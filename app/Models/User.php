@@ -88,4 +88,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(Account::class, 'teller_id', localKey: 'id');
     }
+
+    /**
+     * Get the user's teller daily balances.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<TellerDailyBalance>
+     */
+    public function tellerDailyBalances()
+    {
+        return $this->hasMany(TellerDailyBalance::class, 'teller_id', localKey: 'id');
+    }
 }
