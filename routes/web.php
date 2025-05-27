@@ -43,7 +43,6 @@ Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () 
         Route::get('/', [ProfileController::class, 'index'])->name('profile.index');
         Route::get('edit', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('update', [ProfileController::class, 'update'])->name('profile.update');
-        Route::delete('destroy', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 });
 

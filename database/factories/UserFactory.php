@@ -28,6 +28,8 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
+            'phone' => fake()->optional()->phoneNumber(),
+            'address' => fake()->optional()->address(),
             'position_id' => Position::inRandomOrder()->first()?->id ?? Position::factory(),
             'branch_id' => Branch::inRandomOrder()->first()?->id ?? Branch::factory(),
             'email_verified_at' => now(),
