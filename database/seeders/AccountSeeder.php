@@ -62,7 +62,7 @@ class AccountSeeder extends Seeder
         $bar->start();
 
         // Setup date range
-        $endDate = Carbon::create(2025, 5, 10); // May 9, 2025 (current date in your system)
+        $endDate = Carbon::now();
         $startDate = $endDate->copy()->subDays(60);
 
         // Assign clients to tellers (10 accounts per teller)
