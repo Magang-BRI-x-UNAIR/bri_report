@@ -20,10 +20,7 @@ import {
     BadgeCheck,
     DollarSign,
     Search,
-    MoreHorizontal,
     Eye,
-    FileText,
-    Ban,
     Phone,
     XCircle,
     Filter,
@@ -33,8 +30,11 @@ import {
     LineChart,
     AlertCircle,
     CalendarDays,
-    ArrowDownUp,
     CalendarIcon,
+    ArrowUp,
+    ArrowDown,
+    BarChart3,
+    PieChart,
 } from "lucide-react";
 import {
     Card,
@@ -44,14 +44,6 @@ import {
     CardTitle,
     CardFooter,
 } from "@/Components/ui/card";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
 import {
     Table,
     TableBody,
@@ -86,15 +78,15 @@ import { id } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/Components/ui/calendar";
 import { isValid } from "date-fns";
 
-// First, add the necessary imports from recharts at the top of the file, after the other imports
+// Recharts imports
 import {
-    LineChart as RechartsLineChart,
-    Line,
     XAxis,
     YAxis,
     CartesianGrid,
     Tooltip as RechartsTooltip,
     ResponsiveContainer,
+    AreaChart,
+    Area,
 } from "recharts";
 
 // Date Range Picker Component
@@ -127,29 +119,38 @@ interface AccountStats {
     totalBalance: number;
 }
 
+interface DailyBalance {
+    [x: string]: number | string;
+    date: string;
+    totalBalance: number;
+    formattedDate: string;
+    change: number;
+    transactionCount: number;
+}
+
 interface ShowProps extends PageProps {
     teller: User;
     accountStats: AccountStats;
     clients: Client[];
     recentAccounts: any[];
-    dailyBalances: Array<{
-        date: string;
-        totalBalance: number;
-        formattedDate: string;
-    }>;
-}
-
-// In a real application, this would come from the backend
-interface BalanceHistoryEntry {
-    date: string;
-    totalBalance: number;
-    change: number;
-    transactions: number;
+    dailyBalances: DailyBalance[];
+    highestBalance: number;
+    lowestBalance: number;
+    totalChange: number;
+    percentageChange: number;
 }
 
 const TellersShow = () => {
-    const { teller, accountStats, clients, dailyBalances } =
-        usePage<ShowProps>().props;
+    const {
+        teller,
+        accountStats,
+        clients,
+        dailyBalances,
+        highestBalance,
+        lowestBalance,
+        totalChange,
+        percentageChange,
+    } = usePage<ShowProps>().props;
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [productFilter, setProductFilter] = useState("all");
@@ -159,16 +160,6 @@ const TellersShow = () => {
 
     // Balance history chart state
     const [timeFilter, setTimeFilter] = useState("week");
-    const [startDate, setStartDate] = useState<Date | undefined>(
-        new Date(new Date().setDate(new Date().getDate() - 7))
-    );
-    const [endDate, setEndDate] = useState<Date | undefined>(new Date());
-    const [balanceHistory, setBalanceHistory] = useState<BalanceHistoryEntry[]>(
-        []
-    );
-    const [isChartLoading, setIsChartLoading] = useState(true);
-
-    // Date range state
     const [dateRange, setDateRange] = useState<{
         from: Date | null;
         to: Date | null;
@@ -180,7 +171,6 @@ const TellersShow = () => {
     // Filter balance data based on date range
     const filteredBalanceData = useMemo(() => {
         // Check if dailyBalances exists in the props
-
         if (!dailyBalances || dailyBalances.length === 0) {
             return [];
         }
@@ -204,67 +194,6 @@ const TellersShow = () => {
                     new Date(a.date).getTime() - new Date(b.date).getTime()
             );
     }, [dailyBalances, dateRange]);
-
-    // Generate mock data for the balance history chart
-    useEffect(() => {
-        setIsChartLoading(true);
-
-        // In a real application, this would be an API call to get the data
-        // based on the selected date range
-        setTimeout(() => {
-            const mockData: BalanceHistoryEntry[] = [];
-            const days =
-                Math.floor(
-                    (endDate!.getTime() - startDate!.getTime()) /
-                        (1000 * 60 * 60 * 24)
-                ) + 1;
-
-            // Start with the current total balance and work backwards
-            let currentBalance = accountStats.totalBalance;
-
-            for (let i = 0; i < days; i++) {
-                const date = new Date(endDate!);
-                date.setDate(date.getDate() - i);
-
-                // Random change amount (between -2% and +2% of current balance)
-                const changePercent = Math.random() * 4 - 2;
-                const change = Math.round(
-                    (currentBalance * changePercent) / 100
-                );
-
-                // Previous day's balance
-                const previousBalance = currentBalance - change;
-
-                // Random number of transactions (1-5)
-                const transactions = Math.floor(Math.random() * 5) + 1;
-
-                mockData.unshift({
-                    date: format(date, "yyyy-MM-dd"),
-                    totalBalance: previousBalance,
-                    change: change,
-                    transactions: transactions,
-                });
-
-                // Set the balance for the next iteration
-                currentBalance = previousBalance;
-            }
-
-            // Add today's balance as the last entry
-            mockData.push({
-                date: format(new Date(), "yyyy-MM-dd"),
-                totalBalance: accountStats.totalBalance,
-                change:
-                    mockData.length > 0
-                        ? accountStats.totalBalance -
-                          mockData[mockData.length - 1].totalBalance
-                        : 0,
-                transactions: Math.floor(Math.random() * 5) + 1,
-            });
-
-            setBalanceHistory(mockData);
-            setIsChartLoading(false);
-        }, 800);
-    }, [timeFilter, startDate, endDate, accountStats.totalBalance]);
 
     // Handle time filter change
     const handleTimeFilterChange = (value: string) => {
@@ -298,28 +227,18 @@ const TellersShow = () => {
                 newStartDate.setDate(today.getDate() - 7);
         }
 
-        setStartDate(newStartDate);
-        setEndDate(newEndDate);
-
-        // Update the dateRange state to match the new start and end dates
         setDateRange({
             from: newStartDate,
             to: newEndDate,
         });
     };
 
-    // Also update the useEffect for custom date selection to update dateRange
-    // Add this effect after the existing useEffect for balanceHistory:
-
     // Update dateRange when custom dates change
     useEffect(() => {
-        if (timeFilter === "custom" && startDate && endDate) {
-            setDateRange({
-                from: startDate,
-                to: endDate,
-            });
+        if (timeFilter === "custom" && dateRange.from && dateRange.to) {
+            // This effect is intentionally left empty as it's just for updating dateRange
         }
-    }, [timeFilter, startDate, endDate]);
+    }, [timeFilter, dateRange]);
 
     // Format currency
     const formatCurrency = (amount: number, currency = "IDR") => {
@@ -330,7 +249,6 @@ const TellersShow = () => {
         }).format(amount);
     };
 
-    // Add this function near the other utility functions (like formatCurrency)
     // Format compact currency for chart ticks
     const formatCompactCurrency = (amount: number) => {
         if (amount >= 1000000000) {
@@ -482,69 +400,8 @@ const TellersShow = () => {
         return Math.round((value / total) * 100);
     };
 
-    // Get the highest and lowest points in the balance history
-    const highestBalance = useMemo(() => {
-        if (balanceHistory.length === 0) return 0;
-        return Math.max(...balanceHistory.map((entry) => entry.totalBalance));
-    }, [balanceHistory]);
-
-    const lowestBalance = useMemo(() => {
-        if (balanceHistory.length === 0) return 0;
-        return Math.min(...balanceHistory.map((entry) => entry.totalBalance));
-    }, [balanceHistory]);
-
-    // Calculate the total change over the period
-    const totalChange = useMemo(() => {
-        if (balanceHistory.length < 2) return 0;
-        return (
-            balanceHistory[balanceHistory.length - 1].totalBalance -
-            balanceHistory[0].totalBalance
-        );
-    }, [balanceHistory]);
-
-    // Calculate the percentage change
-    const percentageChange = useMemo(() => {
-        if (balanceHistory.length < 2 || balanceHistory[0].totalBalance === 0)
-            return 0;
-        return (totalChange / balanceHistory[0].totalBalance) * 100;
-    }, [balanceHistory, totalChange]);
-
-    // Calculate the chart dimensions
-    const chartHeight = 200;
-    const chartWidth = "100%";
-
-    // Calculate the chart points
-    const chartPoints = useMemo(() => {
-        if (balanceHistory.length === 0) return "";
-
-        // Find min and max values for scaling
-        const minBalance = Math.min(
-            ...balanceHistory.map((entry) => entry.totalBalance)
-        );
-        const maxBalance = Math.max(
-            ...balanceHistory.map((entry) => entry.totalBalance)
-        );
-        const range = maxBalance - minBalance;
-
-        // Padding to avoid points at the very top or bottom
-        const padding = range * 0.1;
-
-        // Calculate points
-        return balanceHistory
-            .map((entry, index) => {
-                const x = (index / (balanceHistory.length - 1)) * 100;
-                const y =
-                    100 -
-                    ((entry.totalBalance - minBalance + padding) /
-                        (range + padding * 2)) *
-                        100;
-                return `${x},${y}`;
-            })
-            .join(" ");
-    }, [balanceHistory]);
-
-    // Calculate balance change
-    const balanceChange = useMemo(() => {
+    // Calculate balance change from filtered data
+    const filteredBalanceChange = useMemo(() => {
         if (filteredBalanceData.length < 2) return 0;
 
         const firstBalance = filteredBalanceData[0].totalBalance;
@@ -553,6 +410,34 @@ const TellersShow = () => {
 
         return lastBalance - firstBalance;
     }, [filteredBalanceData]);
+
+    // Calculate percentage change from filtered data
+    const filteredPercentageChange = useMemo(() => {
+        if (
+            filteredBalanceData.length < 2 ||
+            filteredBalanceData[0].totalBalance === 0
+        )
+            return 0;
+
+        return (
+            (filteredBalanceChange / filteredBalanceData[0].totalBalance) * 100
+        );
+    }, [filteredBalanceData, filteredBalanceChange]);
+
+    // Calculate highest and lowest balances from filtered data
+    const filteredHighestBalance = useMemo(() => {
+        if (filteredBalanceData.length === 0) return highestBalance;
+        return Math.max(
+            ...filteredBalanceData.map((entry) => entry.totalBalance)
+        );
+    }, [filteredBalanceData, highestBalance]);
+
+    const filteredLowestBalance = useMemo(() => {
+        if (filteredBalanceData.length === 0) return lowestBalance;
+        return Math.min(
+            ...filteredBalanceData.map((entry) => entry.totalBalance)
+        );
+    }, [filteredBalanceData, lowestBalance]);
 
     return (
         <AuthenticatedLayout>
@@ -625,9 +510,9 @@ const TellersShow = () => {
                                 <div className="flex flex-wrap gap-2">
                                     <Link href={route("tellers.index")}>
                                         <Button
-                                            variant="ghost"
+                                            variant="outline"
                                             size="sm"
-                                            className="text-white hover:bg-white/20 bg-[#F37021] hover:text-white"
+                                            className="text-white bg-[#F37021] hover:bg-white/20 hover:text-white border-white/20"
                                         >
                                             <ChevronLeft className="h-4 w-4 mr-1" />
                                             Kembali
@@ -773,9 +658,9 @@ const TellersShow = () => {
                                                         className="h-9 gap-1"
                                                     >
                                                         <CalendarDays className="h-4 w-4" />
-                                                        {startDate
+                                                        {dateRange.from
                                                             ? format(
-                                                                  startDate,
+                                                                  dateRange.from,
                                                                   "dd MMM yyyy",
                                                                   { locale: id }
                                                               )
@@ -788,8 +673,18 @@ const TellersShow = () => {
                                                 >
                                                     <CalendarComponent
                                                         mode="single"
-                                                        selected={startDate}
-                                                        onSelect={setStartDate}
+                                                        selected={
+                                                            dateRange.from ||
+                                                            undefined
+                                                        }
+                                                        onSelect={(date) =>
+                                                            setDateRange({
+                                                                ...dateRange,
+                                                                from:
+                                                                    date ||
+                                                                    null,
+                                                            })
+                                                        }
                                                         initialFocus
                                                     />
                                                 </PopoverContent>
@@ -805,9 +700,9 @@ const TellersShow = () => {
                                                         className="h-9 gap-1"
                                                     >
                                                         <CalendarDays className="h-4 w-4" />
-                                                        {endDate
+                                                        {dateRange.to
                                                             ? format(
-                                                                  endDate,
+                                                                  dateRange.to,
                                                                   "dd MMM yyyy",
                                                                   { locale: id }
                                                               )
@@ -820,8 +715,18 @@ const TellersShow = () => {
                                                 >
                                                     <CalendarComponent
                                                         mode="single"
-                                                        selected={endDate}
-                                                        onSelect={setEndDate}
+                                                        selected={
+                                                            dateRange.to ||
+                                                            undefined
+                                                        }
+                                                        onSelect={(date) =>
+                                                            setDateRange({
+                                                                ...dateRange,
+                                                                to:
+                                                                    date ||
+                                                                    null,
+                                                            })
+                                                        }
                                                         initialFocus
                                                     />
                                                 </PopoverContent>
@@ -859,28 +764,31 @@ const TellersShow = () => {
                                         </CardDescription>
                                         <CardTitle
                                             className={`text-xl flex items-center ${
-                                                totalChange >= 0
+                                                filteredBalanceChange >= 0
                                                     ? "text-green-600"
                                                     : "text-red-600"
                                             }`}
                                         >
-                                            {totalChange >= 0 ? (
-                                                <ArrowUpDown className="h-5 w-5 mr-2" />
+                                            {filteredBalanceChange >= 0 ? (
+                                                <ArrowUp className="h-5 w-5 mr-2" />
                                             ) : (
-                                                <ArrowDownUp className="h-5 w-5 mr-2" />
+                                                <ArrowDown className="h-5 w-5 mr-2" />
                                             )}
                                             {formatCurrency(
-                                                Math.abs(totalChange)
+                                                Math.abs(filteredBalanceChange)
                                             )}
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <p className="text-xs text-muted-foreground">
-                                            {totalChange >= 0
+                                            {filteredBalanceChange >= 0
                                                 ? "Kenaikan"
                                                 : "Penurunan"}{" "}
                                             sebesar{" "}
-                                            {percentageChange.toFixed(2)}%
+                                            {filteredPercentageChange.toFixed(
+                                                2
+                                            )}
+                                            %
                                         </p>
                                     </CardContent>
                                 </Card>
@@ -892,7 +800,9 @@ const TellersShow = () => {
                                         </CardDescription>
                                         <CardTitle className="text-xl flex items-center text-green-600">
                                             <DollarSign className="h-5 w-5 mr-2" />
-                                            {formatCurrency(highestBalance)}
+                                            {formatCurrency(
+                                                filteredHighestBalance
+                                            )}
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
@@ -909,7 +819,9 @@ const TellersShow = () => {
                                         </CardDescription>
                                         <CardTitle className="text-xl flex items-center text-amber-600">
                                             <DollarSign className="h-5 w-5 mr-2" />
-                                            {formatCurrency(lowestBalance)}
+                                            {formatCurrency(
+                                                filteredLowestBalance
+                                            )}
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent>
@@ -920,149 +832,153 @@ const TellersShow = () => {
                                 </Card>
                             </div>
 
-                            {isChartLoading ? (
-                                <div className="flex items-center justify-center h-[300px] bg-gray-50 rounded-lg border">
-                                    <div className="flex flex-col items-center">
-                                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#00529C]"></div>
-                                        <p className="mt-4 text-sm text-gray-500">
-                                            Memuat data...
-                                        </p>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="relative">
-                                    <div className="h-[300px] w-full bg-gray-50 rounded-lg border p-4">
-                                        <div className="flex justify-between items-center mb-4">
-                                            <h3 className="text-sm font-medium text-gray-700">
-                                                Total Saldo Rekening
-                                            </h3>
-                                            <div className="text-xs text-gray-500">
-                                                {startDate && endDate ? (
-                                                    <>
-                                                        {format(
-                                                            startDate,
-                                                            "dd MMM yyyy",
-                                                            { locale: id }
-                                                        )}{" "}
-                                                        -{" "}
-                                                        {format(
-                                                            endDate,
-                                                            "dd MMM yyyy",
-                                                            { locale: id }
-                                                        )}
-                                                    </>
-                                                ) : (
-                                                    "Periode"
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {/* Replace this entire SVG chart section with Recharts */}
-                                        <div className="h-[200px] relative">
-                                            {filteredBalanceData.length > 0 ? (
-                                                <ResponsiveContainer
-                                                    width="100%"
-                                                    height="100%"
-                                                >
-                                                    <RechartsLineChart
-                                                        data={
-                                                            filteredBalanceData
-                                                        }
-                                                        margin={{
-                                                            top: 5,
-                                                            right: 30,
-                                                            left: 30,
-                                                            bottom: 5,
-                                                        }}
-                                                    >
-                                                        <CartesianGrid
-                                                            strokeDasharray="3 3"
-                                                            stroke="#f0f0f0"
-                                                        />
-                                                        <XAxis
-                                                            dataKey="formattedDate"
-                                                            tick={{
-                                                                fontSize: 12,
-                                                            }}
-                                                            tickMargin={10}
-                                                        />
-                                                        <YAxis
-                                                            tickFormatter={(
-                                                                value
-                                                            ) =>
-                                                                formatCompactCurrency(
-                                                                    value
-                                                                )
-                                                            }
-                                                            domain={[
-                                                                "auto",
-                                                                "auto",
-                                                            ]}
-                                                            tick={{
-                                                                fontSize: 12,
-                                                            }}
-                                                        />
-                                                        <RechartsTooltip
-                                                            formatter={(
-                                                                value
-                                                            ) => [
-                                                                formatCurrency(
-                                                                    value as number
-                                                                ),
-                                                                "Total Saldo",
-                                                            ]}
-                                                            labelFormatter={(
-                                                                label
-                                                            ) =>
-                                                                `Tanggal: ${label}`
-                                                            }
-                                                            contentStyle={{
-                                                                fontSize:
-                                                                    "12px",
-                                                                borderRadius:
-                                                                    "4px",
-                                                            }}
-                                                        />
-                                                        <Line
-                                                            type="monotone"
-                                                            dataKey="totalBalance"
-                                                            name="Total Saldo"
-                                                            stroke="#00529C"
-                                                            strokeWidth={2}
-                                                            dot={{
-                                                                stroke: "#00529C",
-                                                                strokeWidth: 2,
-                                                                r: 4,
-                                                                fill: "white",
-                                                            }}
-                                                            activeDot={{
-                                                                r: 6,
-                                                                stroke: "#00529C",
-                                                                strokeWidth: 2,
-                                                                fill: "#00529C",
-                                                            }}
-                                                        />
-                                                    </RechartsLineChart>
-                                                </ResponsiveContainer>
+                            <div className="relative">
+                                <div className="h-[300px] w-full bg-gray-50 rounded-lg border p-4">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-sm font-medium text-gray-700">
+                                            Total Saldo Rekening
+                                        </h3>
+                                        <div className="text-xs text-gray-500">
+                                            {dateRange.from && dateRange.to ? (
+                                                <>
+                                                    {format(
+                                                        dateRange.from,
+                                                        "dd MMM yyyy",
+                                                        { locale: id }
+                                                    )}{" "}
+                                                    -{" "}
+                                                    {format(
+                                                        dateRange.to,
+                                                        "dd MMM yyyy",
+                                                        { locale: id }
+                                                    )}
+                                                </>
                                             ) : (
-                                                <div className="h-full flex items-center justify-center">
-                                                    <div className="text-center text-gray-500">
-                                                        <LineChart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                                                        <p className="font-medium">
-                                                            Tidak ada data untuk
-                                                            ditampilkan
-                                                        </p>
-                                                        <p className="text-sm mt-1">
-                                                            Pilih rentang
-                                                            tanggal yang berbeda
-                                                        </p>
-                                                    </div>
-                                                </div>
+                                                "Periode"
                                             )}
                                         </div>
                                     </div>
+
+                                    <div className="h-[200px] relative">
+                                        {filteredBalanceData.length > 0 ? (
+                                            <ResponsiveContainer
+                                                width="100%"
+                                                height="100%"
+                                            >
+                                                <AreaChart
+                                                    data={filteredBalanceData}
+                                                    margin={{
+                                                        top: 5,
+                                                        right: 30,
+                                                        left: 30,
+                                                        bottom: 5,
+                                                    }}
+                                                >
+                                                    <defs>
+                                                        <linearGradient
+                                                            id="colorBalance"
+                                                            x1="0"
+                                                            y1="0"
+                                                            x2="0"
+                                                            y2="1"
+                                                        >
+                                                            <stop
+                                                                offset="5%"
+                                                                stopColor="#00529C"
+                                                                stopOpacity={
+                                                                    0.8
+                                                                }
+                                                            />
+                                                            <stop
+                                                                offset="95%"
+                                                                stopColor="#00529C"
+                                                                stopOpacity={
+                                                                    0.1
+                                                                }
+                                                            />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid
+                                                        strokeDasharray="3 3"
+                                                        stroke="#f0f0f0"
+                                                    />
+                                                    <XAxis
+                                                        dataKey="formattedDate"
+                                                        tick={{ fontSize: 12 }}
+                                                        tickMargin={10}
+                                                        axisLine={{
+                                                            stroke: "#e5e7eb",
+                                                        }}
+                                                    />
+                                                    <YAxis
+                                                        tickFormatter={(
+                                                            value
+                                                        ) =>
+                                                            formatCompactCurrency(
+                                                                value
+                                                            )
+                                                        }
+                                                        domain={[
+                                                            "auto",
+                                                            "auto",
+                                                        ]}
+                                                        tick={{ fontSize: 12 }}
+                                                        axisLine={{
+                                                            stroke: "#e5e7eb",
+                                                        }}
+                                                    />
+                                                    <RechartsTooltip
+                                                        formatter={(value) => [
+                                                            formatCurrency(
+                                                                value as number
+                                                            ),
+                                                            "Total Saldo",
+                                                        ]}
+                                                        labelFormatter={(
+                                                            label
+                                                        ) =>
+                                                            `Tanggal: ${label}`
+                                                        }
+                                                        contentStyle={{
+                                                            fontSize: "12px",
+                                                            borderRadius: "4px",
+                                                        }}
+                                                    />
+                                                    <Area
+                                                        type="monotone"
+                                                        dataKey="totalBalance"
+                                                        name="Total Saldo"
+                                                        stroke="#00529C"
+                                                        strokeWidth={2}
+                                                        fillOpacity={1}
+                                                        fill="url(#colorBalance)"
+                                                        activeDot={{
+                                                            r: 6,
+                                                            stroke: "#00529C",
+                                                            strokeWidth: 2,
+                                                            fill: "#00529C",
+                                                        }}
+                                                    />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
+                                        ) : (
+                                            <div className="h-full flex items-center justify-center">
+                                                <div className="text-center text-gray-500">
+                                                    <LineChart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                                                    <p className="font-medium">
+                                                        Tidak ada data untuk
+                                                        ditampilkan
+                                                    </p>
+                                                    <p className="text-sm mt-1">
+                                                        Pilih rentang tanggal
+                                                        yang berbeda
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            )}
+                            </div>
 
                             {/* Transactions table */}
                             <div className="mt-6">
@@ -1078,6 +994,7 @@ const TellersShow = () => {
                                                     Total Saldo
                                                 </TableHead>
                                                 <TableHead>Perubahan</TableHead>
+                                                <TableHead>Transaksi</TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
@@ -1085,7 +1002,7 @@ const TellersShow = () => {
                                             0 ? (
                                                 <TableRow>
                                                     <TableCell
-                                                        colSpan={3}
+                                                        colSpan={4}
                                                         className="h-24 text-center text-muted-foreground"
                                                     >
                                                         Tidak ada data perubahan
@@ -1094,52 +1011,54 @@ const TellersShow = () => {
                                                 </TableRow>
                                             ) : (
                                                 filteredBalanceData.map(
-                                                    (entry, index, array) => {
-                                                        const prevBalance =
-                                                            index > 0
-                                                                ? array[
-                                                                      index - 1
-                                                                  ].totalBalance
-                                                                : entry.totalBalance;
-                                                        const change =
-                                                            entry.totalBalance -
-                                                            prevBalance;
-
-                                                        return (
-                                                            <TableRow
-                                                                key={index}
-                                                            >
-                                                                <TableCell>
-                                                                    {
-                                                                        entry.formattedDate
-                                                                    }
-                                                                </TableCell>
-                                                                <TableCell className="font-medium">
-                                                                    {formatCurrency(
-                                                                        entry.totalBalance
-                                                                    )}
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <span
-                                                                        className={
-                                                                            change >=
-                                                                            0
-                                                                                ? "text-green-600"
-                                                                                : "text-red-600"
-                                                                        }
-                                                                    >
-                                                                        {change >=
+                                                    (entry, index) => (
+                                                        <TableRow
+                                                            key={entry.date}
+                                                        >
+                                                            <TableCell>
+                                                                {
+                                                                    entry.formattedDate
+                                                                }
+                                                            </TableCell>
+                                                            <TableCell className="font-medium">
+                                                                {formatCurrency(
+                                                                    entry.totalBalance
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <span
+                                                                    className={`flex items-center ${
+                                                                        entry.change >=
                                                                         0
-                                                                            ? "+"
-                                                                            : ""}
-                                                                        {formatCurrency(
-                                                                            change
-                                                                        )}
-                                                                    </span>
-                                                                </TableCell>
-                                                            </TableRow>
-                                                        );
-                                                    }
+                                                                            ? "text-green-600"
+                                                                            : "text-red-600"
+                                                                    }`}
+                                                                >
+                                                                    {entry.change >=
+                                                                    0 ? (
+                                                                        <ArrowUp className="h-3.5 w-3.5 mr-1" />
+                                                                    ) : (
+                                                                        <ArrowDown className="h-3.5 w-3.5 mr-1" />
+                                                                    )}
+                                                                    {formatCurrency(
+                                                                        Math.abs(
+                                                                            entry.change
+                                                                        )
+                                                                    )}
+                                                                </span>
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Badge
+                                                                    variant="outline"
+                                                                    className="font-normal"
+                                                                >
+                                                                    {entry.transactionCount ||
+                                                                        0}{" "}
+                                                                    transaksi
+                                                                </Badge>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    )
                                                 )
                                             )}
                                         </TableBody>
@@ -1149,187 +1068,9 @@ const TellersShow = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Teller Information Card */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="space-y-6">
-                            <Card>
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center justify-between">
-                                        <CardTitle className="text-lg flex items-center gap-2">
-                                            <UserCircle className="h-5 w-5 text-[#00529C]" />
-                                            Informasi Teller
-                                        </CardTitle>
-                                        <Link
-                                            href={route(
-                                                "tellers.edit",
-                                                teller.id
-                                            )}
-                                        >
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0"
-                                                title="Edit"
-                                            >
-                                                <Edit className="h-4 w-4 text-gray-500 hover:text-[#00529C]" />
-                                                <span className="sr-only">
-                                                    Edit
-                                                </span>
-                                            </Button>
-                                        </Link>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="flex items-center gap-4 pb-4 border-b">
-                                        <div className="h-16 w-16 bg-blue-50 rounded-full flex items-center justify-center">
-                                            <UserCircle className="h-10 w-10 text-[#00529C]" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium">
-                                                {teller.name}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {teller.position?.name ||
-                                                    "Tidak ada jabatan"}
-                                            </p>
-                                            <div className="mt-1">
-                                                {teller.email_verified_at ? (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="bg-green-50 text-green-700 border-green-100 text-xs"
-                                                    >
-                                                        <BadgeCheck className="h-3 w-3 mr-1" />
-                                                        Terverifikasi
-                                                    </Badge>
-                                                ) : (
-                                                    <Badge
-                                                        variant="outline"
-                                                        className="bg-amber-50 text-amber-700 border-amber-100 text-xs"
-                                                    >
-                                                        <AlertCircle className="h-3 w-3 mr-1" />
-                                                        Belum Terverifikasi
-                                                    </Badge>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-3">
-                                        <div className="flex items-start gap-2">
-                                            <Mail className="h-4 w-4 text-gray-400 mt-0.5" />
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Email
-                                                </p>
-                                                <p className="text-sm">
-                                                    {teller.email}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-start gap-2">
-                                            <Building2 className="h-4 w-4 text-gray-400 mt-0.5" />
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Cabang
-                                                </p>
-                                                <p className="text-sm">
-                                                    {teller.branch?.name ||
-                                                        "Tidak ada cabang"}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-start gap-2">
-                                            <Calendar className="h-4 w-4 text-gray-400 mt-0.5" />
-                                            <div>
-                                                <p className="text-xs text-muted-foreground">
-                                                    Bergabung
-                                                </p>
-                                                <p className="text-sm">
-                                                    {formatDate(
-                                                        teller.created_at
-                                                    )}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {/* Quick Insights Card */}
-                            <Card>
-                                <CardHeader className="pb-3">
-                                    <CardTitle className="text-lg flex items-center gap-2">
-                                        <LineChart className="h-5 w-5 text-[#00529C]" />
-                                        Insight Cepat
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-muted-foreground">
-                                                Rekening Aktif
-                                            </span>
-                                            <span className="font-medium">
-                                                {calculatePercentage(
-                                                    accountStats.byStatus
-                                                        ?.active || 0,
-                                                    accountStats.total
-                                                )}
-                                                %
-                                            </span>
-                                        </div>
-                                        <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                            <div
-                                                className="h-full bg-green-500"
-                                                style={{
-                                                    width: `${calculatePercentage(
-                                                        accountStats.byStatus
-                                                            ?.active || 0,
-                                                        accountStats.total
-                                                    )}%`,
-                                                }}
-                                            ></div>
-                                        </div>
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <div className="flex justify-between items-center text-sm">
-                                            <span className="text-muted-foreground">
-                                                Rata-rata Saldo
-                                            </span>
-                                            <span className="font-medium">
-                                                {formatCurrency(
-                                                    accountStats.total > 0
-                                                        ? accountStats.totalBalance /
-                                                              accountStats.total
-                                                        : 0
-                                                )}
-                                            </span>
-                                        </div>
-                                        <div className="w-full p-3 border rounded-md bg-gray-50 text-center">
-                                            <span className="text-xs text-muted-foreground">
-                                                Per rekening nasabah
-                                            </span>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setCurrentTab("stats")}
-                                        className="w-full"
-                                    >
-                                        Lihat Statistik Lengkap
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        </div>
-
-                        <div className="lg:col-span-2 space-y-6">
-                            {/* Recent Clients */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Recent Clients - 6 columns */}
+                        <div className="col-span-1">
                             <Card>
                                 <CardHeader className="pb-3">
                                     <div className="flex justify-between items-center">
@@ -1407,13 +1148,20 @@ const TellersShow = () => {
                                                                 }{" "}
                                                                 rekening
                                                             </Badge>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="sm"
-                                                                className="h-8 w-8 p-0"
+                                                            <Link
+                                                                href={route(
+                                                                    "clients.show",
+                                                                    client.id
+                                                                )}
                                                             >
-                                                                <Eye className="h-4 w-4 text-gray-400 hover:text-[#00529C]" />
-                                                            </Button>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="sm"
+                                                                    className="h-8 w-8 p-0"
+                                                                >
+                                                                    <Eye className="h-4 w-4 text-gray-400 hover:text-[#00529C]" />
+                                                                </Button>
+                                                            </Link>
                                                         </div>
                                                     </div>
                                                 ))}
@@ -1432,8 +1180,10 @@ const TellersShow = () => {
                                     )}
                                 </CardContent>
                             </Card>
+                        </div>
 
-                            {/* Recent Accounts */}
+                        {/* Recent Accounts - 6 columns */}
+                        <div className="col-span-1">
                             <Card>
                                 <CardHeader className="pb-3">
                                     <div className="flex justify-between items-center">
@@ -1474,9 +1224,6 @@ const TellersShow = () => {
                                                         </TableHead>
                                                         <TableHead className="text-right">
                                                             Saldo
-                                                        </TableHead>
-                                                        <TableHead>
-                                                            Status
                                                         </TableHead>
                                                     </TableRow>
                                                 </TableHeader>
@@ -1533,17 +1280,6 @@ const TellersShow = () => {
                                                                     {formatCurrency(
                                                                         account.current_balance
                                                                     )}
-                                                                </TableCell>
-                                                                <TableCell>
-                                                                    <Badge
-                                                                        className={getStatusColor(
-                                                                            account.status
-                                                                        )}
-                                                                    >
-                                                                        {
-                                                                            account.status
-                                                                        }
-                                                                    </Badge>
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))}
@@ -2086,45 +1822,20 @@ const TellersShow = () => {
                                                         )}
                                                     </TableCell>
                                                     <TableCell>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger
-                                                                asChild
+                                                        <Link
+                                                            href={route(
+                                                                "accounts.show",
+                                                                account.id
+                                                            )}
+                                                        >
+                                                            <Button
+                                                                variant="outline"
+                                                                size="icon"
+                                                                className="h-7 w-7"
                                                             >
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    className="h-8 w-8 p-0"
-                                                                >
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuLabel>
-                                                                    Aksi
-                                                                </DropdownMenuLabel>
-                                                                <DropdownMenuItem>
-                                                                    <Eye className="mr-2 h-4 w-4" />
-                                                                    <span>
-                                                                        Lihat
-                                                                        Detail
-                                                                    </span>
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem>
-                                                                    <FileText className="mr-2 h-4 w-4" />
-                                                                    <span>
-                                                                        Lihat
-                                                                        Transaksi
-                                                                    </span>
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem className="text-red-600">
-                                                                    <Ban className="mr-2 h-4 w-4" />
-                                                                    <span>
-                                                                        Blokir
-                                                                        Rekening
-                                                                    </span>
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
+                                                                <Eye className="h-4 w-4" />
+                                                            </Button>
+                                                        </Link>
                                                     </TableCell>
                                                 </TableRow>
                                             ))
@@ -2275,6 +1986,166 @@ const TellersShow = () => {
                                         </div>
                                     );
                                 })}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Product Distribution */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <PieChart className="h-5 w-5 text-[#00529C]" />
+                                Distribusi Produk Rekening
+                            </CardTitle>
+                            <CardDescription>
+                                Jumlah rekening berdasarkan jenis produk
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                {Object.entries(
+                                    accountStats.byAccountProduct || {}
+                                ).map(([product, count]) => {
+                                    return (
+                                        <div key={product}>
+                                            <div className="flex items-center justify-between mb-1">
+                                                <span className="text-sm font-medium">
+                                                    {product}
+                                                </span>
+                                                <span className="text-sm text-muted-foreground">
+                                                    {count} rekening (
+                                                    {calculatePercentage(
+                                                        count,
+                                                        accountStats.total
+                                                    )}
+                                                    %)
+                                                </span>
+                                            </div>
+                                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-[#00529C]"
+                                                    style={{
+                                                        width: `${calculatePercentage(
+                                                            count,
+                                                            accountStats.total
+                                                        )}%`,
+                                                    }}
+                                                ></div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Balance History */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <BarChart3 className="h-5 w-5 text-[#00529C]" />
+                                Riwayat Saldo
+                            </CardTitle>
+                            <CardDescription>
+                                Perubahan saldo rekening dari waktu ke waktu
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-[300px] w-full">
+                                {dailyBalances.length > 0 ? (
+                                    <ResponsiveContainer
+                                        width="100%"
+                                        height="100%"
+                                    >
+                                        <AreaChart
+                                            data={dailyBalances}
+                                            margin={{
+                                                top: 5,
+                                                right: 30,
+                                                left: 30,
+                                                bottom: 5,
+                                            }}
+                                        >
+                                            <defs>
+                                                <linearGradient
+                                                    id="colorBalance2"
+                                                    x1="0"
+                                                    y1="0"
+                                                    x2="0"
+                                                    y2="1"
+                                                >
+                                                    <stop
+                                                        offset="5%"
+                                                        stopColor="#00529C"
+                                                        stopOpacity={0.8}
+                                                    />
+                                                    <stop
+                                                        offset="95%"
+                                                        stopColor="#00529C"
+                                                        stopOpacity={0.1}
+                                                    />
+                                                </linearGradient>
+                                            </defs>
+                                            <CartesianGrid
+                                                strokeDasharray="3 3"
+                                                stroke="#f0f0f0"
+                                            />
+                                            <XAxis
+                                                dataKey="formattedDate"
+                                                tick={{ fontSize: 12 }}
+                                                tickMargin={10}
+                                                axisLine={{ stroke: "#e5e7eb" }}
+                                            />
+                                            <YAxis
+                                                tickFormatter={(value) =>
+                                                    formatCompactCurrency(value)
+                                                }
+                                                domain={["auto", "auto"]}
+                                                tick={{ fontSize: 12 }}
+                                                axisLine={{ stroke: "#e5e7eb" }}
+                                            />
+                                            <RechartsTooltip
+                                                formatter={(value) => [
+                                                    formatCurrency(
+                                                        value as number
+                                                    ),
+                                                    "Total Saldo",
+                                                ]}
+                                                labelFormatter={(label) =>
+                                                    `Tanggal: ${label}`
+                                                }
+                                                contentStyle={{
+                                                    fontSize: "12px",
+                                                    borderRadius: "4px",
+                                                }}
+                                            />
+                                            <Area
+                                                type="monotone"
+                                                dataKey="totalBalance"
+                                                name="Total Saldo"
+                                                stroke="#00529C"
+                                                strokeWidth={2}
+                                                fillOpacity={1}
+                                                fill="url(#colorBalance2)"
+                                                activeDot={{
+                                                    r: 6,
+                                                    stroke: "#00529C",
+                                                    strokeWidth: 2,
+                                                    fill: "#00529C",
+                                                }}
+                                            />
+                                        </AreaChart>
+                                    </ResponsiveContainer>
+                                ) : (
+                                    <div className="h-full flex items-center justify-center">
+                                        <div className="text-center text-gray-500">
+                                            <LineChart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                                            <p className="font-medium">
+                                                Tidak ada data untuk ditampilkan
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>

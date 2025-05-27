@@ -12,6 +12,23 @@ export function formatDate(dateString: string) {
         year: "numeric",
     });
 }
+
+// Format time for display
+export const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
+
+export const formatShortDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "short",
+    });
+};
 export function classNames(
     ...classes: (string | boolean | undefined | null)[]
 ): string {

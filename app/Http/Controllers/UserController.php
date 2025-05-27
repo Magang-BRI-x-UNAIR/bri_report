@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateUserRequest;
 use App\Models\Branch;
 use App\Models\Position;
 use Inertia\Inertia;
+use App\Models\TellerDailyBalance;
 use App\Models\AccountTransaction;
 use Carbon\Carbon;
 
@@ -78,6 +79,16 @@ class UserController extends Controller
             ->where('status', 'active')
             ->get();
 
+        // Get date range - last 60 days
+        $endDate = now()->format('Y-m-d');
+        $startDate = now()->subDays(365)->format('Y-m-d');
+
+        // Get the teller's daily balance data
+        $tellerDailyBalances = TellerDailyBalance::where('teller_id', $teller->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->orderBy('date', 'asc')
+            ->get();
+
         // Calculate account statistics
         $accountStats = [
             'total' => $accounts->count(),
@@ -85,101 +96,41 @@ class UserController extends Controller
                 ->map(fn($group) => $group->count()),
             'byAccountProduct' => $accounts->groupBy('account_product.name')
                 ->map(fn($group) => $group->count()),
-            'totalBalance' => $accounts->sum('current_balance'),
+            'totalBalance' => TellerDailyBalance::where('teller_id', $teller->id)
+                ->where('date', $endDate)
+                ->first()
+                ?->total_balance ?? 0,
         ];
 
         // Get recent accounts
         $recentAccounts = $teller->accounts()->orderBy('opened_at', 'desc')->take(5)->get();
 
-        // Get daily balance data for the last 60 days
-        $endDate = now(); // Use current date
-        $startDate = $endDate->copy()->subDays(60);
 
-        // Get all transactions for this teller's accounts in the date range
-        $transactions = AccountTransaction::whereIn('account_id', $accounts->pluck('id'))
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderBy('created_at')
-            ->get();
 
-        // Group transactions by date
-        $transactionsByDate = $transactions->groupBy(function ($transaction) {
-            return $transaction->created_at->format('Y-m-d');
-        });
-        // Calculate daily balances
-        $dailyBalances = [];
-        $currentDate = $startDate->copy();
-
-        // Get the initial balance at the start date
-        $initialBalance = $accounts->sum(function ($account) use ($startDate) {
-            // Get the balance just before our start date, or use current balance if no transactions exist
-            $earliestTransaction = AccountTransaction::where('account_id', $account->id)
-                ->where('created_at', '<', $startDate)
-                ->orderBy('created_at', 'desc')
-                ->first();
-
-            return $earliestTransaction ? $earliestTransaction->new_balance : $account->current_balance;
-        });
-
-        $cumulativeBalance = $initialBalance;
-        $previousBalance = $initialBalance;
-
-        // Process each day in the date range
-        while ($currentDate <= $endDate) {
-            $dateStr = $currentDate->format('Y-m-d');
-
-            // If we have real transactions for this date
-            if (isset($transactionsByDate[$dateStr])) {
-                $dayTransactions = $transactionsByDate[$dateStr];
-                // Calculate net change for the day
-                $dayChange = $dayTransactions->sum('amount');
-                $cumulativeBalance += $dayChange;
-            } else {
-                // No transactions for this day
-                // Create a zero-amount transaction record for continuity
-                $dayChange = 0;
-
-                // For our first account (could pick any active account)
-                if ($accounts->count() > 0) {
-                    $firstAccount = $accounts->first();
-
-                    // Create a placeholder transaction with zero amount
-                    AccountTransaction::create([
-                        'account_id' => $firstAccount->id,
-                        'amount' => 0,
-                        'previous_balance' => $cumulativeBalance,
-                        'new_balance' => $cumulativeBalance,
-                        'created_at' => $currentDate->copy()->setTime(9, 0, 0), // Set time to 9:00 AM
-                        'updated_at' => $currentDate->copy()->setTime(9, 0, 0),
-                    ]);
-                }
-
-                // No change to cumulative balance
-            }
-
-            // Add to daily balances array
-            $dailyBalances[] = [
-                'date' => $dateStr,
-                'totalBalance' => $cumulativeBalance,
-                'formattedDate' => $currentDate->format('d M'),
-                'change' => $cumulativeBalance - $previousBalance,
+        // Format for frontend
+        $dailyBalances = $tellerDailyBalances->map(function ($record) {
+            return [
+                'date' => $record->date->format('Y-m-d'),
+                'totalBalance' => (float)$record->total_balance,
+                'formattedDate' => $record->date->format('d M'),
+                'change' => (float)$record->daily_change,
             ];
+        });
 
-            // Update previous balance for the next iteration
-            $previousBalance = $cumulativeBalance;
+        // Calculate highest and lowest balances
+        // Fixed algorithm: Initialize with null to handle empty collections properly
+        $highestBalance = 0;
+        $lowestBalance = PHP_FLOAT_MAX;
 
-            // Move to next day
-            $currentDate->addDay();
-        }
+        // Only calculate if we have data
+        $highestBalance = $dailyBalances->max('totalBalance');
+        $lowestBalance = $dailyBalances->min('totalBalance');
 
-        // Ensure the final balance exactly matches current total balance
-        if (count($dailyBalances) > 0) {
-            $lastIndex = count($dailyBalances) - 1;
-
-            // If there's a discrepancy, adjust the final entry
-            if (abs($dailyBalances[$lastIndex]['totalBalance'] - $accountStats['totalBalance']) > 0.01) {
-                $dailyBalances[$lastIndex]['totalBalance'] = $accountStats['totalBalance'];
-            }
-        }
+        // Calculate total change from first to last day
+        $firstBalance = $dailyBalances->first()['totalBalance'] ?? 0;
+        $lastBalance = $dailyBalances->last()['totalBalance'] ?? 0;
+        $totalChange = $lastBalance - $firstBalance;
+        $percentageChange = $firstBalance > 0 ? ($totalChange / $firstBalance * 100) : 0;
 
         return Inertia::render('Dashboard/Tellers/Show', [
             'teller' => $teller,
@@ -187,6 +138,10 @@ class UserController extends Controller
             'clients' => $clients,
             'recentAccounts' => $recentAccounts,
             'dailyBalances' => $dailyBalances,
+            'highestBalance' => $highestBalance,
+            'lowestBalance' => $lowestBalance,
+            'totalChange' => $totalChange,
+            'percentageChange' => $percentageChange,
         ]);
     }
 

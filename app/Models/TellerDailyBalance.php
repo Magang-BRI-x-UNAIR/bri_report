@@ -16,6 +16,13 @@ class TellerDailyBalance extends Model
         'transaction_count',
     ];
 
+    protected $casts = [
+        'date' => 'date',
+        'total_balance' => 'decimal:2',
+        'daily_change' => 'decimal:2',
+        'transaction_count' => 'integer',
+    ];
+
     public function teller()
     {
         return $this->belongsTo(User::class, 'teller_id');

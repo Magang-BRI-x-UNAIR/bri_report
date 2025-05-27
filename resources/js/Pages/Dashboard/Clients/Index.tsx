@@ -1,8 +1,9 @@
-// Update imports by removing modal-specific icons
+"use client";
+
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import { Client, PageProps } from "@/types";
+import type { Client, PageProps } from "@/types";
 import { Head, usePage, Link, router } from "@inertiajs/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Search,
     Plus,
@@ -10,21 +11,28 @@ import {
     Trash2,
     Eye,
     Users,
-    ChevronRight,
     Phone,
     Mail,
-    CreditCard,
     ListFilter,
     ArrowUpDown,
     X,
-    User,
     Calendar,
     FileText,
+    MoreVertical,
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/Components/ui/pagination";
+import { usePagination } from "@/hooks/use-pagination";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/Components/ui/dropdown-menu";
 
-// Keep the interface and component start
+// Simplified interface for client-side pagination only
 interface ClientsIndexProps extends PageProps {
     clients: Client[];
 }
@@ -36,11 +44,11 @@ const ClientsIndex = () => {
     const [sortField, setSortField] = useState("name");
     const [sortDirection, setSortDirection] = useState("asc");
 
-    // Only keep delete modal state, remove create/edit modal states
+    // Delete modal state
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
-    // Keep filtering, sorting logic, etc.
+    // Client-side filtering and sorting
     const filteredClients = clients
         .filter(
             (client) =>
@@ -74,6 +82,25 @@ const ClientsIndex = () => {
             return 0;
         });
 
+    // Use the pagination hook for client-side pagination
+    const {
+        currentPage,
+        setCurrentPage,
+        totalPages,
+        currentItems: paginatedClients,
+        totalItems,
+    } = usePagination({
+        items: filteredClients,
+        initialPage: 1,
+        itemsPerPage: 10,
+    });
+
+    // Reset to page 1 when filters change
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, sortField, sortDirection]);
+
+    // Handle sort
     const handleSort = (field: string) => {
         if (sortField === field) {
             setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -154,7 +181,7 @@ const ClientsIndex = () => {
                 </div>
             </div>
 
-            {/* Keep the search/filter section */}
+            {/* Search/filter section */}
             <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-lg">
                 <div className="p-5 border-b border-gray-100 bg-gray-50/70">
                     {/* Search input */}
@@ -223,7 +250,9 @@ const ClientsIndex = () => {
                                         className="w-full rounded-lg border-gray-200 text-sm"
                                         value={sortDirection}
                                         onChange={(e) =>
-                                            setSortDirection(e.target.value)
+                                            setSortDirection(
+                                                e.target.value as "asc" | "desc"
+                                            )
                                         }
                                     >
                                         <option value="asc">
@@ -234,14 +263,15 @@ const ClientsIndex = () => {
                                         </option>
                                     </select>
                                 </div>
-                                <div className="flex items-end">
-                                    <Button
-                                        className="bg-[#00529C] hover:bg-[#003b75] text-white px-4 py-2 h-10 text-sm w-full"
-                                        onClick={() => setShowFilters(false)}
-                                    >
-                                        Terapkan Filter
-                                    </Button>
-                                </div>
+                            </div>
+
+                            <div className="mt-4 flex justify-end">
+                                <Button
+                                    className="bg-[#00529C] hover:bg-[#003b75] text-white px-4 py-2 h-10 text-sm"
+                                    onClick={() => setShowFilters(false)}
+                                >
+                                    Terapkan Filter
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -308,7 +338,6 @@ const ClientsIndex = () => {
                                         )}
                                     </div>
                                 </th>
-
                                 <th
                                     scope="col"
                                     className="px-6 py-3.5 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
@@ -318,14 +347,14 @@ const ClientsIndex = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                            {filteredClients.length > 0 ? (
-                                filteredClients.map((client, index) => (
+                            {paginatedClients.length > 0 ? (
+                                paginatedClients.map((client, index) => (
                                     <tr
                                         key={client.id}
                                         className="hover:bg-blue-50/40 transition-colors duration-150"
                                     >
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                            {index + 1}
+                                            {(currentPage - 1) * 10 + index + 1}
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4">
                                             <div className="flex items-center">
@@ -378,43 +407,67 @@ const ClientsIndex = () => {
                                                 {formatDate(client.joined_at)}
                                             </div>
                                         </td>
-
                                         <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
                                             <div className="flex justify-end space-x-1">
-                                                {/* Keep the view link */}
-                                                <Link
-                                                    href={route(
-                                                        "clients.show",
-                                                        client.id
-                                                    )}
-                                                    className="rounded-lg p-2 text-[#00529C] hover:bg-blue-50 transition-colors"
-                                                    title="Lihat Detail"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
-
-                                                {/* Replace edit button with link to edit page */}
-                                                <Link
-                                                    href={route(
-                                                        "clients.edit",
-                                                        client.id
-                                                    )}
-                                                    className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 transition-colors"
-                                                    title="Edit Nasabah"
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </Link>
-
-                                                {/* Keep delete button */}
-                                                <button
-                                                    onClick={() =>
-                                                        openDeleteModal(client)
-                                                    }
-                                                    className="rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors"
-                                                    title="Hapus"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
+                                                {/* Replace custom dropdown with shadcn dropdown */}
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
+                                                    >
+                                                        <button
+                                                            className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none"
+                                                            title="Opsi"
+                                                        >
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                href={route(
+                                                                    "clients.show",
+                                                                    client.id
+                                                                )}
+                                                                className="flex items-center cursor-pointer"
+                                                            >
+                                                                <Eye className="h-4 w-4 mr-3 text-[#00529C]" />
+                                                                <span>
+                                                                    Lihat Detail
+                                                                </span>
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                href={route(
+                                                                    "clients.edit",
+                                                                    client.id
+                                                                )}
+                                                                className="flex items-center cursor-pointer"
+                                                            >
+                                                                <Edit className="h-4 w-4 mr-3 text-amber-600" />
+                                                                <span>
+                                                                    Edit Nasabah
+                                                                </span>
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            className="text-red-600 focus:text-red-600 focus:bg-red-50 cursor-pointer"
+                                                            onClick={() =>
+                                                                openDeleteModal(
+                                                                    client
+                                                                )
+                                                            }
+                                                        >
+                                                            <Trash2 className="h-4 w-4 mr-3" />
+                                                            <span>Hapus</span>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         </td>
                                     </tr>
@@ -479,45 +532,22 @@ const ClientsIndex = () => {
                     </table>
                 </div>
 
-                {/* Footer info section */}
-                {filteredClients.length > 0 && (
-                    <div className="bg-gray-50/70 px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200">
-                        <div className="text-sm text-gray-500 mb-4 sm:mb-0">
-                            Menampilkan {filteredClients.length} dari{" "}
-                            {clients.length} nasabah
-                        </div>
-                        <div className="flex justify-center">
-                            <nav
-                                className="inline-flex rounded-md shadow-sm -space-x-px"
-                                aria-label="Pagination"
-                            >
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                                >
-                                    <span className="sr-only">Previous</span>
-                                    <ChevronRight className="h-4 w-4 transform rotate-180" />
-                                </a>
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-[#00529C] hover:bg-blue-100"
-                                >
-                                    1
-                                </a>
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                                >
-                                    <span className="sr-only">Next</span>
-                                    <ChevronRight className="h-4 w-4" />
-                                </a>
-                            </nav>
-                        </div>
+                {/* Pagination section */}
+                {paginatedClients.length > 0 && (
+                    <div className="bg-gray-50/70 px-6 py-4 border-t border-gray-200">
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalItems}
+                            perPage={10}
+                            onPageChange={setCurrentPage}
+                            showPageNumbers={true}
+                            siblingCount={1}
+                        />
                     </div>
                 )}
             </div>
 
-            {/* Keep only the Delete Modal */}
+            {/* Delete Modal */}
             {showDeleteModal && clientToDelete && (
                 <div
                     className="fixed inset-0 z-50 overflow-y-auto"

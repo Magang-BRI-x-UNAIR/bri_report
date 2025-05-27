@@ -5,7 +5,7 @@ import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import { PageProps, Client } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
     User,
     Mail,
@@ -197,8 +197,8 @@ const ClientsEdit = () => {
                                     ) : data.cif && !validateCIF(data.cif) ? (
                                         <p className="mt-1 text-sm text-orange-600 flex items-center">
                                             <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            Nomor CIF harus terdiri dari 6
-                                            digit angka
+                                            Nomor CIF harus terdiri dari 6 digit
+                                            angka
                                         </p>
                                     ) : null}
                                 </div>

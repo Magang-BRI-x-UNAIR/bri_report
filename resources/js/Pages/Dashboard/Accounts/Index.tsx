@@ -1,7 +1,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Account, PageProps } from "@/types";
 import { Head, usePage, Link } from "@inertiajs/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Search,
     CreditCard,
@@ -18,6 +18,9 @@ import {
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
+import { Pagination } from "@/Components/ui/pagination";
+import { usePagination } from "@/hooks/use-pagination";
+import { formatCurrency } from "@/lib/utils";
 
 interface AccountsIndexProps extends PageProps {
     accounts: Account[];
@@ -42,24 +45,7 @@ const AccountsIndex = () => {
             ])
         ).values(),
     ];
-
-    // Format currency
-    const formatCurrency = (amount: number, currency: string = "IDR") => {
-        return new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: currency,
-            minimumFractionDigits: 0,
-        }).format(amount);
-    };
-
     // Format date
-    const formatDate = (dateStr: string) => {
-        return new Date(dateStr).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-        });
-    };
 
     // Filter accounts based on search term and filters
     const filteredAccounts = accounts
@@ -121,6 +107,21 @@ const AccountsIndex = () => {
             return 0;
         });
 
+    const {
+        currentPage,
+        setCurrentPage,
+        totalPages,
+        currentItems: paginatedAccounts,
+        totalItems,
+    } = usePagination({
+        items: filteredAccounts,
+        initialPage: 1,
+        itemsPerPage: 10,
+    });
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, sortField, sortDirection, statusFilter, productFilter]);
     const handleSort = (field: string) => {
         if (sortField === field) {
             setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -132,6 +133,14 @@ const AccountsIndex = () => {
 
     const clearSearch = () => {
         setSearchTerm("");
+    };
+
+    const clearFilters = () => {
+        setSearchTerm("");
+        setStatusFilter("all");
+        setProductFilter("all");
+        setSortField("account_number");
+        setSortDirection("asc");
     };
 
     // Get status badge
@@ -456,8 +465,8 @@ const AccountsIndex = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                            {filteredAccounts.length > 0 ? (
-                                filteredAccounts.map((account, index) => (
+                            {paginatedAccounts.length > 0 ? (
+                                paginatedAccounts.map((account, index) => (
                                     <tr
                                         key={account.id}
                                         className="hover:bg-blue-50/40 transition-colors duration-150"
@@ -633,40 +642,17 @@ const AccountsIndex = () => {
                     </table>
                 </div>
 
-                {/* Footer info section */}
-                {filteredAccounts.length > 0 && (
-                    <div className="bg-gray-50/70 px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200">
-                        <div className="text-sm text-gray-500 mb-4 sm:mb-0">
-                            Menampilkan {filteredAccounts.length} dari{" "}
-                            {accounts.length} rekening
-                        </div>
-                        <div className="flex justify-center">
-                            <nav
-                                className="inline-flex rounded-md shadow-sm -space-x-px"
-                                aria-label="Pagination"
-                            >
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                                >
-                                    <span className="sr-only">Previous</span>
-                                    <ChevronRight className="h-4 w-4 transform rotate-180" />
-                                </a>
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-[#00529C] hover:bg-blue-100"
-                                >
-                                    1
-                                </a>
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                                >
-                                    <span className="sr-only">Next</span>
-                                    <ChevronRight className="h-4 w-4" />
-                                </a>
-                            </nav>
-                        </div>
+                {/* Pagination section */}
+                {paginatedAccounts.length > 0 && (
+                    <div className="bg-gray-50/70 px-6 py-4 border-t border-gray-200">
+                        <Pagination
+                            currentPage={currentPage}
+                            totalItems={totalItems}
+                            perPage={10}
+                            onPageChange={setCurrentPage}
+                            showPageNumbers={true}
+                            siblingCount={1}
+                        />
                     </div>
                 )}
             </div>

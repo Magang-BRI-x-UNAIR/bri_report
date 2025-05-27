@@ -47,80 +47,107 @@ class AccountSeeder extends Seeder
             return;
         }
 
-        $this->command->info('Creating accounts for existing clients...');
+        $this->command->info('Creating accounts for clients...');
+
+        // First, clean up existing data to avoid duplicates
+        // Disable foreign key checks before truncating
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('account_transactions')->truncate();
+        DB::table('accounts')->truncate();
+        DB::table('teller_daily_balances')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;'); // Re-enable foreign key checks
 
         // Track our progress
         $bar = $this->command->getOutput()->createProgressBar($clients->count());
         $bar->start();
 
-        // Create accounts
+        // Setup date range
+        $endDate = Carbon::create(2025, 5, 10); // May 9, 2025 (current date in your system)
+        $startDate = $endDate->copy()->subDays(60);
+
+        // Assign clients to tellers (10 accounts per teller)
+        $tellerAccounts = [];
+        foreach ($tellers as $teller) {
+            $tellerAccounts[$teller->id] = 0;
+        }
+
+        // Create accounts - one per client
         $accounts = [];
-        $accountTransactions = [];
         $now = Carbon::now();
 
-        // Each client will have 1-3 accounts
-        foreach ($clients as $client) {
-            $accountCount = rand(1, 3);
+        // Distribute clients evenly among tellers, ensuring each teller gets 10 accounts
+        $clientsForSeeding = $clients->take(count($tellers) * 10); // Limit to exactly what we need
+        $tellerIndex = 0;
+        $currentTellerId = $tellers[$tellerIndex]->id;
 
-            for ($i = 0; $i < $accountCount; $i++) {
-                // Determine account type
-                $accountProduct = $accountProducts->random();
-                $teller = $tellers->random();
+        foreach ($clientsForSeeding as $index => $client) {
+            // If current teller has 10 accounts, move to next teller
+            if ($tellerAccounts[$currentTellerId] >= 10) {
+                $tellerIndex++;
+                if ($tellerIndex >= count($tellers)) {
+                    break; // We've assigned all tellers their 10 accounts
+                }
+                $currentTellerId = $tellers[$tellerIndex]->id;
+            }
 
-                // Create base account using factory but don't persist yet
-                $account = Account::factory()->make([
+            // Determine account type
+            $accountProduct = $accountProducts->random();
+
+            // Create account using factory but don't persist yet
+            $account = Account::factory()->make([
+                'client_id' => $client->id,
+                'account_product_id' => $accountProduct->id,
+                'teller_id' => $currentTellerId,
+                'opened_at' => $startDate,
+            ]);
+
+            // Special account types with more realistic distribution
+            $rand = rand(1, 100);
+            if ($rand > 95) {
+                // 5% chance of high balance account
+                $account = Account::factory()->highBalance()->make([
                     'client_id' => $client->id,
                     'account_product_id' => $accountProduct->id,
-                    'teller_id' => $teller->id,
-                    // Set the opened_at date to 61 days ago from March 9, 2025
-                    'opened_at' => Carbon::create(2025, 3, 9)->subDays(61),
+                    'teller_id' => $currentTellerId,
+                    'opened_at' => $startDate,
                 ]);
-
-                // Special account types - with more realistic distribution
-                $rand = rand(1, 100);
-                if ($rand > 95) {
-                    // 5% chance of high balance account
-                    $account = Account::factory()->highBalance()->make([
-                        'client_id' => $client->id,
-                        'account_product_id' => $accountProduct->id,
-                        'teller_id' => $teller->id,
-                        'opened_at' => Carbon::create(2025, 3, 9)->subDays(61),
-                    ]);
-                } elseif ($rand > 80) {
-                    // 15% chance of low balance account
-                    $account = Account::factory()->lowBalance()->make([
-                        'client_id' => $client->id,
-                        'account_product_id' => $accountProduct->id,
-                        'teller_id' => $teller->id,
-                        'opened_at' => Carbon::create(2025, 3, 9)->subDays(61),
-                    ]);
-                } elseif ($rand > 75) {
-                    // 5% chance of USD account
-                    $account = Account::factory()->usdCurrency()->make([
-                        'client_id' => $client->id,
-                        'account_product_id' => $accountProduct->id,
-                        'teller_id' => $teller->id,
-                        'opened_at' => Carbon::create(2025, 3, 9)->subDays(61),
-                    ]);
-                }
-
-                // Prepare account data for bulk insertion
-                $accounts[] = [
-                    'account_number' => $account->account_number,
-                    'current_balance' => $account->current_balance,
-                    'available_balance' => $account->available_balance,
-                    'currency' => $account->currency,
-                    'status' => $account->status,
-                    'opened_at' => $account->opened_at,
-                    'client_id' => $account->client_id,
-                    'account_product_id' => $account->account_product_id,
-                    'teller_id' => $account->teller_id,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-
-                $bar->advance();
+            } elseif ($rand > 80) {
+                // 15% chance of low balance account
+                $account = Account::factory()->lowBalance()->make([
+                    'client_id' => $client->id,
+                    'account_product_id' => $accountProduct->id,
+                    'teller_id' => $currentTellerId,
+                    'opened_at' => $startDate,
+                ]);
+            } elseif ($rand > 75) {
+                // 5% chance of USD account
+                $account = Account::factory()->usdCurrency()->make([
+                    'client_id' => $client->id,
+                    'account_product_id' => $accountProduct->id,
+                    'teller_id' => $currentTellerId,
+                    'opened_at' => $startDate,
+                ]);
             }
+
+            // Prepare account data for bulk insertion
+            $accounts[] = [
+                'account_number' => $account->account_number,
+                'current_balance' => $account->current_balance,
+                'available_balance' => $account->available_balance,
+                'currency' => $account->currency,
+                'status' => $account->status,
+                'opened_at' => $account->opened_at,
+                'client_id' => $account->client_id,
+                'account_product_id' => $account->account_product_id,
+                'teller_id' => $account->teller_id,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+
+            // Increment account count for this teller
+            $tellerAccounts[$currentTellerId]++;
+
+            $bar->advance();
         }
 
         // Bulk insert accounts (much faster than individual inserts)
@@ -130,6 +157,12 @@ class AccountSeeder extends Seeder
         $this->command->newLine(2);
         $this->command->info('Successfully created ' . count($accounts) . ' accounts!');
 
+        // Verify each teller has 10 accounts
+        foreach ($tellers as $teller) {
+            $count = DB::table('accounts')->where('teller_id', $teller->id)->count();
+            $this->command->info("Teller {$teller->name} has {$count} accounts");
+        }
+
         // Now let's create 60 days of account transactions for each account
         $this->command->info('Creating 60 days of account transactions...');
         $accounts = Account::all();
@@ -138,9 +171,7 @@ class AccountSeeder extends Seeder
         $bar->start();
 
         $transactions = [];
-
-        // Define the end date (March 9, 2025)
-        $endDate = Carbon::create(2025, 4, 9);
+        $tellerDailyBalances = [];
 
         // For consistent transaction patterns
         $transactionPatterns = [
@@ -154,9 +185,26 @@ class AccountSeeder extends Seeder
             'transport' => ['frequency' => 10, 'amount' => [-20000, -100000]],
         ];
 
+        // Initialize teller balance tracking arrays
+        $tellerDailyData = [];
+        foreach ($tellers as $teller) {
+            $tellerDailyData[$teller->id] = [];
+
+            $currentDay = $startDate->copy();
+            while ($currentDay <= $endDate) {
+                $dateStr = $currentDay->format('Y-m-d');
+                $tellerDailyData[$teller->id][$dateStr] = [
+                    'total_balance' => 0,
+                    'daily_change' => 0,
+                    'transaction_count' => 0,
+                ];
+                $currentDay->addDay();
+            }
+        }
+
         foreach ($accounts as $account) {
             // Setup the start balance and date
-            $startDate = Carbon::parse($account->opened_at);
+            $currentDay = $startDate->copy();
             $startBalance = $account->currency === 'IDR' ? rand(1000000, 5000000) : rand(100, 500);
             $balance = $startBalance;
             $previousBalance = 0;
@@ -180,79 +228,74 @@ class AccountSeeder extends Seeder
                 'updated_at' => $startDate,
             ];
 
+            // Update teller daily data for opening day
+            $openingDateStr = $startDate->format('Y-m-d');
+            $tellerDailyData[$account->teller_id][$openingDateStr]['total_balance'] += $balance;
+            $tellerDailyData[$account->teller_id][$openingDateStr]['daily_change'] += $balance;
+            $tellerDailyData[$account->teller_id][$openingDateStr]['transaction_count']++;
+
             $previousBalance = $balance;
             $currentDay = $startDate->copy()->addDay();
 
-            // Generate transactions for each day until we reach March 9, 2025
-            while ($currentDay->lte($endDate)) {
-                // Generate 0-3 transactions for this day
-                $dayTransactionsCount = rand(0, 3);
+            // Generate transactions for each day until we reach end date
+            while ($currentDay <= $endDate) {
+                $dateStr = $currentDay->format('Y-m-d');
+                $dayTransactionsCount = 0;
+                $dayTotalChange = 0;
 
                 // Check for recurring pattern transactions
                 foreach ($accountPatterns as $key => $pattern) {
-                    // Check weekly patterns
-                    if (isset($pattern['day']) && is_string($pattern['day']) && strtolower($currentDay->format('l')) === $pattern['day']) {
-                        // It's a weekly pattern day (like salary on Friday)
-                        $amount = rand($pattern['amount'][0], $pattern['amount'][1]);
+                    // Process weekly and monthly patterns
+                    if (isset($pattern['day'])) {
+                        $matchDay = false;
 
-                        // Adjust amount based on currency
-                        if ($account->currency === 'USD') {
-                            $amount = $amount / 15000; // Approximate USD conversion
+                        // Check if it's weekly pattern day
+                        if (is_string($pattern['day']) && strtolower($currentDay->format('l')) === $pattern['day']) {
+                            $matchDay = true;
+                        }
+                        // Check if it's monthly pattern day
+                        else if (is_numeric($pattern['day']) && $currentDay->day === $pattern['day']) {
+                            $matchDay = true;
                         }
 
-                        $balance += $amount;
+                        if ($matchDay) {
+                            // Create the pattern transaction
+                            $amount = rand($pattern['amount'][0], $pattern['amount'][1]);
 
-                        $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
+                            // Adjust amount based on currency
+                            if ($account->currency === 'USD') {
+                                $amount = $amount / 15000;
+                            }
 
-                        $transactions[] = [
-                            'account_id' => $account->id,
-                            'amount' => $amount,
-                            'previous_balance' => $previousBalance,
-                            'new_balance' => $balance,
-                            'created_at' => $transactionTime,
-                            'updated_at' => $transactionTime,
-                        ];
+                            $balance += $amount;
+                            $dayTotalChange += $amount;
 
-                        $previousBalance = $balance;
-                    }
+                            $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
 
-                    // Check monthly patterns (bill payments, rent, etc.)
-                    if (isset($pattern['day']) && is_numeric($pattern['day']) && $currentDay->day === $pattern['day']) {
-                        // It's a monthly pattern day (like rent on the 5th)
-                        $amount = rand($pattern['amount'][0], $pattern['amount'][1]);
+                            $transactions[] = [
+                                'account_id' => $account->id,
+                                'amount' => $amount,
+                                'previous_balance' => $previousBalance,
+                                'new_balance' => $balance,
+                                'created_at' => $transactionTime,
+                                'updated_at' => $transactionTime,
+                            ];
 
-                        // Adjust amount based on currency
-                        if ($account->currency === 'USD') {
-                            $amount = $amount / 15000; // Approximate USD conversion
+                            $previousBalance = $balance;
+                            $dayTransactionsCount++;
                         }
-
-                        $balance += $amount;
-
-                        $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
-
-                        $transactions[] = [
-                            'account_id' => $account->id,
-                            'amount' => $amount,
-                            'previous_balance' => $previousBalance,
-                            'new_balance' => $balance,
-                            'created_at' => $transactionTime,
-                            'updated_at' => $transactionTime,
-                        ];
-
-                        $previousBalance = $balance;
                     }
-
                     // Check frequency-based patterns
-                    if (isset($pattern['frequency']) && rand(1, 30) <= $pattern['frequency']) {
-                        // Random chance based on frequency value
+                    else if (isset($pattern['frequency']) && rand(1, 30) <= $pattern['frequency']) {
                         $amount = rand($pattern['amount'][0], $pattern['amount'][1]);
 
                         // Adjust amount based on currency
                         if ($account->currency === 'USD') {
-                            $amount = $amount / 15000; // Approximate USD conversion
+                            $amount = $amount / 15000;
                         }
 
                         $balance += $amount;
+                        $dayTotalChange += $amount;
 
                         $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
 
@@ -266,33 +309,31 @@ class AccountSeeder extends Seeder
                         ];
 
                         $previousBalance = $balance;
+                        $dayTransactionsCount++;
                     }
                 }
 
-                // Generate random transactions for this day
-                for ($i = 0; $i < $dayTransactionsCount; $i++) {
+                // Generate random transactions for this day (0-2 more transactions)
+                $randomTransCount = rand(0, 2);
+                for ($i = 0; $i < $randomTransCount; $i++) {
                     // Random transaction type (credit or debit)
-                    $type = rand(1, 100) > 40 ? 'credit' : 'debit'; // 60% credits, 40% debits
+                    $isDeposit = rand(1, 100) > 40;
 
-                    if ($type === 'credit') {
-                        $amount = rand(50000, 1000000); // Random deposit
+                    if ($isDeposit) {
+                        $amount = rand(50000, 1000000);
                         if ($account->currency === 'USD') {
-                            $amount = rand(5, 100); // USD deposits
+                            $amount = rand(5, 100);
                         }
-
-                        $balance += $amount;
                     } else {
                         // Ensure withdrawals don't exceed available balance
-                        $maxWithdrawal = min($balance * 0.7, 1000000); // Limit withdrawals
+                        $maxWithdrawal = min($balance * 0.7, 1000000);
                         if ($account->currency === 'USD') {
                             $maxWithdrawal = min($balance * 0.7, 100);
                         }
 
-                        if ($maxWithdrawal < 10000 && $account->currency === 'IDR') {
-                            // Skip if balance is too low for IDR
-                            continue;
-                        } else if ($maxWithdrawal < 5 && $account->currency === 'USD') {
-                            // Skip if balance is too low for USD
+                        if (($maxWithdrawal < 10000 && $account->currency === 'IDR') ||
+                            ($maxWithdrawal < 5 && $account->currency === 'USD')
+                        ) {
                             continue;
                         }
 
@@ -300,11 +341,11 @@ class AccountSeeder extends Seeder
                             $account->currency === 'IDR' ? 10000 : 5,
                             max((int)$maxWithdrawal, $account->currency === 'IDR' ? 10000 : 5)
                         );
-
-                        $balance += $amount; // Amount is negative
                     }
 
-                    // Create the transaction with a random time on current day
+                    $balance += $amount;
+                    $dayTotalChange += $amount;
+
                     $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
 
                     $transactions[] = [
@@ -317,50 +358,73 @@ class AccountSeeder extends Seeder
                     ];
 
                     $previousBalance = $balance;
+                    $dayTransactionsCount++;
                 }
 
-                // Move to the next day
+                // Make sure we have at least one transaction per day (even if zero amount)
+                if ($dayTransactionsCount === 0) {
+                    $transactions[] = [
+                        'account_id' => $account->id,
+                        'amount' => 0,
+                        'previous_balance' => $balance,
+                        'new_balance' => $balance,
+                        'created_at' => $currentDay->copy()->setTime(9, 0, 0),
+                        'updated_at' => $currentDay->copy()->setTime(9, 0, 0),
+                    ];
+
+                    $dayTransactionsCount++;
+                }
+
+                // Update teller daily data
+                $tellerDailyData[$account->teller_id][$dateStr]['total_balance'] += $balance;
+                $tellerDailyData[$account->teller_id][$dateStr]['daily_change'] += $dayTotalChange;
+                $tellerDailyData[$account->teller_id][$dateStr]['transaction_count'] += $dayTransactionsCount;
+
+                // Move to next day
                 $currentDay->addDay();
             }
+
+            // Update account with final balance
+            $account->current_balance = $balance;
+            $account->available_balance = $balance * rand(95, 100) / 100;
+            $account->save();
 
             $bar->advance();
         }
 
-        // Update final account balances to match the last transaction
-        $accountBalanceUpdates = collect($transactions)
-            ->groupBy('account_id')
-            ->map(function ($accountTransactions) {
-                return collect($accountTransactions)->sortBy('created_at')->last();
-            })
-            ->map(function ($lastTransaction) {
-                return [
-                    'id' => $lastTransaction['account_id'],
-                    'current_balance' => $lastTransaction['new_balance'],
-                    'available_balance' => $lastTransaction['new_balance'] * rand(95, 100) / 100, // Slight variance
-                ];
-            })
-            ->values()
-            ->toArray();
-
-        // Bulk insert transactions in chunks (to avoid memory issues)
+        // Bulk insert transactions in chunks
         foreach (array_chunk($transactions, 1000) as $chunk) {
             DB::table('account_transactions')->insert($chunk);
-        }
-
-        // Update account balances to match their transaction history
-        foreach ($accountBalanceUpdates as $update) {
-            DB::table('accounts')
-                ->where('id', $update['id'])
-                ->update([
-                    'current_balance' => $update['current_balance'],
-                    'available_balance' => $update['available_balance'],
-                ]);
         }
 
         $bar->finish();
         $this->command->newLine(2);
         $this->command->info('Successfully created ' . count($transactions) . ' transactions across 60 days!');
-        $this->command->info('Average of ' . round(count($transactions) / $accounts->count(), 2) . ' transactions per account');
+
+        // Now create the TellerDailyBalance records
+        $this->command->info('Creating teller daily balance records...');
+        $tellerBalanceRecords = [];
+
+        foreach ($tellerDailyData as $tellerId => $dates) {
+            foreach ($dates as $date => $data) {
+                $tellerBalanceRecords[] = [
+                    'teller_id' => $tellerId,
+                    'date' => $date,
+                    'total_balance' => $data['total_balance'],
+                    'daily_change' => $data['daily_change'],
+                    'transaction_count' => $data['transaction_count'],
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        // Insert teller daily balance records
+        foreach (array_chunk($tellerBalanceRecords, 1000) as $chunk) {
+            DB::table('teller_daily_balances')->insert($chunk);
+        }
+
+        $this->command->info('Successfully created ' . count($tellerBalanceRecords) . ' teller daily balance records!');
     }
 
     /**
