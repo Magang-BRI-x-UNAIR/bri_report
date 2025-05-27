@@ -1,3 +1,5 @@
+// File: resources/js/Components/Sidebar.tsx
+
 "use client";
 
 import { Link, usePage } from "@inertiajs/react";
@@ -11,6 +13,7 @@ import {
     Briefcase,
     CreditCard,
     BookOpen,
+    UserCircle, // Tambahkan ikon untuk Profil
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import SidebarItem from "./SidebarItem";
@@ -23,50 +26,20 @@ interface SidebarProps {
 
 const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
     const { url } = usePage();
-    const [activeSection, setActiveSection] = useState<string | null>(null);
     const [isMobile, setIsMobile] = useState(false);
 
     useEffect(() => {
         const handleResize = () => {
             setIsMobile(window.innerWidth < 1024);
         };
-
-        // Initial check
         handleResize();
-
-        // Add event listener
         window.addEventListener("resize", handleResize);
-
-        // Cleanup
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
-    useEffect(() => {
-        if (route().current("dashboard") || route().current("groups.*")) {
-            setActiveSection("environments");
-        } else if (
-            route().current("clients.*") ||
-            route().current("applications.*") ||
-            route().current("groups.*")
-        ) {
-            setActiveSection("access");
-        } else {
-            setActiveSection(null);
-        }
-    }, [url, route]);
-
-    // Toggle section expansion
-    const toggleSection = (section: string) => {
-        if (activeSection === section) {
-            setActiveSection(null);
-        } else {
-            setActiveSection(section);
-        }
-    };
-
     return (
         <>
-            {/* Mobile sidebar backdrop with fade effect */}
+            {/* Mobile sidebar backdrop */}
             {sidebarOpen && isMobile && (
                 <div
                     className="fixed inset-0 z-20 bg-gray-900/50 backdrop-blur-sm transition-opacity duration-300"
@@ -106,16 +79,24 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                     </button>
                 </div>
 
-                {/* Sidebar content with custom scrollbar */}
+                {/* Sidebar content */}
                 <div className="custom-scrollbar flex h-[calc(100%-4rem)] flex-col overflow-y-auto py-4">
                     <nav className="flex-grow space-y-1 px-3">
-                        {/* Dashboard */}
                         <SidebarItem
                             href="dashboard"
                             icon={Home}
                             text="Dashboard"
                             isActive={route().current("dashboard")}
                         />
+
+                        <SidebarSection title="Akun Saya">
+                            <SidebarItem
+                                href="profile.index"
+                                icon={UserCircle}
+                                text="Profil Saya"
+                                isActive={route().current("profile.edit")}
+                            />
+                        </SidebarSection>
 
                         <SidebarSection title="Organization">
                             <SidebarItem
@@ -144,7 +125,6 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                             />
                         </SidebarSection>
 
-                        {/* Add more menu items here */}
                         <SidebarSection title="Reports">
                             <SidebarItem
                                 href="clients.index"
@@ -163,19 +143,6 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                                     route().current("accounts.index") ||
                                     route().current("accounts.*")
                                 }
-                            />
-
-                            <SidebarItem
-                                href="dashboard"
-                                icon={FolderTree}
-                                text="Monthly Summary"
-                                isActive={false}
-                            />
-                            <SidebarItem
-                                href="dashboard"
-                                icon={Tags}
-                                text="Annual Review"
-                                isActive={false}
                             />
                         </SidebarSection>
                     </nav>

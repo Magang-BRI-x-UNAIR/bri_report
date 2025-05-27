@@ -5,8 +5,8 @@ export interface User {
     email_verified_at?: string;
     created_at: string;
     updated_at: string;
-    branch: Branch;
-    position: Position;
+    branch: Branch | null;
+    position: Position | null;
     accounts: Account[];
 }
 

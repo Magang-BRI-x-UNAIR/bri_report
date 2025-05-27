@@ -22,6 +22,12 @@ class PositionController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        //
+        return Inertia::render('Dashboard/Positions/Create');
+    }
+
     /**
      * Store a newly created resource in storage.
      */

@@ -2,7 +2,7 @@ import { usePage, Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { PageProps, User } from "@/types";
 import { Breadcrumb } from "@/Components/Breadcrumb";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
     Briefcase,
     FileText,

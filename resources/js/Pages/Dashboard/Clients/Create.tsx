@@ -3,7 +3,7 @@ import type React from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
     UserPlus,
     Mail,
