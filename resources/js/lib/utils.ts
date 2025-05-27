@@ -53,3 +53,15 @@ export const formatCurrency = (amount: number, currency = "IDR") => {
         minimumFractionDigits: 0,
     }).format(amount);
 };
+
+export const formatDateTime = (dateString: string | null | undefined) => {
+    if (!dateString) return "-";
+    return new Date(dateString).toLocaleString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+    });
+};

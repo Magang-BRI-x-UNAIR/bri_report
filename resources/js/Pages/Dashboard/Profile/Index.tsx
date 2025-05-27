@@ -1,5 +1,3 @@
-// File: resources/js/Pages/Dashboard/Profile/Index.tsx
-
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, usePage, Link } from "@inertiajs/react";
 import { PageProps, User } from "@/types";
@@ -14,7 +12,10 @@ import {
     Edit2,
     ShieldCheck,
     Info,
+    Phone,
+    MapPin,
 } from "lucide-react";
+import { formatDateTime } from "@/lib/utils";
 
 interface ProfileIndexPageProps extends PageProps {
     user: User;
@@ -29,18 +30,6 @@ const ProfileIndexPage = () => {
             day: "numeric",
             month: "long",
             year: "numeric",
-        });
-    };
-
-    const formatDateTime = (dateString: string | null | undefined) => {
-        if (!dateString) return "-";
-        return new Date(dateString).toLocaleString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false,
         });
     };
 
@@ -92,6 +81,25 @@ const ProfileIndexPage = () => {
                                     </p>
                                 </div>
                             </div>
+
+                            <div className="flex items-start space-x-3">
+                                <Phone className="h-5 w-5 text-gray-400 mt-1" />
+                                <div>
+                                    <p className="text-xs text-gray-500">
+                                        Nomor Telepon
+                                    </p>
+                                    {user.phone ? (
+                                        <p className="font-medium text-gray-700">
+                                            {user.phone}
+                                        </p>
+                                    ) : (
+                                        <p className="italic text-gray-400">
+                                            Belum diatur
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+
                             <div className="flex items-start space-x-3">
                                 <Building2 className="h-5 w-5 text-gray-400 mt-1" />
                                 <div>
@@ -108,6 +116,7 @@ const ProfileIndexPage = () => {
                                 </div>
                             </div>
                         </div>
+
                         {/* Detail Kolom Kanan */}
                         <div className="space-y-5">
                             <div className="flex items-start space-x-3">
@@ -121,6 +130,7 @@ const ProfileIndexPage = () => {
                                     </p>
                                 </div>
                             </div>
+
                             <div className="flex items-start space-x-3">
                                 <ShieldCheck
                                     className={`h-5 w-5 mt-1 ${
@@ -148,8 +158,27 @@ const ProfileIndexPage = () => {
                                     )}
                                 </div>
                             </div>
+
+                            <div className="flex items-start space-x-3">
+                                <MapPin className="h-5 w-5 text-gray-400 mt-1" />
+                                <div>
+                                    <p className="text-xs text-gray-500">
+                                        Alamat
+                                    </p>
+                                    {user.address ? (
+                                        <p className="font-medium text-gray-700">
+                                            {user.address}
+                                        </p>
+                                    ) : (
+                                        <p className="italic text-gray-400">
+                                            Belum diatur
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
+
                     <CardFooter className="bg-gray-50 p-4 border-t">
                         <div className="flex items-center text-xs text-gray-600">
                             <Info className="h-4 w-4 mr-2 text-blue-500" />

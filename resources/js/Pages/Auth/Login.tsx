@@ -156,16 +156,6 @@ const Login = () => {
                                                 >
                                                     Password
                                                 </label>
-                                                <div className="text-sm">
-                                                    <Link
-                                                        href={route(
-                                                            "password.request"
-                                                        )}
-                                                        className="font-medium text-[#00529C] hover:text-[#003b75]"
-                                                    >
-                                                        Lupa password?
-                                                    </Link>
-                                                </div>
                                             </div>
                                             <div className="mt-1 relative rounded-md">
                                                 <div
