@@ -157,6 +157,16 @@ class ClientController extends Controller
         }
     }
 
+    public function showAccount(Client $client, Account $account)
+    {
+        $account->load('accountProduct', 'universalBanker', 'universalBanker.branch');
+
+        return Inertia::render('Dashboard/Clients/Accounts/Show', [
+            'client' => $client,
+            'account' => $account,
+        ]);
+    }
+
     /**
      * Show the form for editing the specified account of the client.
      */
@@ -194,6 +204,19 @@ class ClientController extends Controller
             return redirect()->route('clients.show', $client)->with('success', 'Account updated successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to update account: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove the specified account from the client.
+     */
+    public function destroyAccount(Client $client, Account $account)
+    {
+        try {
+            $account->delete();
+            return redirect()->route('clients.show', $client)->with('success', 'Account deleted successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete account: ' . $e->getMessage());
         }
     }
 }

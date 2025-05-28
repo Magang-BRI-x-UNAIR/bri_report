@@ -1,6 +1,6 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Client, PageProps } from "@/types";
-import { Head, Link, usePage } from "@inertiajs/react";
+import { Head, Link, router, usePage } from "@inertiajs/react";
 import { useState } from "react";
 import {
     User,
@@ -22,9 +22,27 @@ import {
     Plus,
     Users,
     Edit,
+    Trash2,
+    MoreHorizontal,
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/Components/ui/dropdown-menu";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/Components/ui/alert-dialog";
 
 interface ClientsShowPageProps extends PageProps {
     client: Client;
@@ -43,6 +61,28 @@ const ClientsShow = () => {
             setSortField(field);
             setSortDirection("desc");
         }
+    };
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [accountToDelete, setAccountToDelete] = useState<{
+        id: string;
+        account_number: string;
+    } | null>(null);
+
+    // Add this function to handle deletion
+    const handleDeleteAccount = () => {
+        if (!accountToDelete) return;
+
+        router.delete(
+            route("clients.accounts.destroy", [client.id, accountToDelete.id]),
+            {
+                preserveScroll: true,
+                onSuccess: () => {
+                    // Reset the account to delete
+                    setAccountToDelete(null);
+                },
+            }
+        );
     };
 
     // Sort accounts
@@ -575,32 +615,83 @@ const ClientsShow = () => {
                                                 </div>
                                             </td>
                                             <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-medium">
-                                                <div className="flex justify-end space-x-2">
-                                                    <Link
-                                                        href={route(
-                                                            "clients.accounts.show",
-                                                            [
-                                                                client.id,
-                                                                account.id,
-                                                            ]
-                                                        )}
-                                                        className="text-blue-600 hover:text-blue-800"
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger
+                                                        asChild
                                                     >
-                                                        <Eye className="h-5 w-5" />
-                                                    </Link>
-                                                    <Link
-                                                        href={route(
-                                                            "clients.accounts.edit",
-                                                            [
-                                                                client.id,
-                                                                account.id,
-                                                            ]
-                                                        )}
-                                                        className="text-yellow-600 hover:text-yellow-800"
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 w-8 p-0"
+                                                        >
+                                                            <span className="sr-only">
+                                                                Open menu
+                                                            </span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent
+                                                        align="end"
+                                                        className="w-[160px]"
                                                     >
-                                                        <Edit className="h-5 w-5" />
-                                                    </Link>
-                                                </div>
+                                                        <DropdownMenuItem
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                href={route(
+                                                                    "clients.accounts.show",
+                                                                    [
+                                                                        client.id,
+                                                                        account.id,
+                                                                    ]
+                                                                )}
+                                                                className="flex w-full cursor-pointer items-center"
+                                                            >
+                                                                <Eye className="mr-2 h-4 w-4 text-blue-600" />
+                                                                <span>
+                                                                    Lihat Detail
+                                                                </span>
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            asChild
+                                                        >
+                                                            <Link
+                                                                href={route(
+                                                                    "clients.accounts.edit",
+                                                                    [
+                                                                        client.id,
+                                                                        account.id,
+                                                                    ]
+                                                                )}
+                                                                className="flex w-full cursor-pointer items-center"
+                                                            >
+                                                                <Edit className="mr-2 h-4 w-4 text-yellow-600" />
+                                                                <span>
+                                                                    Edit
+                                                                </span>
+                                                            </Link>
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            onClick={() => {
+                                                                setAccountToDelete(
+                                                                    {
+                                                                        id: account.id,
+                                                                        account_number:
+                                                                            account.account_number,
+                                                                    }
+                                                                );
+                                                                setDeleteDialogOpen(
+                                                                    true
+                                                                );
+                                                            }}
+                                                            className="flex cursor-pointer items-center text-red-600 focus:text-red-700"
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            <span>Hapus</span>
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </td>
                                         </tr>
                                     ))}
@@ -635,6 +726,46 @@ const ClientsShow = () => {
                     )}
                 </div>
             </div>
+            <AlertDialog
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-red-600 flex items-center gap-2">
+                            <Trash2 className="h-5 w-5" />
+                            Konfirmasi Hapus Rekening
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="py-4">
+                            <p className="mb-2 text-gray-700">
+                                Apakah Anda yakin ingin menghapus rekening
+                                dengan nomor:
+                            </p>
+                            <div className="bg-gray-50 border border-gray-200 rounded-md p-3 font-medium text-gray-900 mb-2">
+                                {accountToDelete?.account_number}
+                            </div>
+                            <p className="text-sm text-gray-500">
+                                Tindakan ini tidak dapat dibatalkan dan akan
+                                menghapus semua data terkait rekening ini.
+                            </p>
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel
+                            className="border-gray-300 text-gray-700"
+                            onClick={() => setAccountToDelete(null)}
+                        >
+                            Batal
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            className="bg-red-600 hover:bg-red-700 focus:ring-red-500"
+                            onClick={handleDeleteAccount}
+                        >
+                            Hapus Rekening
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AuthenticatedLayout>
     );
 };

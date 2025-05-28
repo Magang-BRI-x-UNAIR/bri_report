@@ -32,9 +32,12 @@ export interface Account {
     account_product: AccountProduct;
     universal_banker: User;
     account_transactions: AccountTransaction[];
+    created_at: string;
+    updated_at: string;
 }
 
 export interface AccountTransaction {
+    id: string;
     account: Account;
     amount: number;
     previous_balance: number;

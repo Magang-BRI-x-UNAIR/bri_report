@@ -53,9 +53,6 @@ import {
     YAxis,
     BarChart,
     Bar,
-    Cell,
-    PieChart,
-    Pie,
     Sector,
     ReferenceLine,
     ComposedChart,
@@ -600,6 +597,27 @@ const AccountsShow = () => {
         setActiveIndex(index);
     };
 
+    // Calculate better Y-axis domain for balance chart
+    const getBalanceDomain = (data: any[]) => {
+        if (data.length === 0) return [0, 100];
+
+        const balances = data
+            .map((d) => d.balance)
+            .filter((b) => b !== undefined && b !== null);
+        if (balances.length === 0) return [0, 100];
+
+        const min = Math.min(...balances);
+        const max = Math.max(...balances);
+        const range = max - min;
+
+        // Add 10% padding on both sides
+        const padding = range * 0.1;
+        return [
+            Math.max(0, min - padding), // Don't go below 0 for balance
+            max + padding,
+        ];
+    };
+
     return (
         <AuthenticatedLayout>
             <Head title={`Rekening ${account.account_number} | Bank BRI`} />
@@ -793,10 +811,10 @@ const AccountsShow = () => {
                                             <AreaChart
                                                 data={chartData}
                                                 margin={{
-                                                    top: 10,
-                                                    right: 30,
-                                                    left: 10,
-                                                    bottom: 0,
+                                                    top: 20,
+                                                    right: 40,
+                                                    left: 20,
+                                                    bottom: 20,
                                                 }}
                                             >
                                                 <defs>
@@ -842,8 +860,13 @@ const AccountsShow = () => {
                                                     }
                                                     tickLine={false}
                                                     axisLine={false}
-                                                    domain={["auto", "auto"]}
-                                                    padding={{ top: 20 }}
+                                                    domain={getBalanceDomain(
+                                                        chartData
+                                                    )}
+                                                    padding={{
+                                                        top: 20,
+                                                        bottom: 20,
+                                                    }}
                                                 />
                                                 <Tooltip
                                                     content={<CustomTooltip />}
@@ -878,10 +901,10 @@ const AccountsShow = () => {
                                             <BarChart
                                                 data={chartData}
                                                 margin={{
-                                                    top: 10,
-                                                    right: 30,
-                                                    left: 10,
-                                                    bottom: 0,
+                                                    top: 20,
+                                                    right: 40,
+                                                    left: 20,
+                                                    bottom: 20,
                                                 }}
                                                 barGap={8}
                                             >
@@ -985,10 +1008,10 @@ const AccountsShow = () => {
                                             <ComposedChart
                                                 data={chartData}
                                                 margin={{
-                                                    top: 10,
-                                                    right: 30,
-                                                    left: 10,
-                                                    bottom: 0,
+                                                    top: 20,
+                                                    right: 40,
+                                                    left: 20,
+                                                    bottom: 20,
                                                 }}
                                             >
                                                 <defs>
@@ -1034,8 +1057,13 @@ const AccountsShow = () => {
                                                     }
                                                     tickLine={false}
                                                     axisLine={false}
-                                                    domain={["auto", "auto"]}
-                                                    padding={{ top: 20 }}
+                                                    domain={getBalanceDomain(
+                                                        chartData
+                                                    )}
+                                                    padding={{
+                                                        top: 20,
+                                                        bottom: 20,
+                                                    }}
                                                 />
                                                 <Tooltip
                                                     content={<CustomTooltip />}
@@ -1939,8 +1967,6 @@ const AccountsShow = () => {
                     </div>
                 </TabsContent>
             </Tabs>
-
-            {/* Transaction Detail Modal would go here */}
         </AuthenticatedLayout>
     );
 };
