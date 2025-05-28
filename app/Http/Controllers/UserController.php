@@ -162,7 +162,19 @@ class UserController extends Controller
         //
         $validatedData = $request->validated();
         try {
-            $universalBanker->update($validatedData);
+            if ($validatedData['is_change_password'] && !empty($validatedData['password'])) {
+                $validatedData['password'] = bcrypt($validatedData['password']);
+            } else {
+                unset($validatedData['password']);
+            }
+            $universalBanker->update([
+                'name' => $validatedData['name'],
+                'email' => $validatedData['email'],
+                'phone' => $validatedData['phone'] ?? null,
+                'address' => $validatedData['address'] ?? null,
+                'branch_id' => $validatedData['branch_id'],
+                'password' => $validatedData['password'] ?? $universalBanker->password, // Keep old password if not changing
+            ]);
             return redirect()->route('universalBankers.index')->with('success', 'UniversalBanker updated successfully!');
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Failed to update universalBanker: ' . $e->getMessage());

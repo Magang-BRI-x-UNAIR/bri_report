@@ -30,6 +30,8 @@ Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () 
         Route::post('accounts', [ClientController::class, 'storeAccount'])->name('clients.accounts.store');
         Route::get('accounts/{account}/edit', [ClientController::class, 'editAccount'])->name('clients.accounts.edit');
         Route::patch('accounts/{account}', [ClientController::class, 'updateAccount'])->name('clients.accounts.update');
+        Route::delete('accounts/{account}', [ClientController::class, 'destroyAccount'])->name('clients.accounts.destroy');
+        Route::get('accounts/{account}', [ClientController::class, 'showAccount'])->name('clients.accounts.show');
     });
 
     Route::resource('clients', ClientController::class);

@@ -164,6 +164,7 @@ class ClientController extends Controller
     {
         $accountProducts = AccountProduct::all();
         $universalBankers = User::with('branch')->get();
+        $account->load('accountProduct', 'universalBanker');
 
         return Inertia::render('Dashboard/Clients/Accounts/Edit', [
             'client' => $client,
@@ -185,8 +186,7 @@ class ClientController extends Controller
             'current_balance' => 'required|numeric|min:0',
             'available_balance' => 'required|numeric|min:0',
             'currency' => 'required|string|max:3',
-            'status' => 'required|string|max:255',
-            'opened_at' => 'required|date',
+            'status' => 'required|in:active,inactive, blocked',
         ]);
 
         try {

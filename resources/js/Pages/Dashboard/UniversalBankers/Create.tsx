@@ -25,6 +25,8 @@ import {
     RefreshCw,
     Info,
     Users,
+    Phone,
+    MapPin,
 } from "lucide-react";
 
 interface CreateProps extends PageProps {
@@ -37,6 +39,8 @@ const UniversalBankersCreate = () => {
     const { data, setData, post, processing, errors, reset } = useForm({
         name: "",
         email: "",
+        phone: "",
+        address: "",
         password: "",
         password_confirmation: "",
         branch_id: "",
@@ -232,6 +236,81 @@ const UniversalBankersCreate = () => {
                                         <p className="mt-1 text-sm text-red-600 flex items-center">
                                             <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                                             {errors.email}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* New Phone Field */}
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="phone"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Nomor Telepon
+                                    </label>
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Phone className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="phone"
+                                            name="phone"
+                                            value={data.phone}
+                                            onChange={(e) =>
+                                                setData("phone", e.target.value)
+                                            }
+                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
+                                                errors.phone
+                                                    ? "border-red-300 bg-red-50"
+                                                    : "border-gray-300"
+                                            }`}
+                                            placeholder="Contoh: 081234567890"
+                                        />
+                                    </div>
+                                    {errors.phone && (
+                                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                                            {errors.phone}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* New Address Field */}
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="address"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Alamat
+                                    </label>
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <MapPin className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="address"
+                                            name="address"
+                                            value={data.address}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "address",
+                                                    e.target.value
+                                                )
+                                            }
+                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
+                                                errors.address
+                                                    ? "border-red-300 bg-red-50"
+                                                    : "border-gray-300"
+                                            }`}
+                                            placeholder="Masukkan alamat lengkap"
+                                        />
+                                    </div>
+                                    {errors.address && (
+                                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                                            {errors.address}
                                         </p>
                                     )}
                                 </div>

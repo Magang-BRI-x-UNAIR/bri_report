@@ -72,12 +72,6 @@ const ClientsIndex = () => {
                 return sortDirection === "asc"
                     ? a.cif.localeCompare(b.cif)
                     : b.cif.localeCompare(a.cif);
-            } else if (sortField === "joined_at") {
-                return sortDirection === "asc"
-                    ? new Date(a.joined_at).getTime() -
-                          new Date(b.joined_at).getTime()
-                    : new Date(b.joined_at).getTime() -
-                          new Date(a.joined_at).getTime();
             }
             return 0;
         });
@@ -114,15 +108,6 @@ const ClientsIndex = () => {
         setSearchTerm("");
     };
 
-    // Format date function
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-        });
-    };
-
     // Delete modal functions
     const openDeleteModal = (client: Client) => {
         setClientToDelete(client);
@@ -149,7 +134,7 @@ const ClientsIndex = () => {
             <Head title="Nasabah | Bank BRI" />
             <Breadcrumb items={[{ label: "Nasabah" }]} />
 
-            {/* Hero Section with Animated Background */}
+            {/* Header Section */}
             <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-8 shadow-lg">
                 <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
                 <div className="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
@@ -237,9 +222,6 @@ const ClientsIndex = () => {
                                             Nama Nasabah
                                         </option>
                                         <option value="cif">Nomor CIF</option>
-                                        <option value="joined_at">
-                                            Tanggal Bergabung
-                                        </option>
                                     </select>
                                 </div>
                                 <div>
@@ -263,15 +245,14 @@ const ClientsIndex = () => {
                                         </option>
                                     </select>
                                 </div>
-                            </div>
-
-                            <div className="mt-4 flex justify-end">
-                                <Button
-                                    className="bg-[#00529C] hover:bg-[#003b75] text-white px-4 py-2 h-10 text-sm"
-                                    onClick={() => setShowFilters(false)}
-                                >
-                                    Terapkan Filter
-                                </Button>
+                                <div className="flex items-end">
+                                    <Button
+                                        className="bg-[#00529C] hover:bg-[#003b75] text-white px-4 py-2 h-10 text-sm w-full"
+                                        onClick={() => setShowFilters(false)}
+                                    >
+                                        Terapkan Filter
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -325,18 +306,6 @@ const ClientsIndex = () => {
                                     className="px-6 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                                 >
                                     Kontak
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-[#00529C]"
-                                    onClick={() => handleSort("joined_at")}
-                                >
-                                    <div className="flex items-center">
-                                        Tgl Bergabung
-                                        {sortField === "joined_at" && (
-                                            <ArrowUpDown className="ml-1 h-3 w-3" />
-                                        )}
-                                    </div>
                                 </th>
                                 <th
                                     scope="col"
@@ -399,12 +368,6 @@ const ClientsIndex = () => {
                                                             Tidak ada kontak
                                                         </span>
                                                     )}
-                                            </div>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                            <div className="flex items-center">
-                                                <Calendar className="h-3.5 w-3.5 text-gray-400 mr-1.5" />
-                                                {formatDate(client.joined_at)}
                                             </div>
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
@@ -475,7 +438,7 @@ const ClientsIndex = () => {
                             ) : (
                                 <tr>
                                     <td
-                                        colSpan={7}
+                                        colSpan={6}
                                         className="px-6 py-10 text-center text-gray-500"
                                     >
                                         {searchTerm ? (
@@ -632,13 +595,13 @@ const ClientsIndex = () => {
                                 >
                                     Hapus Nasabah
                                 </button>
-                                <button
+                                <Button
                                     type="button"
                                     className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00529C] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                                     onClick={closeDeleteModal}
                                 >
                                     Batalkan
-                                </button>
+                                </Button>
                             </div>
                         </div>
                     </div>

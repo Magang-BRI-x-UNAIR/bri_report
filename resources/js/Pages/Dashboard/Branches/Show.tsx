@@ -96,7 +96,7 @@ const BranchesShow = () => {
                         <div className="grid grid-cols-2 md:grid-cols-2 divide-x divide-blue-400/20">
                             <div className="p-4 text-center">
                                 <p className="text-blue-100 text-sm">
-                                    Total UniversalBanker
+                                    Total Universal Banker
                                 </p>
                                 <p className="text-white text-2xl font-bold mt-1">
                                     {branch.users.length}
@@ -125,17 +125,6 @@ const BranchesShow = () => {
                                 Informasi Cabang
                             </h2>
                         </div>
-                        <Link href={route("branches.edit", branch.id)}>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                                title="Edit"
-                            >
-                                <Edit className="h-4 w-4 text-gray-500 hover:text-amber-500" />
-                                <span className="sr-only">Edit</span>
-                            </Button>
-                        </Link>
                     </div>
 
                     <div className="p-5">
@@ -168,10 +157,10 @@ const BranchesShow = () => {
                                 <Users className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
                                 <div>
                                     <p className="text-sm font-medium text-gray-700">
-                                        Jumlah UniversalBanker
+                                        Jumlah Universal Banker
                                     </p>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        {branch.users.length} UniversalBanker
+                                        {branch.users.length} Universal Banker
                                     </p>
                                 </div>
                             </div>
@@ -211,13 +200,13 @@ const BranchesShow = () => {
                         <div className="flex items-center space-x-2">
                             <Users className="h-5 w-5 text-[#00529C]" />
                             <h2 className="font-medium text-gray-900">
-                                Daftar UniversalBanker
+                                Daftar Universal Banker
                             </h2>
                         </div>
 
                         <div className="flex items-center space-x-3">
                             <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#00529C]">
-                                {branch.users.length} UniversalBanker
+                                {branch.users.length} Universal Banker
                             </span>
                         </div>
                     </div>
@@ -229,7 +218,7 @@ const BranchesShow = () => {
                                 <div className="flex items-center justify-center p-2 border-r border-gray-200">
                                     <div className="text-center">
                                         <p className="text-xs text-gray-500">
-                                            UniversalBanker Terverifikasi
+                                            Universal Banker Terverifikasi
                                         </p>
                                         <p className="text-lg font-medium text-green-600">
                                             {
@@ -277,7 +266,7 @@ const BranchesShow = () => {
                                                 </p>
                                                 <div className="flex items-center">
                                                     <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                                                        UniversalBanker
+                                                        Universal Banker
                                                     </span>
                                                     <p className="text-xs text-gray-500 ml-2">
                                                         ID:{" "}
@@ -319,26 +308,19 @@ const BranchesShow = () => {
                                     <Users className="h-8 w-8 text-blue-500" />
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-900">
-                                    Belum ada UniversalBanker
+                                    Belum ada Universal Banker
                                 </h3>
                                 <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
-                                    Cabang ini belum memiliki UniversalBanker
+                                    Cabang ini belum memiliki Universal Banker
                                     yang ditugaskan. Anda dapat menambahkan
-                                    UniversalBanker baru atau memindahkan
-                                    UniversalBanker yang sudah ada ke cabang
+                                    Universal Banker baru atau memindahkan
+                                    Universal Banker yang sudah ada ke cabang
                                     ini.
                                 </p>
                                 <div className="mt-6 flex justify-center space-x-3">
                                     <Button className="bg-[#00529C] hover:bg-[#003b75] gap-1.5">
                                         <PlusCircle className="h-4 w-4" />
-                                        Tambahkan UniversalBanker
-                                    </Button>
-                                    <Button
-                                        variant="outline"
-                                        className="gap-1.5"
-                                    >
-                                        <ArrowLeftRight className="h-4 w-4" />
-                                        Pindahkan UniversalBanker
+                                        Tambahkan Universal Banker
                                     </Button>
                                 </div>
                             </div>
@@ -358,7 +340,7 @@ const BranchesShow = () => {
                                         size="sm"
                                         className="text-sm"
                                     >
-                                        Lihat Semua UniversalBanker
+                                        Lihat Semua Universal Banker
                                     </Button>
                                 </Link>
                             </div>

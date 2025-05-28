@@ -87,22 +87,6 @@ const AccountsIndex = () => {
                 return sortDirection === "asc"
                     ? a.current_balance - b.current_balance
                     : b.current_balance - a.current_balance;
-            } else if (sortField === "universal_banker") {
-                return sortDirection === "asc"
-                    ? a.universal_banker.name.localeCompare(
-                          b.universal_banker.name
-                      )
-                    : b.universal_banker.name.localeCompare(
-                          a.universal_banker.name
-                      );
-            } else if (sortField === "product") {
-                return sortDirection === "asc"
-                    ? a.account_product.name.localeCompare(
-                          b.account_product.name
-                      )
-                    : b.account_product.name.localeCompare(
-                          a.account_product.name
-                      );
             } else if (sortField === "status") {
                 return sortDirection === "asc"
                     ? a.status.localeCompare(b.status)
@@ -277,13 +261,6 @@ const AccountsIndex = () => {
                                         <option value="client_name">
                                             Nama Nasabah
                                         </option>
-                                        <option value="universal_banker">
-                                            UniversalBanker
-                                        </option>
-                                        <option value="balance">Saldo</option>
-                                        <option value="product">
-                                            Jenis Produk
-                                        </option>
                                         <option value="status">Status</option>
                                     </select>
                                 </div>
@@ -417,32 +394,6 @@ const AccountsIndex = () => {
                                 <th
                                     scope="col"
                                     className="px-6 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-[#00529C]"
-                                    onClick={() =>
-                                        handleSort("universal_banker")
-                                    }
-                                >
-                                    <div className="flex items-center">
-                                        UniversalBanker
-                                        {sortField === "universal_banker" && (
-                                            <ArrowUpDown className="ml-1 h-3 w-3" />
-                                        )}
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-[#00529C]"
-                                    onClick={() => handleSort("product")}
-                                >
-                                    <div className="flex items-center">
-                                        Produk
-                                        {sortField === "product" && (
-                                            <ArrowUpDown className="ml-1 h-3 w-3" />
-                                        )}
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-[#00529C]"
                                     onClick={() => handleSort("balance")}
                                 >
                                     <div className="flex items-center">
@@ -515,39 +466,6 @@ const AccountsIndex = () => {
                                                     </div>
                                                 </div>
                                             </Link>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <div className="flex items-center">
-                                                <div>
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {
-                                                            account
-                                                                .universal_banker
-                                                                .name
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="inline-flex items-center bg-blue-50 rounded-md px-2 py-1">
-                                                <div>
-                                                    <div className="text-sm font-medium text-[#00529C]">
-                                                        {
-                                                            account
-                                                                .account_product
-                                                                .name
-                                                        }
-                                                    </div>
-                                                    <div className="text-xs text-blue-600">
-                                                        {
-                                                            account
-                                                                .account_product
-                                                                .code
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </div>
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4">
                                             <div className="flex items-center">

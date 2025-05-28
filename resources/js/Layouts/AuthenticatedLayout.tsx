@@ -10,8 +10,7 @@ import { Toaster } from "@/Components/ui/toaster";
 
 interface AuthenticatedLayoutProps {
     children: React.ReactNode;
-    header?: ReactNode;
-    fluid?: boolean; // Option for full-width content
+    fluid?: boolean;
 }
 
 const AuthenticatedLayout = ({
@@ -75,10 +74,6 @@ const AuthenticatedLayout = ({
         setSidebarOpen(!sidebarOpen);
     };
 
-    const toggleUserDropdown = () => {
-        setUserDropdownOpen(!userDropdownOpen);
-    };
-
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
             {/* Sidebar component */}
@@ -91,13 +86,6 @@ const AuthenticatedLayout = ({
                 }`}
                 ref={userDropdownRef}
             >
-                {/* Header component */}
-                <Header
-                    toggleSidebar={toggleSidebar}
-                    toggleUserDropdown={toggleUserDropdown}
-                    userDropdownOpen={userDropdownOpen}
-                />
-
                 {/* Page content wrapper - this is the scrollable container */}
                 <div
                     className="flex-1 overflow-y-auto overflow-x-hidden"

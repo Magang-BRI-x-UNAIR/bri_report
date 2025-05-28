@@ -1,6 +1,6 @@
 import type React from "react";
-import { Head, Link, useForm, usePage } from "@inertiajs/react";
-import { PageProps, Client, AccountProduct, User } from "@/types";
+import { Head, Link, router, useForm, usePage } from "@inertiajs/react";
+import { PageProps, Client, AccountProduct, User, Account } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -17,30 +17,45 @@ import {
     BadgeInfo,
     Briefcase,
     Building,
-    CircleDashed,
     Users,
+    CheckCircle,
+    Wallet,
 } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatDate } from "@/lib/utils";
 
-interface CreateAccountPageProps extends PageProps {
+interface EditAccountPageProps extends PageProps {
     client: Client;
+    account: Account;
     accountProducts: AccountProduct[];
     universalBankers: User[];
 }
 
-const AccountsCreate = () => {
-    const { client, accountProducts, universalBankers } =
-        usePage<CreateAccountPageProps>().props;
+const AccountsEdit = () => {
+    const { client, account, accountProducts, universalBankers } =
+        usePage<EditAccountPageProps>().props;
 
-    const { data, setData, post, processing, errors } = useForm({
-        client_id: client.id,
-        account_number: "",
-        account_product_id: "",
-        universal_banker_id: "",
-        currency: "IDR", // Default to IDR
-        initial_balance: 0,
-        opened_at: new Date().toISOString().split("T")[0], // Default to today
-        status: "active", // Default to active
+    // Format initial values to IDR format
+    const formatToIDR = (value: string | number | null | undefined): string => {
+        if (!value) return "0";
+        const numValue = typeof value === "string" ? parseFloat(value) : value;
+        return numValue.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    };
+
+    // Parse IDR format back to number
+    const parseIDRValue = (value: string): string => {
+        return value.replace(/\./g, "");
+    };
+
+    const { data, setData, patch, processing, errors } = useForm({
+        account_product_id: account.account_product.id.toString(),
+        universal_banker_id: account.universal_banker?.id
+            ? account.universal_banker.id.toString()
+            : "",
+        account_number: account.account_number || "",
+        current_balance: formatToIDR(account.current_balance || 0),
+        available_balance: formatToIDR(account.available_balance || 0),
+        currency: account.currency || "IDR",
+        status: account.status || "active",
     });
 
     // Currency options
@@ -51,47 +66,62 @@ const AccountsCreate = () => {
         { code: "SGD", name: "Singapore Dollar (SGD)" },
     ];
 
-    // Function to validate account number
-    const validateAccountNumber = (accountNumber: string) => {
-        return /^\d{10}$/.test(accountNumber);
+    // Status badge color
+    const getStatusBadgeColor = (status: string) => {
+        switch (status) {
+            case "active":
+                return "bg-green-100 text-green-800 border-green-200";
+            case "inactive":
+                return "bg-gray-100 text-gray-800 border-gray-200";
+            case "blocked":
+                return "bg-red-100 text-red-800 border-red-200";
+            default:
+                return "bg-blue-100 text-blue-800 border-blue-200";
+        }
     };
 
-    // Function to generate a random account number
-    const generateAccountNumber = () => {
-        const currentYear = new Date().getFullYear().toString().substr(2, 2); // Get last 2 digits of year
-        const randomDigits = Math.floor(10000000 + Math.random() * 90000000); // Generate random 8-digit number
-        const generatedNumber = currentYear + randomDigits.toString();
-        setData("account_number", generatedNumber);
-    };
-
-    // Format currency as user types
-    const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Handle numeric input changes with IDR formatting
+    const handleCurrencyInput = (
+        e: React.ChangeEvent<HTMLInputElement>,
+        field: "current_balance" | "available_balance"
+    ) => {
         let value = e.target.value;
-        // Remove non-numeric characters and leading zeros
-        value = value.replace(/\D/g, "").replace(/^0+/, "");
 
-        // If value is empty, set to 0
-        if (!value) {
-            value = "0";
+        // Remove all non-digit characters
+        value = value.replace(/[^\d]/g, "");
+
+        // Format with thousand separators (dots)
+        if (value) {
+            value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
         }
 
-        setData("initial_balance", parseInt(value, 10));
+        setData(field, value);
     };
 
-    // Submit handler
+    // Submit handler with conversion back to numbers
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route("clients.accounts.store", client.id), {
-            onSuccess: () => {
-                // Redirect handled by the controller
-            },
-        });
+
+        // Prepare the data for submission, converting IDR format back to numbers
+        const formData = {
+            ...data,
+            current_balance: parseIDRValue(data.current_balance),
+            available_balance: parseIDRValue(data.available_balance),
+        };
+
+        router.patch(
+            route("clients.accounts.update", [client.id, account.id]),
+            {
+                data: formData,
+                preserveScroll: true,
+            }
+        );
     };
 
     return (
         <AuthenticatedLayout>
             <Head
-                title={`Buka Rekening Baru untuk ${client.name} | Bank BRI`}
+                title={`Edit Rekening ${account.account_number} | ${client.name} | Bank BRI`}
             />
 
             <Breadcrumb
@@ -101,11 +131,13 @@ const AccountsCreate = () => {
                         label: client.name,
                         href: route("clients.show", client.id),
                     },
-                    { label: "Buka Rekening Baru" },
+                    { label: "Edit Rekening" },
                 ]}
             />
 
+            {/* Rest of the header section remains unchanged */}
             <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-8 shadow-lg">
+                {/* ... existing header code ... */}
                 <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
                 <div className="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
                 <div className="absolute top-0 left-0 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl"></div>
@@ -117,11 +149,11 @@ const AccountsCreate = () => {
                                 <CreditCard className="h-6 w-6 text-white" />
                             </div>
                             <h1 className="text-3xl font-bold tracking-tight text-white">
-                                Buka Rekening Baru
+                                Edit Rekening
                             </h1>
                         </div>
                         <p className="mt-1.5 max-w-2xl text-blue-100 text-lg">
-                            Buat rekening baru untuk nasabah {client.name}
+                            Perbarui informasi rekening nasabah {client.name}
                         </p>
                         <div className="mt-4 flex flex-wrap items-center gap-3">
                             <span className="inline-flex items-center rounded-full bg-blue-800/30 px-2.5 py-1 text-xs font-medium text-white">
@@ -133,7 +165,7 @@ const AccountsCreate = () => {
                                 Nasabah: {client.name}
                             </span>
                             <span className="inline-flex items-center rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white">
-                                CIF: {client.cif}
+                                Rekening: {account.account_number}
                             </span>
                         </div>
                     </div>
@@ -150,8 +182,202 @@ const AccountsCreate = () => {
             <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-lg">
                 <form onSubmit={handleSubmit} className="p-6">
                     <div className="space-y-8">
-                        {/* Account Information */}
+                        {/* Account Basic Information */}
+                        <div className="bg-blue-50/50 p-5 rounded-lg border border-blue-100">
+                            {/* ... existing account info code ... */}
+                            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <div className="bg-blue-100 rounded-md p-1.5 mr-2">
+                                    <UserIcon className="h-5 w-5 text-[#00529C]" />
+                                </div>
+                                Informasi Dasar
+                            </h3>
+
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                    <div className="space-y-2">
+                                        <label
+                                            htmlFor="account_number"
+                                            className="block text-sm font-medium text-gray-700"
+                                        >
+                                            Nomor Rekening
+                                            <span className="text-red-600 ml-1">
+                                                *
+                                            </span>
+                                        </label>
+                                        <div className="relative rounded-md shadow-sm">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <CreditCard className="h-4 w-4 text-gray-400" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                id="account_number"
+                                                name="account_number"
+                                                value={data.account_number}
+                                                onChange={(e) =>
+                                                    setData(
+                                                        "account_number",
+                                                        e.target.value
+                                                    )
+                                                }
+                                                className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
+                                                    errors.account_number
+                                                        ? "border-red-300 bg-red-50"
+                                                        : "border-gray-300"
+                                                }`}
+                                                maxLength={20}
+                                                placeholder="Nomor rekening"
+                                            />
+                                        </div>
+                                        {errors.account_number && (
+                                            <p className="mt-1 text-sm text-red-600 flex items-center">
+                                                <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                                                {errors.account_number}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label
+                                            htmlFor="opened_at"
+                                            className="block text-sm font-medium text-gray-700"
+                                        >
+                                            Tanggal Pembukaan
+                                        </label>
+                                        <div className="relative rounded-md shadow-sm">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <Calendar className="h-4 w-4 text-gray-400" />
+                                            </div>
+                                            <input
+                                                type="text"
+                                                id="opened_at"
+                                                className="block w-full pl-10 rounded-md border-gray-300 bg-gray-100 sm:text-sm"
+                                                value={formatDate(
+                                                    account.opened_at
+                                                )}
+                                                readOnly
+                                            />
+                                        </div>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Tanggal pembukaan rekening tidak
+                                            dapat diubah
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Account Balance Information - WITH UPDATED INPUT HANDLERS */}
+                        <div className="bg-green-50/50 p-5 rounded-lg border border-green-100">
+                            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                                <div className="bg-green-100 rounded-md p-1.5 mr-2">
+                                    <Wallet className="h-5 w-5 text-green-600" />
+                                </div>
+                                Informasi Saldo
+                            </h3>
+
+                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="current_balance"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Saldo Saat Ini
+                                        <span className="text-red-600 ml-1">
+                                            *
+                                        </span>
+                                    </label>
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <DollarSign className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                        <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none text-gray-500">
+                                            Rp
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="current_balance"
+                                            name="current_balance"
+                                            value={data.current_balance}
+                                            onChange={(e) =>
+                                                handleCurrencyInput(
+                                                    e,
+                                                    "current_balance"
+                                                )
+                                            }
+                                            className={`block w-full pl-16 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
+                                                errors.current_balance
+                                                    ? "border-red-300 bg-red-50"
+                                                    : "border-gray-300"
+                                            }`}
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                    {errors.current_balance ? (
+                                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                                            {errors.current_balance}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Total saldo yang dimiliki rekening
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="available_balance"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Saldo Tersedia
+                                        <span className="text-red-600 ml-1">
+                                            *
+                                        </span>
+                                    </label>
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <DollarSign className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                        <div className="absolute inset-y-0 left-10 flex items-center pointer-events-none text-gray-500">
+                                            Rp
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="available_balance"
+                                            name="available_balance"
+                                            value={data.available_balance}
+                                            onChange={(e) =>
+                                                handleCurrencyInput(
+                                                    e,
+                                                    "available_balance"
+                                                )
+                                            }
+                                            className={`block w-full pl-16 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
+                                                errors.available_balance
+                                                    ? "border-red-300 bg-red-50"
+                                                    : "border-gray-300"
+                                            }`}
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                    {errors.available_balance ? (
+                                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                                            {errors.available_balance}
+                                        </p>
+                                    ) : (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            Saldo yang dapat ditarik nasabah
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Rest of the form remains unchanged */}
+                        {/* Account Details */}
                         <div className="bg-gray-50/50 p-5 rounded-lg border border-gray-100">
+                            {/* ... existing account details code ... */}
                             <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                                 <div className="bg-[#00529C]/10 rounded-md p-1.5 mr-2">
                                     <CreditCard className="h-5 w-5 text-[#00529C]" />
@@ -160,72 +386,6 @@ const AccountsCreate = () => {
                             </h3>
 
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <label
-                                        htmlFor="account_number"
-                                        className="block text-sm font-medium text-gray-700"
-                                    >
-                                        Nomor Rekening
-                                        <span className="text-red-600 ml-1">
-                                            *
-                                        </span>
-                                    </label>
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <FileText className="h-4 w-4 text-gray-400" />
-                                        </div>
-                                        <input
-                                            type="text"
-                                            id="account_number"
-                                            name="account_number"
-                                            value={data.account_number}
-                                            onChange={(e) =>
-                                                setData(
-                                                    "account_number",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className={`block w-full pl-10 pr-20 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                errors.account_number
-                                                    ? "border-red-300 bg-red-50"
-                                                    : validateAccountNumber(
-                                                          data.account_number
-                                                      ) || !data.account_number
-                                                    ? "border-gray-300"
-                                                    : "border-orange-300 bg-orange-50"
-                                            }`}
-                                            placeholder="Masukkan 10 digit nomor rekening"
-                                            maxLength={10}
-                                            autoFocus
-                                        />
-                                        <div className="absolute inset-y-0 right-0 flex items-center">
-                                            <button
-                                                type="button"
-                                                onClick={generateAccountNumber}
-                                                className="inline-flex items-center px-2 py-1 mr-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none"
-                                            >
-                                                <CircleDashed className="h-3 w-3 mr-1" />
-                                                Generate
-                                            </button>
-                                        </div>
-                                    </div>
-                                    {errors.account_number ? (
-                                        <p className="mt-1 text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            {errors.account_number}
-                                        </p>
-                                    ) : data.account_number &&
-                                      !validateAccountNumber(
-                                          data.account_number
-                                      ) ? (
-                                        <p className="mt-1 text-sm text-orange-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            Nomor rekening harus terdiri dari 10
-                                            digit angka
-                                        </p>
-                                    ) : null}
-                                </div>
-
                                 <div className="space-y-2">
                                     <label
                                         htmlFor="account_product_id"
@@ -277,9 +437,8 @@ const AccountsCreate = () => {
                                         </p>
                                     )}
                                 </div>
-                            </div>
 
-                            <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                {/* ... more form fields ... */}
                                 <div className="space-y-2">
                                     <label
                                         htmlFor="currency"
@@ -327,48 +486,6 @@ const AccountsCreate = () => {
                                         </p>
                                     )}
                                 </div>
-
-                                <div className="space-y-2">
-                                    <label
-                                        htmlFor="initial_balance"
-                                        className="block text-sm font-medium text-gray-700"
-                                    >
-                                        Setoran Awal
-                                        <span className="text-red-600 ml-1">
-                                            *
-                                        </span>
-                                    </label>
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <DollarSign className="h-4 w-4 text-gray-400" />
-                                        </div>
-                                        <input
-                                            type="text"
-                                            id="initial_balance"
-                                            name="initial_balance"
-                                            value={data.initial_balance}
-                                            onChange={handleBalanceChange}
-                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                errors.initial_balance
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-gray-300"
-                                            }`}
-                                            placeholder="0"
-                                        />
-                                    </div>
-                                    {errors.initial_balance ? (
-                                        <p className="mt-1 text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            {errors.initial_balance}
-                                        </p>
-                                    ) : (
-                                        <p className="mt-1 text-xs text-gray-500">
-                                            {formatCurrency(
-                                                data.initial_balance
-                                            )}
-                                        </p>
-                                    )}
-                                </div>
                             </div>
 
                             <div className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2">
@@ -412,54 +529,40 @@ const AccountsCreate = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label
-                                        htmlFor="opened_at"
-                                        className="block text-sm font-medium text-gray-700"
-                                    >
-                                        Tanggal Pembukaan
-                                        <span className="text-red-600 ml-1">
-                                            *
-                                        </span>
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Status Saat Ini
                                     </label>
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <Calendar className="h-4 w-4 text-gray-400" />
-                                        </div>
-                                        <input
-                                            type="date"
-                                            id="opened_at"
-                                            name="opened_at"
-                                            value={data.opened_at}
-                                            onChange={(e) =>
-                                                setData(
-                                                    "opened_at",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                errors.opened_at
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-gray-300"
-                                            }`}
-                                            max={
-                                                new Date()
-                                                    .toISOString()
-                                                    .split("T")[0]
-                                            }
-                                        />
+                                    <div className="mt-1 pt-1">
+                                        <span
+                                            className={`inline-flex items-center px-2.5 py-1.5 rounded-md text-sm font-medium ${getStatusBadgeColor(
+                                                account.status
+                                            )}`}
+                                        >
+                                            {account.status === "active" && (
+                                                <CheckCircle className="h-4 w-4 mr-1 text-green-600" />
+                                            )}
+                                            {account.status === "inactive" && (
+                                                <X className="h-4 w-4 mr-1 text-gray-500" />
+                                            )}
+                                            {account.status === "blocked" && (
+                                                <AlertCircle className="h-4 w-4 mr-1 text-red-600" />
+                                            )}
+                                            {account.status === "active"
+                                                ? "Aktif"
+                                                : account.status === "inactive"
+                                                ? "Tidak Aktif"
+                                                : account.status === "blocked"
+                                                ? "Diblokir"
+                                                : account.status}
+                                        </span>
                                     </div>
-                                    {errors.opened_at && (
-                                        <p className="mt-1 text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            {errors.opened_at}
-                                        </p>
-                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* UniversalBanker Information */}
+                        {/* Universal Banker Information */}
                         <div className="bg-gray-50/50 p-5 rounded-lg border border-gray-100">
+                            {/* ... existing universal banker code ... */}
                             <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                                 <div className="bg-[#00529C]/10 rounded-md p-1.5 mr-2">
                                     <Briefcase className="h-5 w-5 text-[#00529C]" />
@@ -546,7 +649,9 @@ const AccountsCreate = () => {
                                 className="bg-[#00529C] hover:bg-[#003b75] gap-1.5 transition-all duration-200 shadow-md hover:shadow-lg"
                             >
                                 <Save className="h-4 w-4" />
-                                {processing ? "Menyimpan..." : "Buka Rekening"}
+                                {processing
+                                    ? "Menyimpan..."
+                                    : "Perbarui Rekening"}
                             </Button>
                         </div>
                     </div>
@@ -556,4 +661,4 @@ const AccountsCreate = () => {
     );
 };
 
-export default AccountsCreate;
+export default AccountsEdit;

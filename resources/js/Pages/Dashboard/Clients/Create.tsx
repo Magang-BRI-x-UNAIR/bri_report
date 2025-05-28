@@ -72,28 +72,43 @@ const ClientsCreate = () => {
                 ]}
             />
 
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-lg">
-                <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-[#00529C]/10 to-white flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-[#00529C] rounded-full p-2 text-white">
-                            <UserPlus className="h-5 w-5" />
-                        </div>
-                        <h2 className="font-semibold text-xl text-gray-900">
-                            Tambah Nasabah Baru
-                        </h2>
-                    </div>
-                    <Link href={route("clients.index")}>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5 text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                            <span>Kembali</span>
-                        </Button>
-                    </Link>
-                </div>
+            <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-8 shadow-lg">
+                <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
+                <div className="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+                <div className="absolute top-0 left-0 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl"></div>
 
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div className="mb-6 md:mb-0">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 rounded-lg bg-white/10">
+                                <UserPlus className="h-6 w-6 text-white" />
+                            </div>
+                            <h1 className="text-3xl font-bold tracking-tight text-white">
+                                Tambah Nasabah Baru
+                            </h1>
+                        </div>
+                        <p className="mt-1.5 max-w-2xl text-blue-100 text-lg">
+                            Tambahkan data nasabah baru untuk bergabung dengan
+                            Bank BRI
+                        </p>
+                        <div className="mt-4 flex items-center text-blue-100 text-sm">
+                            <span className="inline-flex items-center rounded-full bg-blue-800/30 px-2.5 py-1 text-xs font-medium text-white">
+                                <User className="h-3.5 w-3.5 mr-1" />
+                                Manajemen Nasabah
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex flex-shrink-0 items-center space-x-3">
+                        <Link href={route("clients.index")}>
+                            <Button className="shadow-md bg-white text-[#00529C] hover:bg-blue-50 gap-1.5 font-medium transition-all duration-200 px-5 py-2.5">
+                                <ChevronLeft className="h-4 w-4" />
+                                <span>Kembali ke Daftar</span>
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+            <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-lg">
                 <form onSubmit={handleSubmit} className="p-6">
                     <div className="space-y-8">
                         {/* Personal Information */}

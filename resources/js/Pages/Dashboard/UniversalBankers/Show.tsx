@@ -124,7 +124,7 @@ interface DailyBalance {
 }
 
 interface ShowProps extends PageProps {
-    universal_banker: User;
+    universalBanker: User;
     accountStats: AccountStats;
     clients: Client[];
     recentAccounts: any[];
@@ -137,7 +137,7 @@ interface ShowProps extends PageProps {
 
 const UniversalBankersShow = () => {
     const {
-        universal_banker,
+        universalBanker,
         accountStats,
         clients,
         dailyBalances,
@@ -259,7 +259,7 @@ const UniversalBankersShow = () => {
 
     // Filter and sort accounts
     const filteredAccounts = useMemo(() => {
-        return universal_banker.accounts
+        return universalBanker.accounts
             .filter((account) => {
                 // Search filter
                 const searchLower = searchQuery.toLowerCase();
@@ -317,7 +317,7 @@ const UniversalBankersShow = () => {
                 return 0;
             });
     }, [
-        universal_banker.accounts,
+        universalBanker.accounts,
         searchQuery,
         statusFilter,
         productFilter,
@@ -328,20 +328,20 @@ const UniversalBankersShow = () => {
     // Get unique product types for filter
     const accountProducts = useMemo(() => {
         const types = new Set<string>();
-        universal_banker.accounts.forEach((account) => {
+        universalBanker.accounts.forEach((account) => {
             types.add(account.account_product.name);
         });
         return Array.from(types);
-    }, [universal_banker.accounts]);
+    }, [universalBanker.accounts]);
 
     // Get unique statuses for filter
     const statuses = useMemo(() => {
         const statusSet = new Set<string>();
-        universal_banker.accounts.forEach((account) => {
+        universalBanker.accounts.forEach((account) => {
             statusSet.add(account.status);
         });
         return Array.from(statusSet);
-    }, [universal_banker.accounts]);
+    }, [universalBanker.accounts]);
 
     // Handle sort change
     const handleSort = (column: string) => {
@@ -408,16 +408,16 @@ const UniversalBankersShow = () => {
     return (
         <AuthenticatedLayout>
             <Head
-                title={`Detail UniversalBanker: ${universal_banker.name} | Bank BRI`}
+                title={`Detail UniversalBanker: ${universalBanker.name} | Bank BRI`}
             />
 
             <Breadcrumb
                 items={[
                     {
-                        label: "UniversalBanker",
+                        label: "Universal Banker",
                         href: route("universalBankers.index"),
                     },
-                    { label: universal_banker.name },
+                    { label: universalBanker.name },
                 ]}
             />
 
@@ -433,7 +433,7 @@ const UniversalBankersShow = () => {
                             <div className="h-24 w-24 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-xl flex items-center justify-center">
                                 <UserCircle className="h-16 w-16 text-white" />
                             </div>
-                            {universal_banker.email_verified_at && (
+                            {universalBanker.email_verified_at && (
                                 <div className="absolute -right-2 -bottom-2 bg-green-500 rounded-full p-1.5 border-2 border-white">
                                     <BadgeCheck className="h-4 w-4 text-white" />
                                 </div>
@@ -445,11 +445,11 @@ const UniversalBankersShow = () => {
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <h1 className="text-2xl font-bold text-white">
-                                            {universal_banker.name}
+                                            {universalBanker.name}
                                         </h1>
                                         <span className="inline-flex items-center rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-xs font-medium text-white border border-white/20">
                                             ID: BRI-T-
-                                            {universal_banker.id
+                                            {universalBanker.id
                                                 .toString()
                                                 .padStart(4, "0")}
                                         </span>
@@ -457,16 +457,14 @@ const UniversalBankersShow = () => {
                                     <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-4 text-blue-100">
                                         <div className="flex items-center">
                                             <Mail className="mr-1.5 h-4 w-4 flex-shrink-0 opacity-70" />
-                                            <span>
-                                                {universal_banker.email}
-                                            </span>
+                                            <span>{universalBanker.email}</span>
                                         </div>
-                                        {universal_banker.branch && (
+                                        {universalBanker.branch && (
                                             <div className="flex items-center">
                                                 <Building2 className="mr-1.5 h-4 w-4 flex-shrink-0 opacity-70" />
                                                 <span>
                                                     {
-                                                        universal_banker.branch
+                                                        universalBanker.branch
                                                             .name
                                                     }
                                                 </span>
@@ -589,7 +587,7 @@ const UniversalBankersShow = () => {
                                     <CardDescription>
                                         Tracking perubahan total saldo rekening
                                         yang ditangani oleh{" "}
-                                        {universal_banker.name}
+                                        {universalBanker.name}
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1062,7 +1060,7 @@ const UniversalBankersShow = () => {
                                     </div>
                                     <CardDescription>
                                         Nasabah yang ditangani oleh{" "}
-                                        {universal_banker.name}
+                                        {universalBanker.name}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -1109,7 +1107,7 @@ const UniversalBankersShow = () => {
                                                                 className="font-normal"
                                                             >
                                                                 {
-                                                                    universal_banker.accounts.filter(
+                                                                    universalBanker.accounts.filter(
                                                                         (a) =>
                                                                             a
                                                                                 .client
@@ -1175,11 +1173,11 @@ const UniversalBankersShow = () => {
                                     </div>
                                     <CardDescription>
                                         Rekening nasabah yang dikelola oleh{" "}
-                                        {universal_banker.name}
+                                        {universalBanker.name}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {universal_banker.accounts.length > 0 ? (
+                                    {universalBanker.accounts.length > 0 ? (
                                         <div className="overflow-x-auto">
                                             <Table>
                                                 <TableHeader>
@@ -1199,7 +1197,7 @@ const UniversalBankersShow = () => {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {universal_banker.accounts
+                                                    {universalBanker.accounts
                                                         .slice(0, 5)
                                                         .map((account) => (
                                                             <TableRow
@@ -1285,7 +1283,7 @@ const UniversalBankersShow = () => {
                             </CardTitle>
                             <CardDescription>
                                 Semua nasabah yang ditangani oleh{" "}
-                                {universal_banker.name}
+                                {universalBanker.name}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -1344,7 +1342,7 @@ const UniversalBankersShow = () => {
                                                                 className="font-normal"
                                                             >
                                                                 {
-                                                                    universal_banker.accounts.filter(
+                                                                    universalBanker.accounts.filter(
                                                                         (a) =>
                                                                             a
                                                                                 .client
@@ -1407,7 +1405,7 @@ const UniversalBankersShow = () => {
                                                             Rekening:
                                                         </span>
                                                         <div className="flex gap-1">
-                                                            {universal_banker.accounts
+                                                            {universalBanker.accounts
                                                                 .filter(
                                                                     (a) =>
                                                                         a.client
@@ -1461,7 +1459,7 @@ const UniversalBankersShow = () => {
                                                                     )
                                                                 )}
 
-                                                            {universal_banker.accounts.filter(
+                                                            {universalBanker.accounts.filter(
                                                                 (a) =>
                                                                     a.client
                                                                         .id ===
@@ -1469,7 +1467,7 @@ const UniversalBankersShow = () => {
                                                             ).length > 3 && (
                                                                 <Badge variant="secondary">
                                                                     +
-                                                                    {universal_banker.accounts.filter(
+                                                                    {universalBanker.accounts.filter(
                                                                         (a) =>
                                                                             a
                                                                                 .client
@@ -1531,7 +1529,7 @@ const UniversalBankersShow = () => {
                             </CardTitle>
                             <CardDescription>
                                 Semua rekening yang dikelola oleh{" "}
-                                {universal_banker.name}
+                                {universalBanker.name}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -1617,7 +1615,7 @@ const UniversalBankersShow = () => {
                                     <Filter className="h-4 w-4 text-[#00529C]" />
                                     <span className="text-[#00529C]">
                                         Menampilkan {filteredAccounts.length}{" "}
-                                        dari {universal_banker.accounts.length}{" "}
+                                        dari {universalBanker.accounts.length}{" "}
                                         rekening
                                     </span>
                                     <Button
@@ -2133,7 +2131,7 @@ const UniversalBankersShow = () => {
                                 Ringkasan Kinerja
                             </CardTitle>
                             <CardDescription>
-                                Statistik dan kinerja universal_banker
+                                Statistik dan kinerja universalBanker
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -2147,9 +2145,7 @@ const UniversalBankersShow = () => {
                                     </p>
                                     <p className="text-xs text-muted-foreground">
                                         Sejak{" "}
-                                        {formatDate(
-                                            universal_banker.created_at
-                                        )}
+                                        {formatDate(universalBanker.created_at)}
                                     </p>
                                 </div>
 

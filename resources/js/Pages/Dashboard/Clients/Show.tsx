@@ -18,21 +18,20 @@ import {
     AlertCircle,
     ArrowUpDown,
     BadgeInfo,
-    Wallet,
     Eye,
     Plus,
+    Users,
+    Edit,
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
-import { Tab } from "@headlessui/react";
-import { classNames } from "@/lib/utils";
 
-interface ShowProps extends PageProps {
+interface ClientsShowPageProps extends PageProps {
     client: Client;
 }
 
 const ClientsShow = () => {
-    const { client } = usePage<ShowProps>().props;
+    const { client } = usePage<ClientsShowPageProps>().props;
     const [sortField, setSortField] = useState<string>("opened_at");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
 
@@ -154,74 +153,67 @@ const ClientsShow = () => {
                 ]}
             />
 
-            <div className="flex flex-col mb-8 gap-6">
-                {/* Header */}
-                <div className="bg-white rounded-xl shadow-md border border-gray-100">
-                    <div className="p-6 sm:p-8 border-b border-gray-100 bg-gradient-to-r from-[#00529C]/5 to-white">
-                        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                            <div className="flex items-start md:items-center gap-4">
-                                <div className="p-2.5 bg-blue-50 rounded-xl flex items-center justify-center border border-blue-100">
-                                    <User className="h-8 w-8 text-[#00529C]" />
-                                </div>
-                                <div>
-                                    <div className="inline-flex gap-2 items-center">
-                                        <h1 className="text-2xl font-bold text-gray-900">
-                                            {client.name}
-                                        </h1>
-                                        {client.accounts.length > 0 && (
-                                            <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                                                <CheckCircle2 className="h-3 w-3 mr-1" />
-                                                Nasabah Aktif
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="mt-1 flex items-center text-sm text-gray-500">
-                                        <FileText className="h-4 w-4 mr-1 text-gray-400" />
-                                        <span>CIF: </span>
-                                        <span className="font-medium text-gray-700 ml-1">
-                                            {client.cif}
-                                        </span>
-                                        <span className="mx-2 text-gray-300">
-                                            •
-                                        </span>
-                                        <span>
-                                            ID: BRI-C-
-                                            {client.id
-                                                .toString()
-                                                .padStart(4, "0")}
-                                        </span>
-                                    </div>
-                                    <div className="mt-2 flex flex-wrap gap-3">
-                                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                                            <Calendar className="h-3 w-3 mr-1" />
-                                            Bergabung:{" "}
-                                            {formatDate(client.joined_at)}
-                                        </span>
-                                        <span className="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                                            <CreditCard className="h-3 w-3 mr-1" />
-                                            {client.accounts.length} Rekening
-                                        </span>
-                                    </div>
-                                </div>
+            {/* Modern Hero Header */}
+            <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-8 shadow-lg">
+                <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
+                <div className="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+                <div className="absolute top-0 left-0 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl"></div>
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div className="mb-6 md:mb-0">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 rounded-lg bg-white/10">
+                                <User className="h-6 w-6 text-white" />
                             </div>
-                            <div className="flex gap-2">
-                                <Link href={route("clients.index")}>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="gap-1.5"
-                                    >
-                                        <ChevronLeft className="h-4 w-4" />
-                                        <span>Kembali</span>
-                                    </Button>
-                                </Link>
-                            </div>
+                            <h1 className="text-3xl font-bold tracking-tight text-white flex items-center gap-3">
+                                {client.name}
+                                {client.accounts.length > 0 && (
+                                    <span className="inline-flex items-center rounded-full bg-green-500/20 px-2.5 py-1 text-sm font-medium text-white border border-green-400/30">
+                                        <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                                        Nasabah Aktif
+                                    </span>
+                                )}
+                            </h1>
+                        </div>
+                        <p className="mt-1.5 max-w-2xl text-blue-100 text-lg">
+                            Lihat detail dan kelola informasi rekening nasabah
+                            Bank BRI
+                        </p>
+                        <div className="mt-4 flex flex-wrap items-center gap-3">
+                            <span className="inline-flex items-center rounded-full bg-blue-800/30 px-2.5 py-1 text-xs font-medium text-white">
+                                <Users className="h-3.5 w-3.5 mr-1" />
+                                Manajemen Nasabah
+                            </span>
+                            <span className="inline-flex items-center rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white">
+                                <FileText className="h-3.5 w-3.5 mr-1" />
+                                CIF: {client.cif}
+                            </span>
+                            <span className="inline-flex items-center rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white">
+                                ID: BRI-C-
+                                {client.id.toString().padStart(4, "0")}
+                            </span>
+                            <span className="inline-flex items-center rounded-full bg-white/20 px-2.5 py-1 text-xs font-medium text-white">
+                                <Calendar className="h-3.5 w-3.5 mr-1" />
+                                Bergabung: {formatDate(client.joined_at)}
+                            </span>
                         </div>
                     </div>
+                    <div className="flex flex-shrink-0 items-center space-x-3">
+                        <Link href={route("clients.index")}>
+                            <Button className="shadow-md bg-white text-[#00529C] hover:bg-blue-50 gap-1.5 font-medium transition-all duration-200 px-5 py-2.5">
+                                <ChevronLeft className="h-4 w-4" />
+                                <span>Kembali ke Daftar</span>
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
 
-                    {/* Client Info Cards */}
+            <div className="flex flex-col mb-8 gap-6">
+                {/* Client Info Cards */}
+                <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
                     <div className="p-6 sm:p-8">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                             {/* Contact Information */}
                             <div className="bg-gray-50/50 border border-gray-100 rounded-lg p-4">
                                 <h3 className="text-sm font-medium text-gray-700 mb-3">
@@ -380,308 +372,267 @@ const ClientsShow = () => {
                     </div>
                 </div>
 
-                {/* Tabs */}
-                <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-                    <Tab.Group>
-                        <div className="border-b border-gray-100">
-                            <Tab.List className="flex space-x-8 px-6">
-                                <Tab
-                                    className={({ selected }) =>
-                                        classNames(
-                                            "py-4 px-1 text-sm font-medium focus:outline-none",
-                                            selected
-                                                ? "border-b-2 border-[#00529C] text-[#00529C]"
-                                                : "text-gray-500 hover:text-gray-700"
-                                        )
-                                    }
-                                >
-                                    <div className="flex items-center">
-                                        <Wallet className="h-4 w-4 mr-2" />
-                                        Daftar Rekening
-                                    </div>
-                                </Tab>
-                            </Tab.List>
-                        </div>
+                {/* Accounts Section - Without Tabs */}
+                <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden p-6">
+                    <div className="mb-5 flex justify-between items-center">
+                        <h3 className="text-lg font-medium text-gray-900 flex items-center">
+                            <CreditCard className="h-5 w-5 mr-2 text-[#00529C]" />
+                            Daftar Rekening Nasabah ({client.accounts.length})
+                        </h3>
+                        <Link
+                            href={route("clients.accounts.create", client.id)}
+                        >
+                            <Button
+                                className="gap-1.5 bg-[#00529C] hover:bg-[#003b75]"
+                                size="sm"
+                            >
+                                <Plus className="h-4 w-4" />
+                                <span>Tambah Rekening</span>
+                            </Button>
+                        </Link>
+                    </div>
 
-                        <Tab.Panels>
-                            <Tab.Panel className="p-6">
-                                <div className="mb-5 flex justify-between">
-                                    <h3 className="font-medium text-gray-900 flex items-center">
-                                        <CreditCard className="h-5 w-5 mr-2 text-[#00529C]" />
-                                        Rekening Nasabah (
-                                        {client.accounts.length})
-                                    </h3>
-                                    <Link href="#">
-                                        <Button
-                                            className="gap-1.5 bg-[#00529C] hover:bg-[#003b75]"
-                                            size="sm"
+                    {client.accounts.length > 0 ? (
+                        <div className="overflow-x-auto border border-gray-100 rounded-lg">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
                                         >
-                                            <Plus className="h-4 w-4" />
-                                            <span>Tambah Rekening</span>
-                                        </Button>
-                                    </Link>
-                                </div>
-
-                                {client.accounts.length > 0 ? (
-                                    <>
-                                        <div className="overflow-x-auto border border-gray-100 rounded-lg">
-                                            <table className="min-w-full divide-y divide-gray-200">
-                                                <thead className="bg-gray-50">
-                                                    <tr>
-                                                        <th
-                                                            scope="col"
-                                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                                                        >
-                                                            No.
-                                                        </th>
-                                                        <th
-                                                            scope="col"
-                                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
-                                                            onClick={() =>
-                                                                handleSort(
-                                                                    "account_number"
-                                                                )
+                                            No.
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
+                                            onClick={() =>
+                                                handleSort("account_number")
+                                            }
+                                        >
+                                            <div className="flex items-center">
+                                                Nomor Rekening
+                                                {sortField ===
+                                                    "account_number" && (
+                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
+                                            onClick={() =>
+                                                handleSort("product")
+                                            }
+                                        >
+                                            <div className="flex items-center">
+                                                Produk
+                                                {sortField === "product" && (
+                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
+                                            onClick={() =>
+                                                handleSort("current_balance")
+                                            }
+                                        >
+                                            <div className="flex items-center">
+                                                Saldo
+                                                {sortField ===
+                                                    "current_balance" && (
+                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
+                                            onClick={() =>
+                                                handleSort("opened_at")
+                                            }
+                                        >
+                                            <div className="flex items-center">
+                                                Tanggal Dibuka
+                                                {sortField === "opened_at" && (
+                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
+                                            onClick={() => handleSort("status")}
+                                        >
+                                            <div className="flex items-center">
+                                                Status
+                                                {sortField === "status" && (
+                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
+                                                )}
+                                            </div>
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+                                        >
+                                            Dibuat Oleh
+                                        </th>
+                                        <th
+                                            scope="col"
+                                            className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+                                        >
+                                            Aksi
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 bg-white">
+                                    {sortedAccounts.map((account, index) => (
+                                        <tr
+                                            key={account.id}
+                                            className="hover:bg-blue-50/40 transition-colors duration-150"
+                                        >
+                                            <td className="whitespace-nowrap px-4 py-3.5 text-sm text-gray-500">
+                                                {index + 1}
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3.5">
+                                                <div className="flex items-center">
+                                                    <div>
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {
+                                                                account.account_number
                                                             }
-                                                        >
-                                                            <div className="flex items-center">
-                                                                Nomor Rekening
-                                                                {sortField ===
-                                                                    "account_number" && (
-                                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                                                                )}
-                                                            </div>
-                                                        </th>
-                                                        <th
-                                                            scope="col"
-                                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
-                                                            onClick={() =>
-                                                                handleSort(
-                                                                    "product"
-                                                                )
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-0.5">
+                                                            {account.currency}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3.5">
+                                                <div className="flex items-center bg-blue-50 px-2.5 py-1.5 rounded-md max-w-fit">
+                                                    <div>
+                                                        <span className="text-sm font-medium text-blue-800">
+                                                            {
+                                                                account
+                                                                    .account_product
+                                                                    .name
                                                             }
-                                                        >
-                                                            <div className="flex items-center">
-                                                                Produk
-                                                                {sortField ===
-                                                                    "product" && (
-                                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                                                                )}
-                                                            </div>
-                                                        </th>
-                                                        <th
-                                                            scope="col"
-                                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
-                                                            onClick={() =>
-                                                                handleSort(
-                                                                    "current_balance"
-                                                                )
+                                                        </span>
+                                                        <div className="text-xs text-blue-600">
+                                                            {
+                                                                account
+                                                                    .account_product
+                                                                    .code
                                                             }
-                                                        >
-                                                            <div className="flex items-center">
-                                                                Saldo
-                                                                {sortField ===
-                                                                    "current_balance" && (
-                                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                                                                )}
-                                                            </div>
-                                                        </th>
-                                                        <th
-                                                            scope="col"
-                                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
-                                                            onClick={() =>
-                                                                handleSort(
-                                                                    "opened_at"
-                                                                )
-                                                            }
-                                                        >
-                                                            <div className="flex items-center">
-                                                                Tanggal Dibuka
-                                                                {sortField ===
-                                                                    "opened_at" && (
-                                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                                                                )}
-                                                            </div>
-                                                        </th>
-                                                        <th
-                                                            scope="col"
-                                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-gray-900"
-                                                            onClick={() =>
-                                                                handleSort(
-                                                                    "status"
-                                                                )
-                                                            }
-                                                        >
-                                                            <div className="flex items-center">
-                                                                Status
-                                                                {sortField ===
-                                                                    "status" && (
-                                                                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
-                                                                )}
-                                                            </div>
-                                                        </th>
-                                                        <th
-                                                            scope="col"
-                                                            className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-                                                        >
-                                                            Dibuat Oleh
-                                                        </th>
-                                                        <th
-                                                            scope="col"
-                                                            className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
-                                                        >
-                                                            Aksi
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-200 bg-white">
-                                                    {sortedAccounts.map(
-                                                        (account, index) => (
-                                                            <tr
-                                                                key={account.id}
-                                                                className="hover:bg-blue-50/40 transition-colors duration-150"
-                                                            >
-                                                                <td className="whitespace-nowrap px-4 py-3.5 text-sm text-gray-500">
-                                                                    {index + 1}
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-3.5">
-                                                                    <div className="flex items-center">
-                                                                        <div>
-                                                                            <div className="text-sm font-medium text-gray-900">
-                                                                                {
-                                                                                    account.account_number
-                                                                                }
-                                                                            </div>
-                                                                            <div className="text-xs text-gray-500 mt-0.5">
-                                                                                {
-                                                                                    account.currency
-                                                                                }
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-3.5">
-                                                                    <div className="flex items-center bg-blue-50 px-2.5 py-1.5 rounded-md max-w-fit">
-                                                                        <div>
-                                                                            <span className="text-sm font-medium text-blue-800">
-                                                                                {
-                                                                                    account
-                                                                                        .account_product
-                                                                                        .name
-                                                                                }
-                                                                            </span>
-                                                                            <div className="text-xs text-blue-600">
-                                                                                {
-                                                                                    account
-                                                                                        .account_product
-                                                                                        .code
-                                                                                }
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-3.5 text-sm">
-                                                                    <div className="font-medium text-gray-900">
-                                                                        {formatCurrency(
-                                                                            account.current_balance,
-                                                                            account.currency
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="text-xs text-gray-500 mt-0.5">
-                                                                        Available:{" "}
-                                                                        {formatCurrency(
-                                                                            account.available_balance,
-                                                                            account.currency
-                                                                        )}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-3.5 text-sm text-gray-500">
-                                                                    <div className="flex items-center">
-                                                                        {formatDate(
-                                                                            account.opened_at
-                                                                        )}
-                                                                    </div>
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-3.5 text-sm">
-                                                                    {getStatusBadge(
-                                                                        account.status
-                                                                    )}
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-3.5 text-sm">
-                                                                    <div className="flex items-center">
-                                                                        <div className="flex flex-col">
-                                                                            <span className="font-medium text-gray-900">
-                                                                                {
-                                                                                    account
-                                                                                        .universal_banker
-                                                                                        .name
-                                                                                }
-                                                                            </span>
-                                                                            <div className="flex items-center text-xs text-gray-500 mt-0.5">
-                                                                                {
-                                                                                    account
-                                                                                        .universal_banker
-                                                                                        .branch
-                                                                                        .name
-                                                                                }
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
-                                                                <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-medium">
-                                                                    <div className="flex justify-end space-x-2">
-                                                                        <Link
-                                                                            href="#"
-                                                                            className="rounded-lg p-1.5 text-blue-700 hover:bg-blue-50 transition-colors"
-                                                                            title="Lihat Detail"
-                                                                        >
-                                                                            <Eye className="h-4 w-4" />
-                                                                        </Link>
-                                                                        <Link
-                                                                            href="#"
-                                                                            className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors"
-                                                                            title="Lihat Transaksi"
-                                                                        >
-                                                                            <ArrowRight className="h-4 w-4" />
-                                                                        </Link>
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        )
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3.5 text-sm">
+                                                <div className="font-medium text-gray-900">
+                                                    {formatCurrency(
+                                                        account.current_balance,
+                                                        account.currency
                                                     )}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center py-10 bg-gray-50/50 rounded-lg border border-gray-100 text-center">
-                                        <div className="h-16 w-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
-                                            <CreditCard className="h-8 w-8 text-[#00529C]" />
-                                        </div>
-                                        <h3 className="text-lg font-medium text-gray-900 mb-1">
-                                            Nasabah Belum Memiliki Rekening
-                                        </h3>
-                                        <p className="text-gray-500 max-w-md mb-6">
-                                            {client.name} belum memiliki
-                                            rekening yang terdaftar. Klik tombol
-                                            di bawah untuk membuat rekening
-                                            baru.
-                                        </p>
-                                        <Link
-                                            href={route(
-                                                "clients.accounts.create",
-                                                client.id
-                                            )}
-                                        >
-                                            <Button className="bg-[#00529C] hover:bg-[#003b75] gap-1.5">
-                                                <Plus className="h-4 w-4" />
-                                                <span>Buka Rekening Baru</span>
-                                            </Button>
-                                        </Link>
-                                    </div>
+                                                </div>
+                                                <div className="text-xs text-gray-500 mt-0.5">
+                                                    Available:{" "}
+                                                    {formatCurrency(
+                                                        account.available_balance,
+                                                        account.currency
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3.5 text-sm text-gray-500">
+                                                <div className="flex items-center">
+                                                    {formatDate(
+                                                        account.opened_at
+                                                    )}
+                                                </div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3.5 text-sm">
+                                                {getStatusBadge(account.status)}
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3.5 text-sm">
+                                                <div className="flex items-center">
+                                                    <div className="flex flex-col">
+                                                        <span className="font-medium text-gray-900">
+                                                            {
+                                                                account
+                                                                    .universal_banker
+                                                                    .name
+                                                            }
+                                                        </span>
+                                                        <div className="flex items-center text-xs text-gray-500 mt-0.5">
+                                                            {account
+                                                                .universal_banker
+                                                                .branch?.name ||
+                                                                "No Branch"}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="whitespace-nowrap px-4 py-3.5 text-right text-sm font-medium">
+                                                <div className="flex justify-end space-x-2">
+                                                    <Link
+                                                        href={route(
+                                                            "clients.accounts.show",
+                                                            [
+                                                                client.id,
+                                                                account.id,
+                                                            ]
+                                                        )}
+                                                        className="text-blue-600 hover:text-blue-800"
+                                                    >
+                                                        <Eye className="h-5 w-5" />
+                                                    </Link>
+                                                    <Link
+                                                        href={route(
+                                                            "clients.accounts.edit",
+                                                            [
+                                                                client.id,
+                                                                account.id,
+                                                            ]
+                                                        )}
+                                                        className="text-yellow-600 hover:text-yellow-800"
+                                                    >
+                                                        <Edit className="h-5 w-5" />
+                                                    </Link>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center py-10 bg-gray-50/50 rounded-lg border border-gray-100 text-center">
+                            <div className="h-16 w-16 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+                                <CreditCard className="h-8 w-8 text-[#00529C]" />
+                            </div>
+                            <h3 className="text-lg font-medium text-gray-900 mb-1">
+                                Nasabah Belum Memiliki Rekening
+                            </h3>
+                            <p className="text-gray-500 max-w-md mb-6">
+                                {client.name} belum memiliki rekening yang
+                                terdaftar. Klik tombol di bawah untuk membuat
+                                rekening baru.
+                            </p>
+                            <Link
+                                href={route(
+                                    "clients.accounts.create",
+                                    client.id
                                 )}
-                            </Tab.Panel>
-                        </Tab.Panels>
-                    </Tab.Group>
+                            >
+                                <Button className="bg-[#00529C] hover:bg-[#003b75] gap-1.5">
+                                    <Plus className="h-4 w-4" />
+                                    <span>Buka Rekening Baru</span>
+                                </Button>
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

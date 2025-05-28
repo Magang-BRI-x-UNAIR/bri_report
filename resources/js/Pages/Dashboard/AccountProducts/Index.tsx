@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/utils";
 
 interface AccountProductsIndexProps extends PageProps {
     accountProducts: AccountProduct[];
@@ -208,21 +209,10 @@ const AccountProductsIndex = () => {
         });
     };
 
-    // Format date function
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-        });
-    };
-
     return (
         <AuthenticatedLayout>
             <Head title="Produk Rekening | Bank BRI" />
             <Breadcrumb items={[{ label: "Produk Rekening" }]} />
-
-            {/* Hero Section with Animated Background */}
             <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-8 shadow-lg">
                 <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
                 <div className="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
