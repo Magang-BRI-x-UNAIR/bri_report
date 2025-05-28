@@ -48,7 +48,7 @@ class AccountFactory extends Factory
             'opened_at' => $openedAt,
             // client_id will be assigned in the seeder
             // account_product_id will be assigned in the seeder
-            // teller_id will be assigned in the seeder
+            // universal_banker_id will be assigned in the seeder
         ];
     }
 

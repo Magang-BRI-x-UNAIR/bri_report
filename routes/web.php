@@ -6,7 +6,6 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BranchController;
-use App\Http\Controllers\PositionController;
 use App\Http\Controllers\UserController;
 use Inertia\Inertia;
 
@@ -35,8 +34,7 @@ Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () 
 
     Route::resource('clients', ClientController::class);
     Route::resource('branches', BranchController::class);
-    Route::resource('positions', PositionController::class);
-    Route::resource('tellers', UserController::class);
+    Route::resource('universalBankers', UserController::class);
     Route::resource('accounts', AccountController::class);
 
     Route::prefix('profile')->group(function () {

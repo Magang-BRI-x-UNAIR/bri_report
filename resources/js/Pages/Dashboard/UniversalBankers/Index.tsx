@@ -9,59 +9,55 @@ import {
     Trash2,
     Eye,
     Users,
-    Mail,
     ListFilter,
     ArrowUpDown,
     X,
-    Briefcase,
-    Building2,
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Pagination } from "@/Components/ui/pagination";
 import { usePagination } from "@/hooks/use-pagination";
 
-interface TellersIndexProps extends PageProps {
-    tellers: User[];
+interface UniversalBankersIndexProps extends PageProps {
+    universalBankers: User[];
 }
 
-const TellersIndex = () => {
-    const { tellers } = usePage<TellersIndexProps>().props;
+const UniversalBankersIndex = () => {
+    const { universalBankers } = usePage<UniversalBankersIndexProps>().props;
     const [searchTerm, setSearchTerm] = useState("");
     const [showFilters, setShowFilters] = useState(false);
     const [sortField, setSortField] = useState("name");
     const [sortDirection, setSortDirection] = useState("asc");
-    const [filterPosition, setFilterPosition] = useState("");
     const [filterBranch, setFilterBranch] = useState("");
 
-    // Get unique positions and branches for filters
-    const positions = [
-        ...new Set(tellers.map((teller) => teller.position?.name)),
-    ].filter(Boolean);
     const branches = [
-        ...new Set(tellers.map((teller) => teller.branch?.name)),
+        ...new Set(
+            universalBankers.map(
+                (universal_banker) => universal_banker.branch?.name
+            )
+        ),
     ].filter(Boolean);
 
     // State untuk modal delete
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [tellerToDelete, setTellerToDelete] = useState<User | null>(null);
+    const [universal_bankerToDelete, setUniversalBankerToDelete] =
+        useState<User | null>(null);
 
-    // Filter tellers based on search term and filters
-    const filteredTellers = tellers
+    // Filter universalBankers based on search term and filters
+    const filteredUniversalBankers = universalBankers
         .filter(
-            (teller) =>
-                (teller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    teller.email
+            (universal_banker) =>
+                (universal_banker.name
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                    universal_banker.email
                         .toLowerCase()
                         .includes(searchTerm.toLowerCase()) ||
-                    teller.branch?.name
-                        .toLowerCase()
-                        .includes(searchTerm.toLowerCase()) ||
-                    teller.position?.name
+                    universal_banker.branch?.name
                         .toLowerCase()
                         .includes(searchTerm.toLowerCase())) &&
-                (!filterPosition || teller.position?.name === filterPosition) &&
-                (!filterBranch || teller.branch?.name === filterBranch)
+                (!filterBranch ||
+                    universal_banker.branch?.name === filterBranch)
         )
         .sort((a, b) => {
             if (sortField === "name") {
@@ -78,12 +74,6 @@ const TellersIndex = () => {
                 return sortDirection === "asc"
                     ? branchA.localeCompare(branchB)
                     : branchB.localeCompare(branchA);
-            } else if (sortField === "position") {
-                const positionA = a.position?.name || "";
-                const positionB = b.position?.name || "";
-                return sortDirection === "asc"
-                    ? positionA.localeCompare(positionB)
-                    : positionB.localeCompare(positionA);
             }
             return 0;
         });
@@ -93,10 +83,10 @@ const TellersIndex = () => {
         currentPage,
         setCurrentPage,
         totalPages,
-        currentItems: paginatedTellers,
+        currentItems: paginatedUniversalBankers,
         totalItems,
     } = usePagination({
-        items: filteredTellers,
+        items: filteredUniversalBankers,
         initialPage: 1,
         itemsPerPage: 10,
     });
@@ -104,7 +94,7 @@ const TellersIndex = () => {
     // Reset to page 1 when filters change
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, sortField, sortDirection, filterPosition, filterBranch]);
+    }, [searchTerm, sortField, sortDirection, filterBranch]);
 
     const handleSort = (field: string) => {
         if (sortField === field) {
@@ -121,39 +111,41 @@ const TellersIndex = () => {
 
     const clearAllFilters = () => {
         setSearchTerm("");
-        setFilterPosition("");
         setFilterBranch("");
         setSortField("name");
         setSortDirection("asc");
     };
 
     // Fungsi untuk membuka modal delete
-    const openDeleteModal = (teller: User) => {
-        setTellerToDelete(teller);
+    const openDeleteModal = (universal_banker: User) => {
+        setUniversalBankerToDelete(universal_banker);
         setShowDeleteModal(true);
     };
 
     // Fungsi untuk menutup modal delete
     const closeDeleteModal = () => {
         setShowDeleteModal(false);
-        setTellerToDelete(null);
+        setUniversalBankerToDelete(null);
     };
 
-    // Fungsi untuk menghapus teller
+    // Fungsi untuk menghapus universal_banker
     const handleDelete = () => {
-        if (!tellerToDelete) return;
+        if (!universal_bankerToDelete) return;
 
-        router.delete(route("tellers.destroy", tellerToDelete.id), {
-            onSuccess: () => {
-                closeDeleteModal();
-            },
-        });
+        router.delete(
+            route("universalBankers.destroy", universal_bankerToDelete.id),
+            {
+                onSuccess: () => {
+                    closeDeleteModal();
+                },
+            }
+        );
     };
 
     return (
         <AuthenticatedLayout>
-            <Head title="Teller | Bank BRI" />
-            <Breadcrumb items={[{ label: "Teller" }]} />
+            <Head title="UniversalBanker | Bank BRI" />
+            <Breadcrumb items={[{ label: "Universal Banker" }]} />
 
             {/* Hero Section with Animated Background */}
             <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-8 shadow-lg">
@@ -164,23 +156,25 @@ const TellersIndex = () => {
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
                     <div className="mb-6 md:mb-0">
                         <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
-                            Manajemen Teller
+                            Manajemen Universal Banker
                         </h1>
                         <p className="mt-1.5 max-w-2xl text-blue-100 text-lg">
-                            Kelola semua teller Bank BRI di seluruh cabang
+                            Kelola semua Universal Banker Bank BRI di seluruh
+                            cabang
                         </p>
                         <div className="mt-4 flex items-center text-blue-100 text-sm">
                             <span className="inline-flex items-center rounded-full bg-blue-800/30 px-2.5 py-1 text-xs font-medium text-white">
                                 <span className="mr-1 h-2 w-2 rounded-full bg-blue-200"></span>
-                                {tellers.length} Teller Terdaftar
+                                {universalBankers.length} UniversalBanker
+                                Terdaftar
                             </span>
                         </div>
                     </div>
                     <div className="flex flex-shrink-0 items-center space-x-3">
-                        <Link href={route("tellers.create")}>
+                        <Link href={route("universalBankers.create")}>
                             <Button className="shadow-md bg-white text-[#00529C] hover:bg-blue-50 gap-1.5 font-medium transition-all duration-200 px-5 py-2.5">
                                 <Plus className="h-4 w-4" />
-                                <span>Tambah Teller</span>
+                                <span>Tambah Universal Banker</span>
                             </Button>
                         </Link>
                     </div>
@@ -198,7 +192,7 @@ const TellersIndex = () => {
                             <input
                                 type="text"
                                 className="block w-full rounded-lg border-gray-200 pl-10 pr-10 focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm shadow-sm"
-                                placeholder="Cari teller berdasarkan nama, email, jabatan, atau cabang..."
+                                placeholder="Cari Universal Banker berdasarkan nama, email, atau cabang..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -225,7 +219,7 @@ const TellersIndex = () => {
                     {/* Filter Panel (Expandable) */}
                     {showFilters && (
                         <div className="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-lg animate-in fade-in duration-200">
-                            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Urutkan Berdasarkan
@@ -238,12 +232,9 @@ const TellersIndex = () => {
                                         }
                                     >
                                         <option value="name">
-                                            Nama Teller
+                                            Nama Universal Banker
                                         </option>
                                         <option value="email">Email</option>
-                                        <option value="position">
-                                            Jabatan
-                                        </option>
                                         <option value="branch">Cabang</option>
                                     </select>
                                 </div>
@@ -264,28 +255,6 @@ const TellersIndex = () => {
                                         <option value="desc">
                                             Descending (Z-A)
                                         </option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Filter Jabatan
-                                    </label>
-                                    <select
-                                        className="w-full rounded-lg border-gray-200 text-sm"
-                                        value={filterPosition}
-                                        onChange={(e) =>
-                                            setFilterPosition(e.target.value)
-                                        }
-                                    >
-                                        <option value="">Semua Jabatan</option>
-                                        {positions.map((position) => (
-                                            <option
-                                                key={position}
-                                                value={position}
-                                            >
-                                                {position}
-                                            </option>
-                                        ))}
                                     </select>
                                 </div>
                                 <div>
@@ -332,13 +301,13 @@ const TellersIndex = () => {
                     {/* Search results counter */}
                     <div className="mt-3 flex items-center text-sm text-gray-500">
                         <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#00529C] mr-2">
-                            {filteredTellers.length}
+                            {filteredUniversalBankers.length}
                         </span>
-                        teller ditemukan
+                        Universal Banker ditemukan
                     </div>
                 </div>
 
-                {/* Tellers Table */}
+                {/* UniversalBankers Table */}
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
@@ -355,7 +324,7 @@ const TellersIndex = () => {
                                     onClick={() => handleSort("name")}
                                 >
                                     <div className="flex items-center">
-                                        Nama Teller
+                                        Nama Universal Banker
                                         {sortField === "name" && (
                                             <ArrowUpDown className="ml-1 h-3 w-3" />
                                         )}
@@ -369,18 +338,6 @@ const TellersIndex = () => {
                                     <div className="flex items-center">
                                         Email
                                         {sortField === "email" && (
-                                            <ArrowUpDown className="ml-1 h-3 w-3" />
-                                        )}
-                                    </div>
-                                </th>
-                                <th
-                                    scope="col"
-                                    className="px-6 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-[#00529C]"
-                                    onClick={() => handleSort("position")}
-                                >
-                                    <div className="flex items-center">
-                                        Jabatan
-                                        {sortField === "position" && (
                                             <ArrowUpDown className="ml-1 h-3 w-3" />
                                         )}
                                     </div>
@@ -407,102 +364,105 @@ const TellersIndex = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                            {paginatedTellers.length > 0 ? (
-                                paginatedTellers.map((teller, index) => (
-                                    <tr
-                                        key={teller.id}
-                                        className="hover:bg-blue-50/40 transition-colors duration-150"
-                                    >
-                                        <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                            {(currentPage - 1) * 10 + index + 1}
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <div className="flex items-center">
-                                                <div>
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {teller.name}
+                            {paginatedUniversalBankers.length > 0 ? (
+                                paginatedUniversalBankers.map(
+                                    (universal_banker, index) => (
+                                        <tr
+                                            key={universal_banker.id}
+                                            className="hover:bg-blue-50/40 transition-colors duration-150"
+                                        >
+                                            <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                                                {(currentPage - 1) * 10 +
+                                                    index +
+                                                    1}
+                                            </td>
+                                            <td className="whitespace-nowrap px-6 py-4">
+                                                <div className="flex items-center">
+                                                    <div>
+                                                        <div className="text-sm font-medium text-gray-900">
+                                                            {
+                                                                universal_banker.name
+                                                            }
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 mt-0.5">
+                                                            ID: BRI-T-
+                                                            {universal_banker.id
+                                                                .toString()
+                                                                .padStart(
+                                                                    4,
+                                                                    "0"
+                                                                )}
+                                                        </div>
                                                     </div>
-                                                    <div className="text-xs text-gray-500 mt-0.5">
-                                                        ID: BRI-T-
-                                                        {teller.id
-                                                            .toString()
-                                                            .padStart(4, "0")}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-start">
+                                                    <div className="text-sm text-gray-500">
+                                                        {universal_banker.email}
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-start">
-                                                <div className="text-sm text-gray-500">
-                                                    {teller.email}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-start">
+                                                    <div className="text-sm text-gray-500 line-clamp-2">
+                                                        {universal_banker.branch
+                                                            ?.name || "-"}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4">
-                                            <div className="flex items-center">
-                                                <span className="text-sm text-gray-500">
-                                                    {teller.position?.name ||
-                                                        "-"}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-start">
-                                                <div className="text-sm text-gray-500 line-clamp-2">
-                                                    {teller.branch?.name || "-"}
+                                            </td>
+                                            <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                                                <div className="flex justify-end space-x-1">
+                                                    <Link
+                                                        href={route(
+                                                            "universalBankers.show",
+                                                            universal_banker.id
+                                                        )}
+                                                        className="rounded-lg p-2 text-[#00529C] hover:bg-blue-50 transition-colors"
+                                                        title="Lihat Detail"
+                                                    >
+                                                        <Eye className="h-4 w-4" />
+                                                    </Link>
+                                                    <Link
+                                                        href={route(
+                                                            "universalBankers.edit",
+                                                            universal_banker.id
+                                                        )}
+                                                        className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit className="h-4 w-4" />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() =>
+                                                            openDeleteModal(
+                                                                universal_banker
+                                                            )
+                                                        }
+                                                        className="rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors"
+                                                        title="Hapus"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
                                                 </div>
-                                            </div>
-                                        </td>
-                                        <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                                            <div className="flex justify-end space-x-1">
-                                                <Link
-                                                    href={route(
-                                                        "tellers.show",
-                                                        teller.id
-                                                    )}
-                                                    className="rounded-lg p-2 text-[#00529C] hover:bg-blue-50 transition-colors"
-                                                    title="Lihat Detail"
-                                                >
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
-                                                <Link
-                                                    href={route(
-                                                        "tellers.edit",
-                                                        teller.id
-                                                    )}
-                                                    className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </Link>
-                                                <button
-                                                    onClick={() =>
-                                                        openDeleteModal(teller)
-                                                    }
-                                                    className="rounded-lg p-2 text-red-600 hover:bg-red-50 transition-colors"
-                                                    title="Hapus"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))
+                                            </td>
+                                        </tr>
+                                    )
+                                )
                             ) : (
                                 <tr>
                                     <td
-                                        colSpan={7}
+                                        colSpan={5}
                                         className="px-6 py-10 text-center text-gray-500"
                                     >
-                                        {searchTerm ||
-                                        filterPosition ||
-                                        filterBranch ? (
+                                        {searchTerm || filterBranch ? (
                                             <div className="flex flex-col items-center justify-center py-10">
                                                 <div className="rounded-full bg-gray-100 p-4 mb-3">
                                                     <Search className="h-6 w-6 text-gray-400" />
                                                 </div>
                                                 <p className="mt-2 text-lg font-medium text-gray-900">
-                                                    Tidak ada teller yang sesuai
+                                                    Tidak ada Universal Banker
+                                                    yang sesuai
                                                 </p>
                                                 <p className="text-sm text-gray-500 max-w-md mx-auto mt-1.5">
                                                     Coba gunakan kata kunci lain
@@ -523,21 +483,24 @@ const TellersIndex = () => {
                                                     <Users className="h-8 w-8 text-[#00529C]" />
                                                 </div>
                                                 <p className="mt-3 text-xl font-medium text-gray-900">
-                                                    Belum ada data teller
+                                                    Belum ada data Universal
+                                                    Banker
                                                 </p>
                                                 <p className="text-sm text-gray-500 mt-2 max-w-md text-center">
-                                                    Silakan tambahkan teller
-                                                    baru untuk mulai mengelola
-                                                    data teller Bank BRI
+                                                    Silakan tambahkan Universal
+                                                    Banker baru untuk mulai
+                                                    mengelola data Universal
+                                                    Banker Bank BRI
                                                 </p>
                                                 <Link
                                                     href={route(
-                                                        "tellers.create"
+                                                        "universalBankers.create"
                                                     )}
                                                 >
                                                     <Button className="mt-6 bg-[#00529C] hover:bg-[#003b75] gap-1.5">
                                                         <Plus className="h-4 w-4" />
-                                                        Tambah Teller Baru
+                                                        Tambah UniversalBanker
+                                                        Baru
                                                     </Button>
                                                 </Link>
                                             </div>
@@ -550,7 +513,7 @@ const TellersIndex = () => {
                 </div>
 
                 {/* Pagination section - replaced the original footer */}
-                {paginatedTellers.length > 0 && (
+                {paginatedUniversalBankers.length > 0 && (
                     <div className="bg-gray-50/70 px-6 py-4 border-t border-gray-200">
                         <Pagination
                             currentPage={currentPage}
@@ -565,7 +528,7 @@ const TellersIndex = () => {
             </div>
 
             {/* Delete Modal remains unchanged */}
-            {showDeleteModal && tellerToDelete && (
+            {showDeleteModal && universal_bankerToDelete && (
                 <div
                     className="fixed inset-0 z-50 overflow-y-auto"
                     aria-labelledby="modal-title"
@@ -579,4 +542,4 @@ const TellersIndex = () => {
     );
 };
 
-export default TellersIndex;
+export default UniversalBankersIndex;

@@ -3,10 +3,10 @@
 namespace Database\Factories;
 
 use App\Models\Branch;
-use App\Models\Position;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
+use Spatie\Permission\Models\Role;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
@@ -30,7 +30,6 @@ class UserFactory extends Factory
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->optional()->phoneNumber(),
             'address' => fake()->optional()->address(),
-            'position_id' => Position::inRandomOrder()->first()?->id ?? Position::factory(),
             'branch_id' => Branch::inRandomOrder()->first()?->id ?? Branch::factory(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
@@ -46,5 +45,19 @@ class UserFactory extends Factory
         return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
+    }
+
+    /**
+     * Configure the user as Universal Banker.
+     */
+    public function universalBanker(): static
+    {
+        return $this->afterCreating(function ($user) {
+            // Get or create the universal_banker role
+            $role = Role::firstOrCreate(['name' => 'universal_banker']);
+
+            // Assign the role to the user
+            $user->assignRole($role);
+        });
     }
 }

@@ -17,14 +17,10 @@ class AccountSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get existing clients, products and tellers
+        // Get existing clients, products and universalBankers
         $clients = Client::all();
         $accountProducts = AccountProduct::all();
-        $tellers = User::where('position_id', function ($query) {
-            $query->select('id')
-                ->from('positions')
-                ->where('name', 'like', '%Teller%');
-        })->get();
+        $universalBankers = User::role('universal_banker')->get();
 
         // If no account products exist, we can't proceed
         if ($accountProducts->isEmpty()) {
@@ -32,10 +28,10 @@ class AccountSeeder extends Seeder
             return;
         }
 
-        // If no tellers exist, we use any available user
-        if ($tellers->isEmpty()) {
-            $tellers = User::all();
-            if ($tellers->isEmpty()) {
+        // If no universalBankers exist, we use any available user
+        if ($universalBankers->isEmpty()) {
+            $universalBankers = User::all();
+            if ($universalBankers->isEmpty()) {
                 $this->command->error('No users found. Please run the UserSeeder first.');
                 return;
             }
@@ -54,7 +50,7 @@ class AccountSeeder extends Seeder
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('account_transactions')->truncate();
         DB::table('accounts')->truncate();
-        DB::table('teller_daily_balances')->truncate();
+        DB::table('universalBanker_daily_balances')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;'); // Re-enable foreign key checks
 
         // Track our progress
@@ -65,29 +61,29 @@ class AccountSeeder extends Seeder
         $endDate = Carbon::now();
         $startDate = $endDate->copy()->subDays(60);
 
-        // Assign clients to tellers (10 accounts per teller)
-        $tellerAccounts = [];
-        foreach ($tellers as $teller) {
-            $tellerAccounts[$teller->id] = 0;
+        // Assign clients to universalBankers (10 accounts per universalBanker)
+        $universalBankerAccounts = [];
+        foreach ($universalBankers as $universalBanker) {
+            $universalBankerAccounts[$universalBanker->id] = 0;
         }
 
         // Create accounts - one per client
         $accounts = [];
         $now = Carbon::now();
 
-        // Distribute clients evenly among tellers, ensuring each teller gets 10 accounts
-        $clientsForSeeding = $clients->take(count($tellers) * 10); // Limit to exactly what we need
-        $tellerIndex = 0;
-        $currentTellerId = $tellers[$tellerIndex]->id;
+        // Distribute clients evenly among universalBankers, ensuring each universalBanker gets 10 accounts
+        $clientsForSeeding = $clients->take(count($universalBankers) * 10); // Limit to exactly what we need
+        $universalBankerIndex = 0;
+        $currentUniversalBankerId = $universalBankers[$universalBankerIndex]->id;
 
         foreach ($clientsForSeeding as $index => $client) {
-            // If current teller has 10 accounts, move to next teller
-            if ($tellerAccounts[$currentTellerId] >= 10) {
-                $tellerIndex++;
-                if ($tellerIndex >= count($tellers)) {
-                    break; // We've assigned all tellers their 10 accounts
+            // If current universalBanker has 10 accounts, move to next universalBanker
+            if ($universalBankerAccounts[$currentUniversalBankerId] >= 10) {
+                $universalBankerIndex++;
+                if ($universalBankerIndex >= count($universalBankers)) {
+                    break; // We've assigned all universalBankers their 10 accounts
                 }
-                $currentTellerId = $tellers[$tellerIndex]->id;
+                $currentUniversalBankerId = $universalBankers[$universalBankerIndex]->id;
             }
 
             // Determine account type
@@ -97,7 +93,7 @@ class AccountSeeder extends Seeder
             $account = Account::factory()->make([
                 'client_id' => $client->id,
                 'account_product_id' => $accountProduct->id,
-                'teller_id' => $currentTellerId,
+                'universal_banker_id' => $currentUniversalBankerId,
                 'opened_at' => $startDate,
             ]);
 
@@ -108,7 +104,7 @@ class AccountSeeder extends Seeder
                 $account = Account::factory()->highBalance()->make([
                     'client_id' => $client->id,
                     'account_product_id' => $accountProduct->id,
-                    'teller_id' => $currentTellerId,
+                    'universal_banker_id' => $currentUniversalBankerId,
                     'opened_at' => $startDate,
                 ]);
             } elseif ($rand > 80) {
@@ -116,7 +112,7 @@ class AccountSeeder extends Seeder
                 $account = Account::factory()->lowBalance()->make([
                     'client_id' => $client->id,
                     'account_product_id' => $accountProduct->id,
-                    'teller_id' => $currentTellerId,
+                    'universal_banker_id' => $currentUniversalBankerId,
                     'opened_at' => $startDate,
                 ]);
             } elseif ($rand > 75) {
@@ -124,7 +120,7 @@ class AccountSeeder extends Seeder
                 $account = Account::factory()->usdCurrency()->make([
                     'client_id' => $client->id,
                     'account_product_id' => $accountProduct->id,
-                    'teller_id' => $currentTellerId,
+                    'universal_banker_id' => $currentUniversalBankerId,
                     'opened_at' => $startDate,
                 ]);
             }
@@ -139,13 +135,13 @@ class AccountSeeder extends Seeder
                 'opened_at' => $account->opened_at,
                 'client_id' => $account->client_id,
                 'account_product_id' => $account->account_product_id,
-                'teller_id' => $account->teller_id,
+                'universal_banker_id' => $account->universal_banker_id,
                 'created_at' => $now,
                 'updated_at' => $now,
             ];
 
-            // Increment account count for this teller
-            $tellerAccounts[$currentTellerId]++;
+            // Increment account count for this universalBanker
+            $universalBankerAccounts[$currentUniversalBankerId]++;
 
             $bar->advance();
         }
@@ -157,10 +153,10 @@ class AccountSeeder extends Seeder
         $this->command->newLine(2);
         $this->command->info('Successfully created ' . count($accounts) . ' accounts!');
 
-        // Verify each teller has 10 accounts
-        foreach ($tellers as $teller) {
-            $count = DB::table('accounts')->where('teller_id', $teller->id)->count();
-            $this->command->info("Teller {$teller->name} has {$count} accounts");
+        // Verify each universalBanker has 10 accounts
+        foreach ($universalBankers as $universalBanker) {
+            $count = DB::table('accounts')->where('universal_banker_id', $universalBanker->id)->count();
+            $this->command->info("UniversalBanker {$universalBanker->name} has {$count} accounts");
         }
 
         // Now let's create 60 days of account transactions for each account
@@ -171,7 +167,7 @@ class AccountSeeder extends Seeder
         $bar->start();
 
         $transactions = [];
-        $tellerDailyBalances = [];
+        $universalBankerDailyBalances = [];
 
         // For consistent transaction patterns
         $transactionPatterns = [
@@ -185,15 +181,15 @@ class AccountSeeder extends Seeder
             'transport' => ['frequency' => 10, 'amount' => [-20000, -100000]],
         ];
 
-        // Initialize teller balance tracking arrays
-        $tellerDailyData = [];
-        foreach ($tellers as $teller) {
-            $tellerDailyData[$teller->id] = [];
+        // Initialize universalBanker balance tracking arrays
+        $universalBankerDailyData = [];
+        foreach ($universalBankers as $universalBanker) {
+            $universalBankerDailyData[$universalBanker->id] = [];
 
             $currentDay = $startDate->copy();
             while ($currentDay <= $endDate) {
                 $dateStr = $currentDay->format('Y-m-d');
-                $tellerDailyData[$teller->id][$dateStr] = [
+                $universalBankerDailyData[$universalBanker->id][$dateStr] = [
                     'total_balance' => 0,
                     'daily_change' => 0,
                     'transaction_count' => 0,
@@ -228,11 +224,11 @@ class AccountSeeder extends Seeder
                 'updated_at' => $startDate,
             ];
 
-            // Update teller daily data for opening day
+            // Update universalBanker daily data for opening day
             $openingDateStr = $startDate->format('Y-m-d');
-            $tellerDailyData[$account->teller_id][$openingDateStr]['total_balance'] += $balance;
-            $tellerDailyData[$account->teller_id][$openingDateStr]['daily_change'] += $balance;
-            $tellerDailyData[$account->teller_id][$openingDateStr]['transaction_count']++;
+            $universalBankerDailyData[$account->universal_banker_id][$openingDateStr]['total_balance'] += $balance;
+            $universalBankerDailyData[$account->universal_banker_id][$openingDateStr]['daily_change'] += $balance;
+            $universalBankerDailyData[$account->universal_banker_id][$openingDateStr]['transaction_count']++;
 
             $previousBalance = $balance;
             $currentDay = $startDate->copy()->addDay();
@@ -375,10 +371,10 @@ class AccountSeeder extends Seeder
                     $dayTransactionsCount++;
                 }
 
-                // Update teller daily data
-                $tellerDailyData[$account->teller_id][$dateStr]['total_balance'] += $balance;
-                $tellerDailyData[$account->teller_id][$dateStr]['daily_change'] += $dayTotalChange;
-                $tellerDailyData[$account->teller_id][$dateStr]['transaction_count'] += $dayTransactionsCount;
+                // Update universalBanker daily data
+                $universalBankerDailyData[$account->universal_banker_id][$dateStr]['total_balance'] += $balance;
+                $universalBankerDailyData[$account->universal_banker_id][$dateStr]['daily_change'] += $dayTotalChange;
+                $universalBankerDailyData[$account->universal_banker_id][$dateStr]['transaction_count'] += $dayTransactionsCount;
 
                 // Move to next day
                 $currentDay->addDay();
@@ -401,14 +397,14 @@ class AccountSeeder extends Seeder
         $this->command->newLine(2);
         $this->command->info('Successfully created ' . count($transactions) . ' transactions across 60 days!');
 
-        // Now create the TellerDailyBalance records
-        $this->command->info('Creating teller daily balance records...');
-        $tellerBalanceRecords = [];
+        // Now create the UniversalBankerDailyBalance records
+        $this->command->info('Creating universalBanker daily balance records...');
+        $universalBankerBalanceRecords = [];
 
-        foreach ($tellerDailyData as $tellerId => $dates) {
+        foreach ($universalBankerDailyData as $universalBankerId => $dates) {
             foreach ($dates as $date => $data) {
-                $tellerBalanceRecords[] = [
-                    'teller_id' => $tellerId,
+                $universalBankerBalanceRecords[] = [
+                    'universal_banker_id' => $universalBankerId,
                     'date' => $date,
                     'total_balance' => $data['total_balance'],
                     'daily_change' => $data['daily_change'],
@@ -419,12 +415,12 @@ class AccountSeeder extends Seeder
             }
         }
 
-        // Insert teller daily balance records
-        foreach (array_chunk($tellerBalanceRecords, 1000) as $chunk) {
-            DB::table('teller_daily_balances')->insert($chunk);
+        // Insert universalBanker daily balance records
+        foreach (array_chunk($universalBankerBalanceRecords, 1000) as $chunk) {
+            DB::table('universalBanker_daily_balances')->insert($chunk);
         }
 
-        $this->command->info('Successfully created ' . count($tellerBalanceRecords) . ' teller daily balance records!');
+        $this->command->info('Successfully created ' . count($universalBankerBalanceRecords) . ' universalBanker daily balance records!');
     }
 
     /**

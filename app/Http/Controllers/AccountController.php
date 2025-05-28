@@ -16,7 +16,7 @@ class AccountController extends Controller
     public function index()
     {
         //
-        $accounts = Account::with(['client', 'accountProduct', 'teller'])->get();
+        $accounts = Account::with(['client', 'accountProduct', 'universalBanker'])->get();
         return Inertia::render('Dashboard/Accounts/Index', [
             'accounts' => $accounts,
         ]);
@@ -47,8 +47,8 @@ class AccountController extends Controller
         $account->load([
             'client',
             'accountProduct',
-            'teller',
-            'teller.branch',
+            'universalBanker',
+            'universalBanker.branch',
             'accountTransactions',
         ]);
 

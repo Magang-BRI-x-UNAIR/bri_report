@@ -14,6 +14,15 @@ class UserSeeder extends Seeder
     public function run(): void
     {
         //
-        User::factory(10)->create();
+        User::factory()->universalBanker()->count(5)->create();
+
+        $super_admin = User::factory()->create([
+            'name' => 'Super Admin',
+            'email' => 'super.admin@bri.co.id',
+            'password' => bcrypt('password'),
+            'phone' => '081234567890',
+            'address' => 'Jl. Super Admin No. 1',
+        ]);
+        $super_admin->assignRole('super_admin');
     }
 }

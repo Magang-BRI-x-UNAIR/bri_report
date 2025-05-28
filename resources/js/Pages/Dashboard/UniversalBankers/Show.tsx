@@ -11,10 +11,7 @@ import {
     UserCircle,
     Mail,
     Building2,
-    Briefcase,
-    Calendar,
     ChevronLeft,
-    Edit,
     Users,
     CreditCard,
     BadgeCheck,
@@ -28,7 +25,6 @@ import {
     Clock,
     BadgeDollarSign,
     LineChart,
-    AlertCircle,
     CalendarDays,
     CalendarIcon,
     ArrowUp,
@@ -42,7 +38,6 @@ import {
     CardDescription,
     CardHeader,
     CardTitle,
-    CardFooter,
 } from "@/Components/ui/card";
 import {
     Table,
@@ -78,7 +73,6 @@ import { id } from "date-fns/locale";
 import { Calendar as CalendarComponent } from "@/Components/ui/calendar";
 import { isValid } from "date-fns";
 
-// Recharts imports
 import {
     XAxis,
     YAxis,
@@ -88,6 +82,7 @@ import {
     AreaChart,
     Area,
 } from "recharts";
+import { formatCompactCurrency, formatCurrency, formatDate } from "@/lib/utils";
 
 // Date Range Picker Component
 const DateRangePicker = ({
@@ -129,7 +124,7 @@ interface DailyBalance {
 }
 
 interface ShowProps extends PageProps {
-    teller: User;
+    universal_banker: User;
     accountStats: AccountStats;
     clients: Client[];
     recentAccounts: any[];
@@ -140,9 +135,9 @@ interface ShowProps extends PageProps {
     percentageChange: number;
 }
 
-const TellersShow = () => {
+const UniversalBankersShow = () => {
     const {
-        teller,
+        universal_banker,
         accountStats,
         clients,
         dailyBalances,
@@ -151,6 +146,7 @@ const TellersShow = () => {
         totalChange,
         percentageChange,
     } = usePage<ShowProps>().props;
+
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [productFilter, setProductFilter] = useState("all");
@@ -240,36 +236,6 @@ const TellersShow = () => {
         }
     }, [timeFilter, dateRange]);
 
-    // Format currency
-    const formatCurrency = (amount: number, currency = "IDR") => {
-        return new Intl.NumberFormat("id-ID", {
-            style: "currency",
-            currency: currency,
-            minimumFractionDigits: 0,
-        }).format(amount);
-    };
-
-    // Format compact currency for chart ticks
-    const formatCompactCurrency = (amount: number) => {
-        if (amount >= 1000000000) {
-            return `${(amount / 1000000000).toFixed(1)}M`;
-        } else if (amount >= 1000000) {
-            return `${(amount / 1000000).toFixed(1)}Jt`;
-        } else if (amount >= 1000) {
-            return `${(amount / 1000).toFixed(1)}Rb`;
-        }
-        return amount.toString();
-    };
-
-    // Format date
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString("id-ID", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-        });
-    };
-
     // Get status color
     const getStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
@@ -293,7 +259,7 @@ const TellersShow = () => {
 
     // Filter and sort accounts
     const filteredAccounts = useMemo(() => {
-        return teller.accounts
+        return universal_banker.accounts
             .filter((account) => {
                 // Search filter
                 const searchLower = searchQuery.toLowerCase();
@@ -351,7 +317,7 @@ const TellersShow = () => {
                 return 0;
             });
     }, [
-        teller.accounts,
+        universal_banker.accounts,
         searchQuery,
         statusFilter,
         productFilter,
@@ -362,20 +328,20 @@ const TellersShow = () => {
     // Get unique product types for filter
     const accountProducts = useMemo(() => {
         const types = new Set<string>();
-        teller.accounts.forEach((account) => {
+        universal_banker.accounts.forEach((account) => {
             types.add(account.account_product.name);
         });
         return Array.from(types);
-    }, [teller.accounts]);
+    }, [universal_banker.accounts]);
 
     // Get unique statuses for filter
     const statuses = useMemo(() => {
         const statusSet = new Set<string>();
-        teller.accounts.forEach((account) => {
+        universal_banker.accounts.forEach((account) => {
             statusSet.add(account.status);
         });
         return Array.from(statusSet);
-    }, [teller.accounts]);
+    }, [universal_banker.accounts]);
 
     // Handle sort change
     const handleSort = (column: string) => {
@@ -441,16 +407,21 @@ const TellersShow = () => {
 
     return (
         <AuthenticatedLayout>
-            <Head title={`Detail Teller: ${teller.name} | Bank BRI`} />
+            <Head
+                title={`Detail UniversalBanker: ${universal_banker.name} | Bank BRI`}
+            />
 
             <Breadcrumb
                 items={[
-                    { label: "Teller", href: route("tellers.index") },
-                    { label: teller.name },
+                    {
+                        label: "UniversalBanker",
+                        href: route("universalBankers.index"),
+                    },
+                    { label: universal_banker.name },
                 ]}
             />
 
-            {/* Hero Section with Teller Information */}
+            {/* Hero Section with UniversalBanker Information */}
             <div className="relative mb-6 overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] shadow-lg">
                 <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
                 <div className="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
@@ -462,7 +433,7 @@ const TellersShow = () => {
                             <div className="h-24 w-24 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-xl flex items-center justify-center">
                                 <UserCircle className="h-16 w-16 text-white" />
                             </div>
-                            {teller.email_verified_at && (
+                            {universal_banker.email_verified_at && (
                                 <div className="absolute -right-2 -bottom-2 bg-green-500 rounded-full p-1.5 border-2 border-white">
                                     <BadgeCheck className="h-4 w-4 text-white" />
                                 </div>
@@ -474,11 +445,11 @@ const TellersShow = () => {
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <h1 className="text-2xl font-bold text-white">
-                                            {teller.name}
+                                            {universal_banker.name}
                                         </h1>
                                         <span className="inline-flex items-center rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-xs font-medium text-white border border-white/20">
                                             ID: BRI-T-
-                                            {teller.id
+                                            {universal_banker.id
                                                 .toString()
                                                 .padStart(4, "0")}
                                         </span>
@@ -486,21 +457,18 @@ const TellersShow = () => {
                                     <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-4 text-blue-100">
                                         <div className="flex items-center">
                                             <Mail className="mr-1.5 h-4 w-4 flex-shrink-0 opacity-70" />
-                                            <span>{teller.email}</span>
+                                            <span>
+                                                {universal_banker.email}
+                                            </span>
                                         </div>
-                                        {teller.branch && (
+                                        {universal_banker.branch && (
                                             <div className="flex items-center">
                                                 <Building2 className="mr-1.5 h-4 w-4 flex-shrink-0 opacity-70" />
                                                 <span>
-                                                    {teller.branch.name}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {teller.position && (
-                                            <div className="flex items-center">
-                                                <Briefcase className="mr-1.5 h-4 w-4 flex-shrink-0 opacity-70" />
-                                                <span>
-                                                    {teller.position.name}
+                                                    {
+                                                        universal_banker.branch
+                                                            .name
+                                                    }
                                                 </span>
                                             </div>
                                         )}
@@ -508,7 +476,9 @@ const TellersShow = () => {
                                 </div>
 
                                 <div className="flex flex-wrap gap-2">
-                                    <Link href={route("tellers.index")}>
+                                    <Link
+                                        href={route("universalBankers.index")}
+                                    >
                                         <Button
                                             variant="outline"
                                             size="sm"
@@ -618,7 +588,8 @@ const TellersShow = () => {
                                     </CardTitle>
                                     <CardDescription>
                                         Tracking perubahan total saldo rekening
-                                        yang ditangani oleh {teller.name}
+                                        yang ditangani oleh{" "}
+                                        {universal_banker.name}
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1091,7 +1062,7 @@ const TellersShow = () => {
                                     </div>
                                     <CardDescription>
                                         Nasabah yang ditangani oleh{" "}
-                                        {teller.name}
+                                        {universal_banker.name}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -1138,7 +1109,7 @@ const TellersShow = () => {
                                                                 className="font-normal"
                                                             >
                                                                 {
-                                                                    teller.accounts.filter(
+                                                                    universal_banker.accounts.filter(
                                                                         (a) =>
                                                                             a
                                                                                 .client
@@ -1173,8 +1144,8 @@ const TellersShow = () => {
                                                 Belum ada nasabah
                                             </p>
                                             <p className="text-sm text-gray-500 mt-1">
-                                                Teller ini belum menangani
-                                                nasabah apapun
+                                                UniversalBanker ini belum
+                                                menangani nasabah apapun
                                             </p>
                                         </div>
                                     )}
@@ -1204,11 +1175,11 @@ const TellersShow = () => {
                                     </div>
                                     <CardDescription>
                                         Rekening nasabah yang dikelola oleh{" "}
-                                        {teller.name}
+                                        {universal_banker.name}
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    {teller.accounts.length > 0 ? (
+                                    {universal_banker.accounts.length > 0 ? (
                                         <div className="overflow-x-auto">
                                             <Table>
                                                 <TableHeader>
@@ -1228,7 +1199,7 @@ const TellersShow = () => {
                                                     </TableRow>
                                                 </TableHeader>
                                                 <TableBody>
-                                                    {teller.accounts
+                                                    {universal_banker.accounts
                                                         .slice(0, 5)
                                                         .map((account) => (
                                                             <TableRow
@@ -1293,8 +1264,8 @@ const TellersShow = () => {
                                                 Belum ada rekening
                                             </p>
                                             <p className="text-sm text-gray-500 mt-1">
-                                                Teller ini belum menangani
-                                                rekening apapun
+                                                UniversalBanker ini belum
+                                                menangani rekening apapun
                                             </p>
                                         </div>
                                     )}
@@ -1313,7 +1284,8 @@ const TellersShow = () => {
                                 Daftar Nasabah
                             </CardTitle>
                             <CardDescription>
-                                Semua nasabah yang ditangani oleh {teller.name}
+                                Semua nasabah yang ditangani oleh{" "}
+                                {universal_banker.name}
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -1372,7 +1344,7 @@ const TellersShow = () => {
                                                                 className="font-normal"
                                                             >
                                                                 {
-                                                                    teller.accounts.filter(
+                                                                    universal_banker.accounts.filter(
                                                                         (a) =>
                                                                             a
                                                                                 .client
@@ -1435,7 +1407,7 @@ const TellersShow = () => {
                                                             Rekening:
                                                         </span>
                                                         <div className="flex gap-1">
-                                                            {teller.accounts
+                                                            {universal_banker.accounts
                                                                 .filter(
                                                                     (a) =>
                                                                         a.client
@@ -1489,7 +1461,7 @@ const TellersShow = () => {
                                                                     )
                                                                 )}
 
-                                                            {teller.accounts.filter(
+                                                            {universal_banker.accounts.filter(
                                                                 (a) =>
                                                                     a.client
                                                                         .id ===
@@ -1497,7 +1469,7 @@ const TellersShow = () => {
                                                             ).length > 3 && (
                                                                 <Badge variant="secondary">
                                                                     +
-                                                                    {teller.accounts.filter(
+                                                                    {universal_banker.accounts.filter(
                                                                         (a) =>
                                                                             a
                                                                                 .client
@@ -1538,9 +1510,10 @@ const TellersShow = () => {
                                         Belum ada nasabah
                                     </h3>
                                     <p className="text-gray-500 max-w-md mx-auto mt-1">
-                                        Teller ini belum menangani nasabah
-                                        apapun. Nasabah akan muncul di sini
-                                        ketika teller mulai mengelola rekening.
+                                        UniversalBanker ini belum menangani
+                                        nasabah apapun. Nasabah akan muncul di
+                                        sini ketika Universal Banker mulai
+                                        mengelola rekening.
                                     </p>
                                 </div>
                             )}
@@ -1557,7 +1530,8 @@ const TellersShow = () => {
                                 Daftar Rekening Nasabah
                             </CardTitle>
                             <CardDescription>
-                                Semua rekening yang dikelola oleh {teller.name}
+                                Semua rekening yang dikelola oleh{" "}
+                                {universal_banker.name}
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -1643,7 +1617,8 @@ const TellersShow = () => {
                                     <Filter className="h-4 w-4 text-[#00529C]" />
                                     <span className="text-[#00529C]">
                                         Menampilkan {filteredAccounts.length}{" "}
-                                        dari {teller.accounts.length} rekening
+                                        dari {universal_banker.accounts.length}{" "}
+                                        rekening
                                     </span>
                                     <Button
                                         variant="ghost"
@@ -2158,7 +2133,7 @@ const TellersShow = () => {
                                 Ringkasan Kinerja
                             </CardTitle>
                             <CardDescription>
-                                Statistik dan kinerja teller
+                                Statistik dan kinerja universal_banker
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
@@ -2171,7 +2146,10 @@ const TellersShow = () => {
                                         {uniqueClients.length}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                        Sejak {formatDate(teller.created_at)}
+                                        Sejak{" "}
+                                        {formatDate(
+                                            universal_banker.created_at
+                                        )}
                                     </p>
                                 </div>
 
@@ -2216,4 +2194,4 @@ const TellersShow = () => {
     );
 };
 
-export default TellersShow;
+export default UniversalBankersShow;

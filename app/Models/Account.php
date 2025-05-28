@@ -15,7 +15,7 @@ class Account extends Model
     protected $fillable = [
         'client_id',
         'account_product_id',
-        'teller_id',
+        'universal_banker_id',
         'account_number',
         'current_balance',
         'available_balance',
@@ -40,10 +40,9 @@ class Account extends Model
         return $this->belongsTo(Client::class, 'client_id');
     }
 
-
-    public function teller()
+    public function universalBanker()
     {
-        return $this->belongsTo(User::class, 'teller_id');
+        return $this->belongsTo(User::class, 'universal_banker_id');
     }
 
     public function accountTransactions()

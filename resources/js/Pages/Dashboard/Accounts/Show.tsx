@@ -1673,14 +1673,10 @@ const AccountsShow = () => {
                                         <Users className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
                                         <div>
                                             <p className="text-sm font-medium text-gray-700">
-                                                Teller
+                                                UniversalBanker
                                             </p>
                                             <p className="text-sm text-gray-600 mt-1">
-                                                {account.teller.name}
-                                            </p>
-                                            <p className="text-xs text-gray-500 mt-0.5">
-                                                {account.teller.position
-                                                    ?.name || "Teller"}
+                                                {account.universal_banker.name}
                                             </p>
                                         </div>
                                     </div>
@@ -1692,8 +1688,8 @@ const AccountsShow = () => {
                                                 Cabang
                                             </p>
                                             <p className="text-sm text-gray-600 mt-1">
-                                                {account.teller.branch?.name ||
-                                                    "Pusat"}
+                                                {account.universal_banker.branch
+                                                    ?.name || "Pusat"}
                                             </p>
                                         </div>
                                     </div>

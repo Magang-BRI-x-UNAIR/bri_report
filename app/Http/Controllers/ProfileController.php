@@ -21,7 +21,7 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         if ($user instanceof User) {
-            $user->load(['position', 'branch']);
+            $user->load(['branch']);
         }
 
         return Inertia::render('Dashboard/Profile/Index', [

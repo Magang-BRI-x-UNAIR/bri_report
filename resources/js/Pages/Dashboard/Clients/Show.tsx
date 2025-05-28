@@ -612,14 +612,14 @@ const ClientsShow = () => {
                                                                             <span className="font-medium text-gray-900">
                                                                                 {
                                                                                     account
-                                                                                        .teller
+                                                                                        .universal_banker
                                                                                         .name
                                                                                 }
                                                                             </span>
                                                                             <div className="flex items-center text-xs text-gray-500 mt-0.5">
                                                                                 {
                                                                                     account
-                                                                                        .teller
+                                                                                        .universal_banker
                                                                                         .branch
                                                                                         .name
                                                                                 }

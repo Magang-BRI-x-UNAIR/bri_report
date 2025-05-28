@@ -7,11 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
 use App\Models\Branch;
-use App\Models\Position;
 use Inertia\Inertia;
-use App\Models\TellerDailyBalance;
-use App\Models\AccountTransaction;
-use Carbon\Carbon;
+use App\Models\UniversalBankerDailyBalance;
 
 class UserController extends Controller
 {
@@ -21,10 +18,8 @@ class UserController extends Controller
     public function index()
     {
         //
-
-        $tellers = User::with(['position', 'branch'])->get();
-        return Inertia::render('Dashboard/Tellers/Index', [
-            'tellers' => $tellers,
+        return Inertia::render('Dashboard/UniversalBankers/Index', [
+            'universalBankers' => User::role('universal_banker')->with(['branch'])->get(),
         ]);
     }
 
@@ -34,8 +29,7 @@ class UserController extends Controller
     public function create()
     {
         //
-        return Inertia::render('Dashboard/Tellers/Create', [
-            'positions' => Position::all(),
+        return Inertia::render('Dashboard/UniversalBankers/Create', [
             'branches' => Branch::all(),
         ]);
     }
@@ -49,32 +43,33 @@ class UserController extends Controller
         $validatedData = $request->validated();
         try {
             $validatedData['password'] = bcrypt($validatedData['password']);
-            User::create($validatedData);
-            return redirect()->route('tellers.index')->with('success', 'Teller created successfully!');
+            $user = User::create($validatedData);
+            $user->assignRole('universal_banker');
+            return redirect()->route('universalBankers.index')->with('success', 'UniversalBanker created successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to create teller: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to create universalBanker: ' . $e->getMessage());
         }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(User $teller)
+    public function show(User $universalBanker)
     {
-        // Load teller relationships
-        $teller->load([
-            'position',
+        // Load universalBanker relationships
+        $universalBanker->load([
             'branch',
             'accounts',
             'accounts.client',
             'accounts.accountProduct',
         ]);
 
-        // Get clients handled by this teller (unique clients)
-        $clients = $teller->accounts->pluck('client')->unique('id')->values();
+
+        // Get clients handled by this universalBanker (unique clients)
+        $clients = $universalBanker->accounts->pluck('client')->unique('id')->values();
 
         // Get accounts with eager loading
-        $accounts = $teller->accounts()
+        $accounts = $universalBanker->accounts()
             ->with(['client', 'accountProduct'])
             ->where('status', 'active')
             ->get();
@@ -83,8 +78,8 @@ class UserController extends Controller
         $endDate = now()->format('Y-m-d');
         $startDate = now()->subDays(365)->format('Y-m-d');
 
-        // Get the teller's daily balance data
-        $tellerDailyBalances = TellerDailyBalance::where('teller_id', $teller->id)
+        // Get the universalBanker's daily balance data
+        $universalBankerDailyBalances = UniversalBankerDailyBalance::where('universal_banker_id', $universalBanker->id)
             ->whereBetween('date', [$startDate, $endDate])
             ->orderBy('date', 'asc')
             ->get();
@@ -96,19 +91,19 @@ class UserController extends Controller
                 ->map(fn($group) => $group->count()),
             'byAccountProduct' => $accounts->groupBy('account_product.name')
                 ->map(fn($group) => $group->count()),
-            'totalBalance' => TellerDailyBalance::where('teller_id', $teller->id)
+            'totalBalance' => UniversalBankerDailyBalance::where('universal_banker_id', $universalBanker->id)
                 ->where('date', $endDate)
                 ->first()
                 ?->total_balance ?? 0,
         ];
 
         // Get recent accounts
-        $recentAccounts = $teller->accounts()->orderBy('opened_at', 'desc')->take(5)->get();
+        $recentAccounts = $universalBanker->accounts()->orderBy('opened_at', 'desc')->take(5)->get();
 
 
 
         // Format for frontend
-        $dailyBalances = $tellerDailyBalances->map(function ($record) {
+        $dailyBalances = $universalBankerDailyBalances->map(function ($record) {
             return [
                 'date' => $record->date->format('Y-m-d'),
                 'totalBalance' => (float)$record->total_balance,
@@ -132,8 +127,8 @@ class UserController extends Controller
         $totalChange = $lastBalance - $firstBalance;
         $percentageChange = $firstBalance > 0 ? ($totalChange / $firstBalance * 100) : 0;
 
-        return Inertia::render('Dashboard/Tellers/Show', [
-            'teller' => $teller,
+        return Inertia::render('Dashboard/UniversalBankers/Show', [
+            'universalBanker' => $universalBanker,
             'accountStats' => $accountStats,
             'clients' => $clients,
             'recentAccounts' => $recentAccounts,
@@ -149,13 +144,12 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $teller)
+    public function edit(User $universalBanker)
     {
         //
-        $teller->load('position', 'branch');
-        return Inertia::render('Dashboard/Tellers/Edit', [
-            'user' => $teller,
-            'positions' => Position::all(),
+        $universalBanker->load('branch');
+        return Inertia::render('Dashboard/UniversalBankers/Edit', [
+            'user' => $universalBanker,
             'branches' => Branch::all(),
         ]);
     }
@@ -163,29 +157,29 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRequest $request, User $teller)
+    public function update(UpdateUserRequest $request, User $universalBanker)
     {
         //
         $validatedData = $request->validated();
         try {
-            $teller->update($validatedData);
-            return redirect()->route('tellers.index')->with('success', 'Teller updated successfully!');
+            $universalBanker->update($validatedData);
+            return redirect()->route('universalBankers.index')->with('success', 'UniversalBanker updated successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update teller: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to update universalBanker: ' . $e->getMessage());
         }
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $teller)
+    public function destroy(User $universalBanker)
     {
         //
         try {
-            $teller->delete();
-            return redirect()->route('tellers.index')->with('success', 'Teller deleted successfully!');
+            $universalBanker->delete();
+            return redirect()->route('universalBankers.index')->with('success', 'UniversalBanker deleted successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to delete teller: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to delete universalBanker: ' . $e->getMessage());
         }
     }
 }

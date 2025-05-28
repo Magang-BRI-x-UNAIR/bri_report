@@ -48,13 +48,6 @@ const ProfileIndexPage = () => {
                                     <UserCircle className="h-10 w-10 mr-3 opacity-80" />
                                     {user.name}
                                 </h1>
-                                <p className="text-blue-100 text-md ml-12 sm:ml-13">
-                                    {user.position?.name || (
-                                        <span className="italic opacity-70">
-                                            Jabatan belum diatur
-                                        </span>
-                                    )}
-                                </p>
                             </div>
                             <Link href={route("profile.edit")}>
                                 <Button

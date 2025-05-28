@@ -4,12 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class TellerDailyBalance extends Model
+class UniversalBankerDailyBalance extends Model
 {
     //
-    protected $table = 'teller_daily_balances';
+    protected $table = 'universalBanker_daily_balances';
     protected $fillable = [
-        'teller_id',
+        'universal_banker_id',
         'date',
         'total_balance',
         'daily_change',
@@ -23,8 +23,8 @@ class TellerDailyBalance extends Model
         'transaction_count' => 'integer',
     ];
 
-    public function teller()
+    public function universalBanker()
     {
-        return $this->belongsTo(User::class, 'teller_id');
+        return $this->belongsTo(User::class, 'universal_banker_id');
     }
 }

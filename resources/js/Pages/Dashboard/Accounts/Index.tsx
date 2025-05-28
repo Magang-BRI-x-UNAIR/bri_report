@@ -87,10 +87,14 @@ const AccountsIndex = () => {
                 return sortDirection === "asc"
                     ? a.current_balance - b.current_balance
                     : b.current_balance - a.current_balance;
-            } else if (sortField === "teller") {
+            } else if (sortField === "universal_banker") {
                 return sortDirection === "asc"
-                    ? a.teller.name.localeCompare(b.teller.name)
-                    : b.teller.name.localeCompare(a.teller.name);
+                    ? a.universal_banker.name.localeCompare(
+                          b.universal_banker.name
+                      )
+                    : b.universal_banker.name.localeCompare(
+                          a.universal_banker.name
+                      );
             } else if (sortField === "product") {
                 return sortDirection === "asc"
                     ? a.account_product.name.localeCompare(
@@ -273,7 +277,9 @@ const AccountsIndex = () => {
                                         <option value="client_name">
                                             Nama Nasabah
                                         </option>
-                                        <option value="teller">Teller</option>
+                                        <option value="universal_banker">
+                                            UniversalBanker
+                                        </option>
                                         <option value="balance">Saldo</option>
                                         <option value="product">
                                             Jenis Produk
@@ -411,11 +417,13 @@ const AccountsIndex = () => {
                                 <th
                                     scope="col"
                                     className="px-6 py-3.5 text-left text-xs font-medium uppercase tracking-wider text-gray-500 cursor-pointer hover:text-[#00529C]"
-                                    onClick={() => handleSort("teller")}
+                                    onClick={() =>
+                                        handleSort("universal_banker")
+                                    }
                                 >
                                     <div className="flex items-center">
-                                        Teller
-                                        {sortField === "teller" && (
+                                        UniversalBanker
+                                        {sortField === "universal_banker" && (
                                             <ArrowUpDown className="ml-1 h-3 w-3" />
                                         )}
                                     </div>
@@ -512,7 +520,11 @@ const AccountsIndex = () => {
                                             <div className="flex items-center">
                                                 <div>
                                                     <div className="text-sm font-medium text-gray-900">
-                                                        {account.teller.name}
+                                                        {
+                                                            account
+                                                                .universal_banker
+                                                                .name
+                                                        }
                                                     </div>
                                                 </div>
                                             </div>

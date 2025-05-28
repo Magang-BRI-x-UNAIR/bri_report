@@ -96,7 +96,7 @@ const BranchesShow = () => {
                         <div className="grid grid-cols-2 md:grid-cols-2 divide-x divide-blue-400/20">
                             <div className="p-4 text-center">
                                 <p className="text-blue-100 text-sm">
-                                    Total Teller
+                                    Total UniversalBanker
                                 </p>
                                 <p className="text-white text-2xl font-bold mt-1">
                                     {branch.users.length}
@@ -168,10 +168,10 @@ const BranchesShow = () => {
                                 <Users className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
                                 <div>
                                     <p className="text-sm font-medium text-gray-700">
-                                        Jumlah Teller
+                                        Jumlah UniversalBanker
                                     </p>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        {branch.users.length} Teller
+                                        {branch.users.length} UniversalBanker
                                     </p>
                                 </div>
                             </div>
@@ -205,31 +205,31 @@ const BranchesShow = () => {
                     </div>
                 </div>
 
-                {/* Teller List Card - Improved */}
+                {/* UniversalBanker List Card - Improved */}
                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="p-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                             <Users className="h-5 w-5 text-[#00529C]" />
                             <h2 className="font-medium text-gray-900">
-                                Daftar Teller
+                                Daftar UniversalBanker
                             </h2>
                         </div>
 
                         <div className="flex items-center space-x-3">
                             <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#00529C]">
-                                {branch.users.length} Teller
+                                {branch.users.length} UniversalBanker
                             </span>
                         </div>
                     </div>
 
-                    {/* Teller Stats Summary */}
+                    {/* UniversalBanker Stats Summary */}
                     {branch.users.length > 0 && (
                         <div className="bg-gray-50/60 p-3 border-b border-gray-100">
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="flex items-center justify-center p-2 border-r border-gray-200">
                                     <div className="text-center">
                                         <p className="text-xs text-gray-500">
-                                            Teller Terverifikasi
+                                            UniversalBanker Terverifikasi
                                         </p>
                                         <p className="text-lg font-medium text-green-600">
                                             {
@@ -277,7 +277,7 @@ const BranchesShow = () => {
                                                 </p>
                                                 <div className="flex items-center">
                                                     <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                                                        Teller
+                                                        UniversalBanker
                                                     </span>
                                                     <p className="text-xs text-gray-500 ml-2">
                                                         ID:{" "}
@@ -319,25 +319,26 @@ const BranchesShow = () => {
                                     <Users className="h-8 w-8 text-blue-500" />
                                 </div>
                                 <h3 className="text-lg font-medium text-gray-900">
-                                    Belum ada Teller
+                                    Belum ada UniversalBanker
                                 </h3>
                                 <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
-                                    Cabang ini belum memiliki Teller yang
-                                    ditugaskan. Anda dapat menambahkan Teller
-                                    baru atau memindahkan Teller yang sudah ada
-                                    ke cabang ini.
+                                    Cabang ini belum memiliki UniversalBanker
+                                    yang ditugaskan. Anda dapat menambahkan
+                                    UniversalBanker baru atau memindahkan
+                                    UniversalBanker yang sudah ada ke cabang
+                                    ini.
                                 </p>
                                 <div className="mt-6 flex justify-center space-x-3">
                                     <Button className="bg-[#00529C] hover:bg-[#003b75] gap-1.5">
                                         <PlusCircle className="h-4 w-4" />
-                                        Tambahkan Teller
+                                        Tambahkan UniversalBanker
                                     </Button>
                                     <Button
                                         variant="outline"
                                         className="gap-1.5"
                                     >
                                         <ArrowLeftRight className="h-4 w-4" />
-                                        Pindahkan Teller
+                                        Pindahkan UniversalBanker
                                     </Button>
                                 </div>
                             </div>
@@ -347,16 +348,17 @@ const BranchesShow = () => {
                     {branch.users.length > 0 && (
                         <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                             <div className="text-sm text-gray-500">
-                                Menampilkan {branch.users.length} teller
+                                Menampilkan {branch.users.length} Universal
+                                Banker
                             </div>
                             <div>
-                                <Link href={route("tellers.index")}>
+                                <Link href={route("universalBankers.index")}>
                                     <Button
                                         variant="outline"
                                         size="sm"
                                         className="text-sm"
                                     >
-                                        Lihat Semua Teller
+                                        Lihat Semua UniversalBanker
                                     </Button>
                                 </Link>
                             </div>

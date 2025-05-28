@@ -3,7 +3,7 @@ import { Head, Link, useForm, usePage } from "@inertiajs/react";
 import { PageProps, Client, AccountProduct, User } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
     CreditCard,
     FileText,
@@ -23,18 +23,18 @@ import {
 interface CreateAccountProps extends PageProps {
     client: Client;
     accountProducts: AccountProduct[];
-    tellers: User[];
+    universalBankers: User[];
 }
 
 const AccountsCreate = () => {
-    const { client, accountProducts, tellers } =
+    const { client, accountProducts, universalBankers } =
         usePage<CreateAccountProps>().props;
 
     const { data, setData, post, processing, errors } = useForm({
         client_id: client.id,
         account_number: "",
         account_product_id: "",
-        teller_id: "",
+        universal_banker_id: "",
         currency: "IDR", // Default to IDR
         initial_balance: "0",
         opened_at: new Date().toISOString().split("T")[0], // Default to today
@@ -497,22 +497,22 @@ const AccountsCreate = () => {
                             </div>
                         </div>
 
-                        {/* Teller Information */}
+                        {/* UniversalBanker Information */}
                         <div className="bg-gray-50/50 p-5 rounded-lg border border-gray-100">
                             <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
                                 <div className="bg-[#00529C]/10 rounded-md p-1.5 mr-2">
                                     <Briefcase className="h-5 w-5 text-[#00529C]" />
                                 </div>
-                                Informasi Teller
+                                Informasi UniversalBanker
                             </h3>
 
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                                 <div className="space-y-2 sm:col-span-2">
                                     <label
-                                        htmlFor="teller_id"
+                                        htmlFor="universal_banker_id"
                                         className="block text-sm font-medium text-gray-700"
                                     >
-                                        Teller Penanggung Jawab
+                                        UniversalBanker Penanggung Jawab
                                         <span className="text-red-600 ml-1">
                                             *
                                         </span>
@@ -522,40 +522,49 @@ const AccountsCreate = () => {
                                             <Building className="h-4 w-4 text-gray-400" />
                                         </div>
                                         <select
-                                            id="teller_id"
-                                            name="teller_id"
-                                            value={data.teller_id}
+                                            id="universal_banker_id"
+                                            name="universal_banker_id"
+                                            value={data.universal_banker_id}
                                             onChange={(e) =>
                                                 setData(
-                                                    "teller_id",
+                                                    "universal_banker_id",
                                                     e.target.value
                                                 )
                                             }
                                             className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                errors.teller_id
+                                                errors.universal_banker_id
                                                     ? "border-red-300 bg-red-50"
                                                     : "border-gray-300"
                                             }`}
                                         >
                                             <option value="">
-                                                Pilih Teller
+                                                Pilih UniversalBanker
                                             </option>
-                                            {tellers.map((teller) => (
-                                                <option
-                                                    key={teller.id}
-                                                    value={teller.id}
-                                                >
-                                                    {teller.name} -{" "}
-                                                    {teller.branch?.name} (
-                                                    {teller.position?.name})
-                                                </option>
-                                            ))}
+                                            {universalBankers.map(
+                                                (universal_banker) => (
+                                                    <option
+                                                        key={
+                                                            universal_banker.id
+                                                        }
+                                                        value={
+                                                            universal_banker.id
+                                                        }
+                                                    >
+                                                        {universal_banker.name}{" "}
+                                                        -{" "}
+                                                        {
+                                                            universal_banker
+                                                                .branch?.name
+                                                        }{" "}
+                                                    </option>
+                                                )
+                                            )}
                                         </select>
                                     </div>
-                                    {errors.teller_id && (
+                                    {errors.universal_banker_id && (
                                         <p className="mt-1 text-sm text-red-600 flex items-center">
                                             <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            {errors.teller_id}
+                                            {errors.universal_banker_id}
                                         </p>
                                     )}
                                 </div>

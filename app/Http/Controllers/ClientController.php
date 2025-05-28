@@ -61,8 +61,8 @@ class ClientController extends Controller
         $client->load([
             'accounts',
             'accounts.accountProduct',
-            'accounts.teller',
-            'accounts.teller.branch',
+            'accounts.universalBanker',
+            'accounts.universalBanker.branch',
         ]);
 
         return Inertia::render('Dashboard/Clients/Show', [
@@ -116,12 +116,12 @@ class ClientController extends Controller
     public function createAccount(Client $client)
     {
         $accountProducts = AccountProduct::all();
-        $tellers = User::with('position', 'branch')->get();
+        $universalBankers = User::with('branch')->get();
 
         return Inertia::render('Dashboard/Clients/Accounts/Create', [
             'client' => $client,
             'accountProducts' => $accountProducts,
-            'tellers' => $tellers,
+            'universalBankers' => $universalBankers,
         ]);
     }
 
@@ -133,7 +133,7 @@ class ClientController extends Controller
         $validatedData = $request->validate([
             'account_number' => 'required|string|max:255|unique:accounts,account_number',
             'account_product_id' => 'required|exists:account_products,id',
-            'teller_id' => 'required|exists:users,id',
+            'universal_banker_id' => 'required|exists:users,id',
             'currency' => 'required|string|max:3',
             'initial_balance' => 'required|numeric|min:50000',
             'status' => 'required|string|max:255',
@@ -144,7 +144,7 @@ class ClientController extends Controller
             $client->accounts()->create([
                 'account_number' => $validatedData['account_number'],
                 'account_product_id' => $validatedData['account_product_id'],
-                'teller_id' => $validatedData['teller_id'],
+                'universal_banker_id' => $validatedData['universal_banker_id'],
                 'currency' => $validatedData['currency'],
                 'current_balance' => $validatedData['initial_balance'],
                 'available_balance' => $validatedData['initial_balance'],
@@ -163,13 +163,13 @@ class ClientController extends Controller
     public function editAccount(Client $client, Account $account)
     {
         $accountProducts = AccountProduct::all();
-        $tellers = User::with('position', 'branch')->get();
+        $universalBankers = User::with('branch')->get();
 
         return Inertia::render('Dashboard/Clients/Accounts/Edit', [
             'client' => $client,
             'account' => $account,
             'accountProducts' => $accountProducts,
-            'tellers' => $tellers,
+            'universalBankers' => $universalBankers,
         ]);
     }
 
@@ -180,7 +180,7 @@ class ClientController extends Controller
     {
         $validatedData = $request->validate([
             'account_product_id' => 'required|exists:account_products,id',
-            'teller_id' => 'required|exists:users,id',
+            'universal_banker_id' => 'required|exists:users,id',
             'account_number' => 'required|string|max:255|unique:accounts,account_number,' . $account->id,
             'current_balance' => 'required|numeric|min:0',
             'available_balance' => 'required|numeric|min:0',

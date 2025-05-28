@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState } from "react";
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
-import type { PageProps, Branch, Position } from "@/types";
+import type { PageProps, Branch } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -24,22 +24,21 @@ import {
     KeyRound,
     RefreshCw,
     Info,
+    Users,
 } from "lucide-react";
 
 interface CreateProps extends PageProps {
-    positions: Position[];
     branches: Branch[];
 }
 
-const TellersCreate = () => {
-    const { positions, branches } = usePage<CreateProps>().props;
+const UniversalBankersCreate = () => {
+    const { branches } = usePage<CreateProps>().props;
 
     const { data, setData, post, processing, errors, reset } = useForm({
         name: "",
         email: "",
         password: "",
         password_confirmation: "",
-        position_id: "",
         branch_id: "",
     });
 
@@ -48,7 +47,7 @@ const TellersCreate = () => {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post(route("tellers.store"), {
+        post(route("universalBankers.store"), {
             onSuccess: () => {
                 reset();
             },
@@ -102,37 +101,57 @@ const TellersCreate = () => {
 
     return (
         <AuthenticatedLayout>
-            <Head title="Tambah Teller Baru | Bank BRI" />
+            <Head title="Tambah UniversalBanker Baru | Bank BRI" />
 
             <Breadcrumb
                 items={[
-                    { label: "Teller", href: route("tellers.index") },
-                    { label: "Tambah Teller Baru" },
+                    {
+                        label: "Universal Banker",
+                        href: route("universalBankers.index"),
+                    },
+                    { label: "Tambah Universal Banker Baru" },
                 ]}
             />
 
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-lg">
-                <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-[#00529C]/10 to-white flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                        <div className="bg-[#00529C] rounded-full p-2 text-white">
-                            <UserPlus className="h-5 w-5" />
-                        </div>
-                        <h2 className="font-semibold text-xl text-gray-900">
-                            Tambah Teller Baru
-                        </h2>
-                    </div>
-                    <Link href={route("tellers.index")}>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="gap-1.5 text-gray-600 hover:text-gray-900 transition-colors"
-                        >
-                            <ChevronLeft className="h-4 w-4" />
-                            <span>Kembali</span>
-                        </Button>
-                    </Link>
-                </div>
+            {/* Hero Section with Animated Background - matching Index page */}
+            <div className="relative mb-8 overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-8 shadow-lg">
+                <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
+                <div className="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
+                <div className="absolute top-0 left-0 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl"></div>
 
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div className="mb-6 md:mb-0">
+                        <div className="flex items-center gap-3 mb-3">
+                            <div className="p-2 rounded-lg bg-white/10">
+                                <UserPlus className="h-6 w-6 text-white" />
+                            </div>
+                            <h1 className="text-3xl font-bold tracking-tight text-white">
+                                Tambah Universal Banker Baru
+                            </h1>
+                        </div>
+                        <p className="mt-1.5 max-w-2xl text-blue-100 text-lg">
+                            Tambahkan anggota Universal Banker baru untuk
+                            bergabung dengan tim Bank BRI
+                        </p>
+                        <div className="mt-4 flex items-center text-blue-100 text-sm">
+                            <span className="inline-flex items-center rounded-full bg-blue-800/30 px-2.5 py-1 text-xs font-medium text-white">
+                                <Users className="h-3.5 w-3.5 mr-1" />
+                                Manajemen Universal Banker
+                            </span>
+                        </div>
+                    </div>
+                    <div className="flex flex-shrink-0 items-center space-x-3">
+                        <Link href={route("universalBankers.index")}>
+                            <Button className="shadow-md bg-white text-[#00529C] hover:bg-blue-50 gap-1.5 font-medium transition-all duration-200 px-5 py-2.5">
+                                <ChevronLeft className="h-4 w-4" />
+                                <span>Kembali ke Daftar</span>
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-lg">
                 <form onSubmit={handleSubmit} className="p-6">
                     <div className="space-y-8">
                         {/* Personal Information */}
@@ -168,7 +187,7 @@ const TellersCreate = () => {
                                                 ? "border-red-300 bg-red-50"
                                                 : "border-gray-300"
                                         }`}
-                                        placeholder="Masukkan nama lengkap teller"
+                                        placeholder="Masukkan nama lengkap Universal Banker"
                                         autoFocus
                                     />
                                     {errors.name && (
@@ -566,63 +585,12 @@ const TellersCreate = () => {
                                         </p>
                                     )}
                                 </div>
-
-                                <div className="space-y-2">
-                                    <label
-                                        htmlFor="position_id"
-                                        className="block text-sm font-medium text-gray-700"
-                                    >
-                                        Jabatan
-                                        <span className="text-red-600 ml-1">
-                                            *
-                                        </span>
-                                    </label>
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <Briefcase className="h-4 w-4 text-gray-400" />
-                                        </div>
-                                        <select
-                                            id="position_id"
-                                            name="position_id"
-                                            value={data.position_id}
-                                            onChange={(e) =>
-                                                setData(
-                                                    "position_id",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                errors.position_id
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-gray-300"
-                                            }`}
-                                        >
-                                            <option value="">
-                                                Pilih Jabatan
-                                            </option>
-                                            {positions.map((position) => (
-                                                <option
-                                                    key={position.id}
-                                                    value={position.id}
-                                                >
-                                                    {position.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {errors.position_id && (
-                                        <p className="mt-1 text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            {errors.position_id}
-                                        </p>
-                                    )}
-                                </div>
                             </div>
                         </div>
 
-                        <div className="border-t border-gray-200 pt-6 flex justify-between items-center">
+                        <div className="bg-gray-50 p-6 border-t border-gray-200 rounded-b-lg flex justify-between items-center">
                             <Link
-                                href={route("tellers.index")}
+                                href={route("universalBankers.index")}
                                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                             >
                                 <X className="h-4 w-4 mr-2" />
@@ -634,7 +602,9 @@ const TellersCreate = () => {
                                 className="bg-[#00529C] hover:bg-[#003b75] gap-1.5 transition-all duration-200 shadow-md hover:shadow-lg"
                             >
                                 <Save className="h-4 w-4" />
-                                {processing ? "Menyimpan..." : "Simpan Teller"}
+                                {processing
+                                    ? "Menyimpan..."
+                                    : "Simpan Universal Banker"}
                             </Button>
                         </div>
                     </div>
@@ -644,4 +614,4 @@ const TellersCreate = () => {
     );
 };
 
-export default TellersCreate;
+export default UniversalBankersCreate;

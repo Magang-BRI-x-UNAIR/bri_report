@@ -18,7 +18,6 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->string('address')->nullable();
             $table->foreignId('branch_id')->nullable()->constrained('branches')->nullOnDelete();
-            $table->foreignId('position_id')->nullable()->constrained('positions')->nullOnDelete();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->rememberToken();

@@ -8,7 +8,6 @@ export interface User {
     created_at: string;
     updated_at: string;
     branch: Branch | null;
-    position: Position | null;
     accounts: Account[];
 }
 
@@ -16,15 +15,6 @@ export interface Branch {
     id: string;
     name: string;
     address: string;
-    created_at: string;
-    updated_at: string;
-    users: User[];
-}
-
-export interface Position {
-    id: string;
-    name: string;
-    description: string;
     created_at: string;
     updated_at: string;
     users: User[];
@@ -40,7 +30,7 @@ export interface Account {
     opened_at: string;
     client: Client;
     account_product: AccountProduct;
-    teller: User;
+    universal_banker: User;
     account_transactions: AccountTransaction[];
 }
 

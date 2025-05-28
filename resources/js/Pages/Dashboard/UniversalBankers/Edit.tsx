@@ -3,10 +3,10 @@
 import type React from "react";
 
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
-import type { PageProps, Branch, Position, User } from "@/types";
+import type { PageProps, Branch, User } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
     UserCog,
     Briefcase,
@@ -21,35 +21,36 @@ import {
 
 interface EditProps extends PageProps {
     user: User;
-    positions: Position[];
     branches: Branch[];
 }
 
-const TellersEdit = () => {
-    const { user, positions, branches } = usePage<EditProps>().props;
+const UniversalBankersEdit = () => {
+    const { user, branches } = usePage<EditProps>().props;
 
     console.log(user);
 
     const { data, setData, put, processing, errors } = useForm({
         name: user.name,
         email: user.email,
-        position_id: user.position?.id?.toString() || "",
         branch_id: user.branch?.id?.toString() || "",
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route("tellers.update", user.id));
+        put(route("universalBankers.update", user.id));
     };
 
     return (
         <AuthenticatedLayout>
-            <Head title="Edit Teller | Bank BRI" />
+            <Head title="Edit UniversalBanker | Bank BRI" />
 
             <Breadcrumb
                 items={[
-                    { label: "Teller", href: route("tellers.index") },
-                    { label: "Edit Teller" },
+                    {
+                        label: "UniversalBanker",
+                        href: route("universalBankers.index"),
+                    },
+                    { label: "Edit UniversalBanker" },
                 ]}
             />
 
@@ -60,10 +61,10 @@ const TellersEdit = () => {
                             <UserCog className="h-5 w-5" />
                         </div>
                         <h2 className="font-semibold text-xl text-gray-900">
-                            Edit Teller: {user.name}
+                            Edit UniversalBanker: {user.name}
                         </h2>
                     </div>
-                    <Link href={route("tellers.index")}>
+                    <Link href={route("universalBankers.index")}>
                         <Button
                             variant="outline"
                             size="sm"
@@ -110,7 +111,7 @@ const TellersEdit = () => {
                                                 ? "border-red-300 bg-red-50"
                                                 : "border-gray-300"
                                         }`}
-                                        placeholder="Masukkan nama lengkap teller"
+                                        placeholder="Masukkan nama lengkap Universal Banker"
                                         autoFocus
                                     />
                                     {errors.name && (
@@ -143,8 +144,8 @@ const TellersEdit = () => {
                                         />
                                     </div>
                                     <p className="mt-1 text-xs text-gray-500">
-                                        Email tidak dapat diubah setelah teller
-                                        dibuat
+                                        Email tidak dapat diubah setelah
+                                        Universal Banker dibuat
                                     </p>
                                 </div>
                             </div>
@@ -210,63 +211,12 @@ const TellersEdit = () => {
                                         </p>
                                     )}
                                 </div>
-
-                                <div className="space-y-2">
-                                    <label
-                                        htmlFor="position_id"
-                                        className="block text-sm font-medium text-gray-700"
-                                    >
-                                        Jabatan
-                                        <span className="text-red-600 ml-1">
-                                            *
-                                        </span>
-                                    </label>
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <Briefcase className="h-4 w-4 text-gray-400" />
-                                        </div>
-                                        <select
-                                            id="position_id"
-                                            name="position_id"
-                                            value={data.position_id}
-                                            onChange={(e) =>
-                                                setData(
-                                                    "position_id",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                errors.position_id
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-gray-300"
-                                            }`}
-                                        >
-                                            <option value="">
-                                                Pilih Jabatan
-                                            </option>
-                                            {positions.map((position) => (
-                                                <option
-                                                    key={position.id}
-                                                    value={position.id}
-                                                >
-                                                    {position.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {errors.position_id && (
-                                        <p className="mt-1 text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            {errors.position_id}
-                                        </p>
-                                    )}
-                                </div>
                             </div>
                         </div>
 
                         <div className="border-t border-gray-200 pt-6 flex justify-between items-center">
                             <Link
-                                href={route("tellers.index")}
+                                href={route("universalBankers.index")}
                                 className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                             >
                                 <X className="h-4 w-4 mr-2" />
@@ -290,4 +240,4 @@ const TellersEdit = () => {
     );
 };
 
-export default TellersEdit;
+export default UniversalBankersEdit;

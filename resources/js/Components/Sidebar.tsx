@@ -106,16 +106,10 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                                 isActive={route().current("branches.*")}
                             />
                             <SidebarItem
-                                href="positions.index"
-                                icon={Briefcase}
-                                text="Jabatan"
-                                isActive={route().current("positions.*")}
-                            />
-                            <SidebarItem
-                                href="tellers.index"
+                                href="universalBankers.index"
                                 icon={Users}
-                                text="Teller"
-                                isActive={route().current("tellers.*")}
+                                text="Universal Banker"
+                                isActive={route().current("universalBankers.*")}
                             />
                             <SidebarItem
                                 href="account-products.index"

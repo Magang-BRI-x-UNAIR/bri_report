@@ -6,11 +6,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
      * The attributes that are mass assignable.
@@ -23,7 +24,6 @@ class User extends Authenticatable
         'phone',
         'address',
         'password',
-        'position_id',
         'branch_id',
     ];
 
@@ -51,27 +51,6 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the attributes that should be appended.
-     *
-     * @return array<string>
-     */
-    protected function appends(): array
-    {
-        return [
-            'position',
-        ];
-    }
-    /**
-     * Get the user's position.
-     *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Position>
-     */
-    public function position()
-    {
-        return $this->belongsTo(Position::class, 'position_id', 'id');
-    }
-
-    /**
      * Get the user's branch.
      *
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<Branch>
@@ -88,16 +67,16 @@ class User extends Authenticatable
      */
     public function accounts()
     {
-        return $this->hasMany(Account::class, 'teller_id', localKey: 'id');
+        return $this->hasMany(Account::class, 'universal_banker_id', localKey: 'id');
     }
 
     /**
-     * Get the user's teller daily balances.
+     * Get the user's universalBanker daily balances.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<TellerDailyBalance>
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<UniversalBankerDailyBalance>
      */
-    public function tellerDailyBalances()
+    public function universalBankerDailyBalances()
     {
-        return $this->hasMany(TellerDailyBalance::class, 'teller_id', localKey: 'id');
+        return $this->hasMany(UniversalBankerDailyBalance::class, 'universal_banker_id', localKey: 'id');
     }
 }
