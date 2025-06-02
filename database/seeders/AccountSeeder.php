@@ -192,7 +192,6 @@ class AccountSeeder extends Seeder
                 $universalBankerDailyData[$universalBanker->id][$dateStr] = [
                     'total_balance' => 0,
                     'daily_change' => 0,
-                    'transaction_count' => 0,
                 ];
                 $currentDay->addDay();
             }
@@ -228,7 +227,6 @@ class AccountSeeder extends Seeder
             $openingDateStr = $startDate->format('Y-m-d');
             $universalBankerDailyData[$account->universal_banker_id][$openingDateStr]['total_balance'] += $balance;
             $universalBankerDailyData[$account->universal_banker_id][$openingDateStr]['daily_change'] += $balance;
-            $universalBankerDailyData[$account->universal_banker_id][$openingDateStr]['transaction_count']++;
 
             $previousBalance = $balance;
             $currentDay = $startDate->copy()->addDay();
@@ -374,7 +372,6 @@ class AccountSeeder extends Seeder
                 // Update universalBanker daily data
                 $universalBankerDailyData[$account->universal_banker_id][$dateStr]['total_balance'] += $balance;
                 $universalBankerDailyData[$account->universal_banker_id][$dateStr]['daily_change'] += $dayTotalChange;
-                $universalBankerDailyData[$account->universal_banker_id][$dateStr]['transaction_count'] += $dayTransactionsCount;
 
                 // Move to next day
                 $currentDay->addDay();
@@ -408,7 +405,6 @@ class AccountSeeder extends Seeder
                     'date' => $date,
                     'total_balance' => $data['total_balance'],
                     'daily_change' => $data['daily_change'],
-                    'transaction_count' => $data['transaction_count'],
                     'created_at' => now(),
                     'updated_at' => now(),
                 ];

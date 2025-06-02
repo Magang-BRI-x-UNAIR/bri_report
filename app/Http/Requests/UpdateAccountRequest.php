@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Auth;
 
 class UpdateAccountRequest extends FormRequest
 {
@@ -11,7 +12,9 @@ class UpdateAccountRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        /** @var \App\Models\User|\Illuminate\Contracts\Auth\Authenticatable|null $user */
+        $user = Auth::user();
+        return $user->hasRole('super_admin');
     }
 
     /**

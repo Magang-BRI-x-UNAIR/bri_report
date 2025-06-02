@@ -17,7 +17,6 @@ return new class extends Migration
             $table->date('date');
             $table->decimal('total_balance', 15, 2);
             $table->decimal('daily_change', 15, 2)->default(0);
-            $table->integer('transaction_count')->default(0);
             $table->timestamps();
             $table->unique(['universal_banker_id', 'date']);
         });

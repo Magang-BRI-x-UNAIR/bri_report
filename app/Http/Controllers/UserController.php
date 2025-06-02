@@ -112,8 +112,6 @@ class UserController extends Controller
             ];
         });
 
-        // Calculate highest and lowest balances
-        // Fixed algorithm: Initialize with null to handle empty collections properly
         $highestBalance = 0;
         $lowestBalance = PHP_FLOAT_MAX;
 

@@ -31,6 +31,15 @@ import {
     ArrowDown,
     BarChart3,
     PieChart,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+    Calendar,
+    CalendarCheck,
+    CalendarClock,
+    CalendarPlus,
+    CalendarRange,
+    X,
 } from "lucide-react";
 import {
     Card,
@@ -83,6 +92,7 @@ import {
     Area,
 } from "recharts";
 import { formatCompactCurrency, formatCurrency, formatDate } from "@/lib/utils";
+import { usePagination } from "@/hooks/use-pagination";
 
 // Date Range Picker Component
 const DateRangePicker = ({
@@ -146,6 +156,10 @@ const UniversalBankersShow = () => {
         totalChange,
         percentageChange,
     } = usePage<ShowProps>().props;
+    // Somewhere after the filteredBalanceData definition
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
+    // Use the pagination hook
 
     const [searchQuery, setSearchQuery] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
@@ -190,6 +204,11 @@ const UniversalBankersShow = () => {
                     new Date(a.date).getTime() - new Date(b.date).getTime()
             );
     }, [dailyBalances, dateRange]);
+
+    const paginatedBalanceData = usePagination({
+        items: filteredBalanceData,
+        initialPage: 1,
+    });
 
     // Handle time filter change
     const handleTimeFilterChange = (value: string) => {
@@ -577,131 +596,211 @@ const UniversalBankersShow = () => {
                 <TabsContent value="overview" className="space-y-6">
                     {/* Balance History Chart */}
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="pb-0 border-b bg-gradient-to-r from-blue-50 to-transparent">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                <div>
-                                    <CardTitle className="text-lg flex items-center gap-2">
+                                <div className="flex items-start gap-3">
+                                    <div className="rounded-lg bg-blue-100 p-2.5 flex-shrink-0 shadow-sm">
                                         <LineChart className="h-5 w-5 text-[#00529C]" />
-                                        Perkembangan Total Saldo
-                                    </CardTitle>
-                                    <CardDescription>
-                                        Tracking perubahan total saldo rekening
-                                        yang ditangani oleh{" "}
-                                        {universalBanker.name}
-                                    </CardDescription>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Select
-                                        value={timeFilter}
-                                        onValueChange={handleTimeFilterChange}
-                                    >
-                                        <SelectTrigger className="w-[140px]">
-                                            <SelectValue placeholder="Pilih Periode" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="week">
-                                                7 Hari Terakhir
-                                            </SelectItem>
-                                            <SelectItem value="month">
-                                                30 Hari Terakhir
-                                            </SelectItem>
-                                            <SelectItem value="quarter">
-                                                3 Bulan Terakhir
-                                            </SelectItem>
-                                            <SelectItem value="year">
-                                                1 Tahun Terakhir
-                                            </SelectItem>
-                                            <SelectItem value="custom">
-                                                Kustom
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-                                    {timeFilter === "custom" && (
-                                        <div className="flex items-center gap-2">
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-9 gap-1"
-                                                    >
-                                                        <CalendarDays className="h-4 w-4" />
-                                                        {dateRange.from
-                                                            ? format(
-                                                                  dateRange.from,
-                                                                  "dd MMM yyyy",
-                                                                  { locale: id }
-                                                              )
-                                                            : "Pilih tanggal"}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent
-                                                    className="w-auto p-0"
-                                                    align="start"
-                                                >
-                                                    <CalendarComponent
-                                                        mode="single"
-                                                        selected={
-                                                            dateRange.from ||
-                                                            undefined
-                                                        }
-                                                        onSelect={(date) =>
-                                                            setDateRange({
-                                                                ...dateRange,
-                                                                from:
-                                                                    date ||
-                                                                    null,
-                                                            })
-                                                        }
-                                                        initialFocus
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
-                                            <span className="text-sm text-gray-500">
-                                                -
-                                            </span>
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-9 gap-1"
-                                                    >
-                                                        <CalendarDays className="h-4 w-4" />
-                                                        {dateRange.to
-                                                            ? format(
-                                                                  dateRange.to,
-                                                                  "dd MMM yyyy",
-                                                                  { locale: id }
-                                                              )
-                                                            : "Pilih tanggal"}
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent
-                                                    className="w-auto p-0"
-                                                    align="start"
-                                                >
-                                                    <CalendarComponent
-                                                        mode="single"
-                                                        selected={
-                                                            dateRange.to ||
-                                                            undefined
-                                                        }
-                                                        onSelect={(date) =>
-                                                            setDateRange({
-                                                                ...dateRange,
-                                                                to:
-                                                                    date ||
-                                                                    null,
-                                                            })
-                                                        }
-                                                        initialFocus
-                                                    />
-                                                </PopoverContent>
-                                            </Popover>
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <CardTitle className="text-lg font-bold text-[#00529C]">
+                                                Perkembangan Total Saldo
+                                            </CardTitle>
+                                            <Badge
+                                                variant="outline"
+                                                className="text-xs bg-blue-50 border-blue-200 text-blue-700"
+                                            >
+                                                Realtime
+                                            </Badge>
                                         </div>
-                                    )}
+                                        <CardDescription className="text-sm text-gray-600">
+                                            Tracking perubahan total saldo
+                                            rekening yang ditangani oleh{" "}
+                                            <span className="font-medium text-gray-700">
+                                                {universalBanker.name}
+                                            </span>
+                                        </CardDescription>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pb-3 sm:pb-0">
+                                    <div className="flex items-center gap-2 min-w-[140px]">
+                                        <CalendarRange className="h-4 w-4 text-gray-500" />
+                                        <span className="text-sm text-gray-500 font-medium">
+                                            Filter Periode:
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <Select
+                                            value={timeFilter}
+                                            onValueChange={
+                                                handleTimeFilterChange
+                                            }
+                                        >
+                                            <SelectTrigger className="w-[160px] bg-white border-blue-200 hover:border-blue-400 shadow-sm transition-colors">
+                                                <SelectValue placeholder="Pilih Periode" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem
+                                                    value="week"
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    7 Hari Terakhir
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value="month"
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    30 Hari Terakhir
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value="quarter"
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    3 Bulan Terakhir
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value="year"
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    1 Tahun Terakhir
+                                                </SelectItem>
+                                                <SelectItem
+                                                    value="custom"
+                                                    className="flex items-center gap-2"
+                                                >
+                                                    Kustom
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        {timeFilter === "custom" && (
+                                            <div className="flex items-center gap-2 bg-white rounded-md border border-blue-200 p-1.5 shadow-sm">
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-7 px-2 text-xs gap-1 hover:bg-blue-50"
+                                                        >
+                                                            <CalendarDays className="h-3.5 w-3.5 text-blue-600" />
+                                                            {dateRange.from
+                                                                ? format(
+                                                                      dateRange.from,
+                                                                      "dd MMM yyyy",
+                                                                      {
+                                                                          locale: id,
+                                                                      }
+                                                                  )
+                                                                : "Mulai"}
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent
+                                                        className="w-auto p-0"
+                                                        align="start"
+                                                    >
+                                                        <CalendarComponent
+                                                            mode="single"
+                                                            selected={
+                                                                dateRange.from ||
+                                                                undefined
+                                                            }
+                                                            onSelect={(date) =>
+                                                                setDateRange({
+                                                                    ...dateRange,
+                                                                    from:
+                                                                        date ||
+                                                                        null,
+                                                                })
+                                                            }
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+                                                <span className="text-xs text-gray-400">
+                                                    —
+                                                </span>
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-7 px-2 text-xs gap-1 hover:bg-blue-50"
+                                                        >
+                                                            <CalendarCheck className="h-3.5 w-3.5 text-blue-600" />
+                                                            {dateRange.to
+                                                                ? format(
+                                                                      dateRange.to,
+                                                                      "dd MMM yyyy",
+                                                                      {
+                                                                          locale: id,
+                                                                      }
+                                                                  )
+                                                                : "Selesai"}
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent
+                                                        className="w-auto p-0"
+                                                        align="start"
+                                                    >
+                                                        <CalendarComponent
+                                                            mode="single"
+                                                            selected={
+                                                                dateRange.to ||
+                                                                undefined
+                                                            }
+                                                            onSelect={(date) =>
+                                                                setDateRange({
+                                                                    ...dateRange,
+                                                                    to:
+                                                                        date ||
+                                                                        null,
+                                                                })
+                                                            }
+                                                            initialFocus
+                                                        />
+                                                    </PopoverContent>
+                                                </Popover>
+
+                                                {dateRange.from &&
+                                                    dateRange.to && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-6 w-6 rounded-full hover:bg-red-50 hover:text-red-600"
+                                                            onClick={() =>
+                                                                setDateRange({
+                                                                    from: null,
+                                                                    to: null,
+                                                                })
+                                                            }
+                                                            title="Reset tanggal"
+                                                        >
+                                                            <X className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    )}
+                                            </div>
+                                        )}
+
+                                        {dateRange.from && dateRange.to && (
+                                            <Badge className="bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 transition-colors cursor-default">
+                                                <Calendar className="h-3 w-3 mr-1" />
+                                                {format(
+                                                    dateRange.from,
+                                                    "dd MMM",
+                                                    { locale: id }
+                                                )}{" "}
+                                                -{" "}
+                                                {format(
+                                                    dateRange.to,
+                                                    "dd MMM yyyy",
+                                                    { locale: id }
+                                                )}
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </CardHeader>
@@ -949,82 +1048,103 @@ const UniversalBankersShow = () => {
                                 </div>
                             </div>
 
-                            {/* Transactions table */}
+                            {/* Transactions table with improved UI and pagination */}
                             <div className="mt-6">
-                                <h3 className="text-sm font-medium text-gray-700 mb-3">
-                                    Riwayat Perubahan Saldo
-                                </h3>
-                                <div className="rounded-md border">
+                                <div className="flex justify-between items-center mb-3">
+                                    <h3 className="text-sm font-medium text-gray-700">
+                                        Riwayat Perubahan Saldo
+                                    </h3>
+                                </div>
+                                <div className="rounded-md border shadow-sm bg-white">
                                     <Table>
                                         <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Tanggal</TableHead>
-                                                <TableHead>
+                                            <TableRow className="bg-muted/50">
+                                                <TableHead className="font-medium">
+                                                    Tanggal
+                                                </TableHead>
+                                                <TableHead className="font-medium">
                                                     Total Saldo
                                                 </TableHead>
-                                                <TableHead>Perubahan</TableHead>
-                                                <TableHead>Transaksi</TableHead>
+                                                <TableHead className="font-medium">
+                                                    Perubahan
+                                                </TableHead>
                                             </TableRow>
                                         </TableHeader>
                                         <TableBody>
-                                            {filteredBalanceData.length ===
-                                            0 ? (
+                                            {paginatedBalanceData.currentItems
+                                                .length === 0 ? (
                                                 <TableRow>
                                                     <TableCell
                                                         colSpan={4}
                                                         className="h-24 text-center text-muted-foreground"
                                                     >
-                                                        Tidak ada data perubahan
-                                                        saldo
+                                                        <div className="flex flex-col items-center justify-center space-y-1">
+                                                            <LineChart className="h-6 w-6 text-gray-300" />
+                                                            <p>
+                                                                Tidak ada data
+                                                                perubahan saldo
+                                                            </p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                                Coba ubah filter
+                                                                periode untuk
+                                                                melihat data
+                                                                lain
+                                                            </p>
+                                                        </div>
                                                     </TableCell>
                                                 </TableRow>
                                             ) : (
-                                                filteredBalanceData.map(
-                                                    (entry, index) => (
+                                                paginatedBalanceData.currentItems.map(
+                                                    (entry) => (
                                                         <TableRow
                                                             key={entry.date}
+                                                            className="hover:bg-muted/30 transition-colors"
                                                         >
-                                                            <TableCell>
+                                                            <TableCell className="font-medium">
                                                                 {
                                                                     entry.formattedDate
                                                                 }
                                                             </TableCell>
-                                                            <TableCell className="font-medium">
-                                                                {formatCurrency(
-                                                                    entry.totalBalance
-                                                                )}
+                                                            <TableCell>
+                                                                <span className="font-mono font-medium">
+                                                                    {formatCurrency(
+                                                                        entry.totalBalance
+                                                                    )}
+                                                                </span>
                                                             </TableCell>
                                                             <TableCell>
                                                                 <span
-                                                                    className={`flex items-center ${
+                                                                    className={`flex items-center gap-1 ${
                                                                         entry.change >=
                                                                         0
                                                                             ? "text-green-600"
                                                                             : "text-red-600"
                                                                     }`}
                                                                 >
-                                                                    {entry.change >=
-                                                                    0 ? (
-                                                                        <ArrowUp className="h-3.5 w-3.5 mr-1" />
-                                                                    ) : (
-                                                                        <ArrowDown className="h-3.5 w-3.5 mr-1" />
-                                                                    )}
-                                                                    {formatCurrency(
-                                                                        Math.abs(
-                                                                            entry.change
-                                                                        )
-                                                                    )}
+                                                                    <Badge
+                                                                        variant={
+                                                                            entry.change >=
+                                                                            0
+                                                                                ? "outline"
+                                                                                : "destructive"
+                                                                        }
+                                                                        className="h-5 w-5 p-0.5 rounded-full"
+                                                                    >
+                                                                        {entry.change >=
+                                                                        0 ? (
+                                                                            <ArrowUp className="h-3.5 w-3.5 text-green-600" />
+                                                                        ) : (
+                                                                            <ArrowDown className="h-3.5 w-3.5" />
+                                                                        )}
+                                                                    </Badge>
+                                                                    <span className="font-mono">
+                                                                        {formatCurrency(
+                                                                            Math.abs(
+                                                                                entry.change
+                                                                            )
+                                                                        )}
+                                                                    </span>
                                                                 </span>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Badge
-                                                                    variant="outline"
-                                                                    className="font-normal"
-                                                                >
-                                                                    {entry.transactionCount ||
-                                                                        0}{" "}
-                                                                    transaksi
-                                                                </Badge>
                                                             </TableCell>
                                                         </TableRow>
                                                     )
@@ -1032,6 +1152,109 @@ const UniversalBankersShow = () => {
                                             )}
                                         </TableBody>
                                     </Table>
+
+                                    {/* Pagination controls */}
+                                    {paginatedBalanceData.totalPages > 1 && (
+                                        <div className="flex items-center justify-between px-4 py-3 border-t">
+                                            <div className="flex-1 text-xs text-muted-foreground">
+                                                Menampilkan{" "}
+                                                {(paginatedBalanceData.currentPage -
+                                                    1) *
+                                                    paginatedBalanceData.itemsPerPage +
+                                                    1}
+                                                -
+                                                {Math.min(
+                                                    paginatedBalanceData.currentPage *
+                                                        paginatedBalanceData.itemsPerPage,
+                                                    filteredBalanceData.length
+                                                )}
+                                                dari{" "}
+                                                {filteredBalanceData.length}{" "}
+                                                perubahan saldo
+                                            </div>
+
+                                            <div className="flex items-center space-x-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() =>
+                                                        paginatedBalanceData.setCurrentPage(
+                                                            1
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        paginatedBalanceData.currentPage ===
+                                                        1
+                                                    }
+                                                >
+                                                    <ChevronsLeft className="h-3.5 w-3.5" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() =>
+                                                        paginatedBalanceData.setCurrentPage(
+                                                            paginatedBalanceData.currentPage -
+                                                                1
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        paginatedBalanceData.currentPage ===
+                                                        1
+                                                    }
+                                                >
+                                                    <ChevronLeft className="h-3.5 w-3.5" />
+                                                </Button>
+
+                                                <div className="text-xs mx-2">
+                                                    Halaman{" "}
+                                                    {
+                                                        paginatedBalanceData.currentPage
+                                                    }{" "}
+                                                    dari{" "}
+                                                    {
+                                                        paginatedBalanceData.totalPages
+                                                    }
+                                                </div>
+
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() =>
+                                                        paginatedBalanceData.setCurrentPage(
+                                                            paginatedBalanceData.currentPage +
+                                                                1
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        paginatedBalanceData.currentPage ===
+                                                        paginatedBalanceData.totalPages
+                                                    }
+                                                >
+                                                    <ChevronRight className="h-3.5 w-3.5" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-7 w-7"
+                                                    onClick={() =>
+                                                        paginatedBalanceData.setCurrentPage(
+                                                            paginatedBalanceData.totalPages
+                                                        )
+                                                    }
+                                                    disabled={
+                                                        paginatedBalanceData.currentPage ===
+                                                        paginatedBalanceData.totalPages
+                                                    }
+                                                >
+                                                    <ChevronsRight className="h-3.5 w-3.5" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </CardContent>

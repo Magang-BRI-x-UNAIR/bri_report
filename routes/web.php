@@ -25,25 +25,25 @@ Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () 
 
     Route::resource('account-products', AccountProductController::class);
 
-    Route::prefix('clients/{client}')->group(function () {
-        Route::get('accounts/create', [ClientController::class, 'createAccount'])->name('clients.accounts.create');
-        Route::post('accounts', [ClientController::class, 'storeAccount'])->name('clients.accounts.store');
-        Route::get('accounts/{account}/edit', [ClientController::class, 'editAccount'])->name('clients.accounts.edit');
-        Route::patch('accounts/{account}', [ClientController::class, 'updateAccount'])->name('clients.accounts.update');
-        Route::delete('accounts/{account}', [ClientController::class, 'destroyAccount'])->name('clients.accounts.destroy');
-        Route::get('accounts/{account}', [ClientController::class, 'showAccount'])->name('clients.accounts.show');
+    Route::prefix('clients/{client}/accounts')->controller(ClientController::class)->group(function () {
+        Route::get('create', 'createAccount')->name('clients.accounts.create');
+        Route::post('/',  'storeAccount')->name('clients.accounts.store');
+        Route::get('{account}/edit',  'editAccount')->name('clients.accounts.edit');
+        Route::patch('{account}',  'updateAccount')->name('clients.accounts.update');
+        Route::delete('{account}',  'destroyAccount')->name('clients.accounts.destroy');
+        Route::get('{account}',  'showAccount')->name('clients.accounts.show');
+    });
+
+    Route::prefix('profile')->controller(ProfileController::class)->group(function () {
+        Route::get('/',  'index')->name('profile.index');
+        Route::get('edit', 'edit')->name('profile.edit');
+        Route::patch('update', 'update')->name('profile.update');
     });
 
     Route::resource('clients', ClientController::class);
     Route::resource('branches', BranchController::class);
     Route::resource('universalBankers', UserController::class);
     Route::resource('accounts', AccountController::class);
-
-    Route::prefix('profile')->group(function () {
-        Route::get('/', [ProfileController::class, 'index'])->name('profile.index');
-        Route::get('edit', [ProfileController::class, 'edit'])->name('profile.edit');
-        Route::put('update', [ProfileController::class, 'update'])->name('profile.update');
-    });
 });
 
 require __DIR__ . '/auth.php';

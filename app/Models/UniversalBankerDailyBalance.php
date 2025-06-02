@@ -13,14 +13,12 @@ class UniversalBankerDailyBalance extends Model
         'date',
         'total_balance',
         'daily_change',
-        'transaction_count',
     ];
 
     protected $casts = [
         'date' => 'date',
         'total_balance' => 'decimal:2',
         'daily_change' => 'decimal:2',
-        'transaction_count' => 'integer',
     ];
 
     public function universalBanker()

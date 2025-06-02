@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreAccountRequest;
 use App\Http\Requests\UpdateAccountRequest;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class AccountController extends Controller
 {
@@ -28,6 +29,16 @@ class AccountController extends Controller
     public function create()
     {
         //
+        /** @var \App\Models\User|\Illuminate\Contracts\Auth\Authenticatable|null $user */
+        $user = Auth::user();
+        if (!$user->hasRole('super_admin')) {
+            return redirect()->route('accounts.index')->with('error', 'You do not have permission to create accounts.');
+        }
+        return Inertia::render('Dashboard/Accounts/Create', [
+            'clients' => \App\Models\Client::all(),
+            'accountProducts' => \App\Models\AccountProduct::all(),
+            'universalBankers' => \App\Models\User::role('universal_banker')->get(),
+        ]);
     }
 
     /**
@@ -36,6 +47,13 @@ class AccountController extends Controller
     public function store(StoreAccountRequest $request)
     {
         //
+        try {
+            $validatedData = $request->validated();
+            Account::create($validatedData);
+            return redirect()->route('accounts.index')->with('success', 'Account created successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to create account: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -63,6 +81,14 @@ class AccountController extends Controller
     public function edit(Account $account)
     {
         //
+        $account->load(['client', 'accountProduct', 'universalBanker']);
+
+        return Inertia::render('Dashboard/Accounts/Edit', [
+            'account' => $account,
+            'clients' => \App\Models\Client::all(),
+            'accountProducts' => \App\Models\AccountProduct::all(),
+            'universalBankers' => \App\Models\User::role('universal_banker')->get(),
+        ]);
     }
 
     /**
@@ -71,6 +97,13 @@ class AccountController extends Controller
     public function update(UpdateAccountRequest $request, Account $account)
     {
         //
+        $validatedData = $request->validated();
+        try {
+            $account->update($validatedData);
+            return redirect()->route('accounts.index')->with('success', 'Account updated successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to update account: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -79,5 +112,16 @@ class AccountController extends Controller
     public function destroy(Account $account)
     {
         //
+        /** @var \App\Models\User|\Illuminate\Contracts\Auth\Authenticatable|null $user */
+        $user = Auth::user();
+        if (!$user->hasRole('super_admin')) {
+            return redirect()->route('accounts.index')->with('error', 'You do not have permission to delete accounts.');
+        }
+        try {
+            $account->delete();
+            return redirect()->route('accounts.index')->with('success', 'Account deleted successfully!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to delete account: ' . $e->getMessage());
+        }
     }
 }
