@@ -37,6 +37,7 @@ const UniversalBankersEdit = () => {
     const { user, branches } = usePage<UniversalBankersEditPageProps>().props;
 
     const { data, setData, put, processing, errors } = useForm({
+        nip: user.nip || "",
         name: user.name || "",
         email: user.email || "",
         phone: user.phone || "",
@@ -164,6 +165,44 @@ const UniversalBankersEdit = () => {
                             </h3>
 
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="nip"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        NIP (Nomor Induk Pegawai)
+                                        <span className="text-red-600 ml-1">
+                                            *
+                                        </span>
+                                    </label>
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Briefcase className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            id="nip"
+                                            name="nip"
+                                            value={data.nip}
+                                            onChange={(e) =>
+                                                setData("nip", e.target.value)
+                                            }
+                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
+                                                errors.nip
+                                                    ? "border-red-300 bg-red-50"
+                                                    : "border-gray-300"
+                                            }`}
+                                            placeholder="Masukkan NIP"
+                                        />
+                                    </div>
+                                    {errors.nip && (
+                                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                                            {errors.nip}
+                                        </p>
+                                    )}
+                                </div>
+
                                 <div className="space-y-2">
                                     <label
                                         htmlFor="name"
@@ -310,6 +349,57 @@ const UniversalBankersEdit = () => {
                                         <p className="mt-1 text-sm text-red-600 flex items-center">
                                             <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                                             {errors.address}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label
+                                        htmlFor="branch_id"
+                                        className="block text-sm font-medium text-gray-700"
+                                    >
+                                        Cabang
+                                        <span className="text-red-600 ml-1">
+                                            *
+                                        </span>
+                                    </label>
+                                    <div className="relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <Building2 className="h-4 w-4 text-gray-400" />
+                                        </div>
+                                        <select
+                                            id="branch_id"
+                                            name="branch_id"
+                                            value={data.branch_id}
+                                            onChange={(e) =>
+                                                setData(
+                                                    "branch_id",
+                                                    e.target.value
+                                                )
+                                            }
+                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
+                                                errors.branch_id
+                                                    ? "border-red-300 bg-red-50"
+                                                    : "border-gray-300"
+                                            }`}
+                                        >
+                                            <option value="">
+                                                Pilih Cabang
+                                            </option>
+                                            {branches.map((branch) => (
+                                                <option
+                                                    key={branch.id}
+                                                    value={branch.id}
+                                                >
+                                                    {branch.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    {errors.branch_id && (
+                                        <p className="mt-1 text-sm text-red-600 flex items-center">
+                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
+                                            {errors.branch_id}
                                         </p>
                                     )}
                                 </div>
@@ -648,69 +738,6 @@ const UniversalBankersEdit = () => {
                                     )}
                                 </>
                             )}
-                        </div>
-
-                        {/* Assignment Information */}
-                        <div className="bg-gray-50/50 p-5 rounded-lg border border-gray-100">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                                <div className="bg-[#00529C]/10 rounded-md p-1.5 mr-2">
-                                    <Briefcase className="h-5 w-5 text-[#00529C]" />
-                                </div>
-                                Penugasan
-                            </h3>
-
-                            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <label
-                                        htmlFor="branch_id"
-                                        className="block text-sm font-medium text-gray-700"
-                                    >
-                                        Cabang
-                                        <span className="text-red-600 ml-1">
-                                            *
-                                        </span>
-                                    </label>
-                                    <div className="relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <Building2 className="h-4 w-4 text-gray-400" />
-                                        </div>
-                                        <select
-                                            id="branch_id"
-                                            name="branch_id"
-                                            value={data.branch_id}
-                                            onChange={(e) =>
-                                                setData(
-                                                    "branch_id",
-                                                    e.target.value
-                                                )
-                                            }
-                                            className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                errors.branch_id
-                                                    ? "border-red-300 bg-red-50"
-                                                    : "border-gray-300"
-                                            }`}
-                                        >
-                                            <option value="">
-                                                Pilih Cabang
-                                            </option>
-                                            {branches.map((branch) => (
-                                                <option
-                                                    key={branch.id}
-                                                    value={branch.id}
-                                                >
-                                                    {branch.name}
-                                                </option>
-                                            ))}
-                                        </select>
-                                    </div>
-                                    {errors.branch_id && (
-                                        <p className="mt-1 text-sm text-red-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            {errors.branch_id}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
                         </div>
 
                         <div className="border-t border-gray-200 pt-6 flex justify-between items-center">

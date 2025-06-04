@@ -467,10 +467,11 @@ const UniversalBankersShow = () => {
                                             {universalBanker.name}
                                         </h1>
                                         <span className="inline-flex items-center rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-xs font-medium text-white border border-white/20">
-                                            ID: BRI-T-
-                                            {universalBanker.id
-                                                .toString()
-                                                .padStart(4, "0")}
+                                            NIP :
+                                            {" " +
+                                                universalBanker.nip
+                                                    .toString()
+                                                    .padStart(4, "0")}
                                         </span>
                                     </div>
                                     <div className="mt-1 flex flex-col sm:flex-row sm:items-center gap-y-1 gap-x-4 text-blue-100">

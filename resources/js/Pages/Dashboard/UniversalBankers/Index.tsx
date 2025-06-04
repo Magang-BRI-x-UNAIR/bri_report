@@ -385,13 +385,14 @@ const UniversalBankersIndex = () => {
                                                             }
                                                         </div>
                                                         <div className="text-xs text-gray-500 mt-0.5">
-                                                            ID: BRI-T-
-                                                            {universal_banker.id
-                                                                .toString()
-                                                                .padStart(
-                                                                    4,
-                                                                    "0"
-                                                                )}
+                                                            NIP :
+                                                            {" " +
+                                                                universal_banker.nip
+                                                                    .toString()
+                                                                    .padStart(
+                                                                        4,
+                                                                        "0"
+                                                                    )}
                                                         </div>
                                                     </div>
                                                 </div>
