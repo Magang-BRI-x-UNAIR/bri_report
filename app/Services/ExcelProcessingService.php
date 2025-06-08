@@ -17,6 +17,7 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Services\Validators\ExcelRowValidator;
 use Illuminate\Support\Arr;
 
+
 class ExcelProcessingService
 {
   /**
@@ -25,35 +26,20 @@ class ExcelProcessingService
    * @var string|null
    */
   private ?string $reportDate = null;
-
-  /**
-   * Supported date formats for parsing
-   */
-  private const DATE_FORMATS = [
-    'Y-m-d',
-    'd/m/Y',
-    'm/d/Y',
-    'Y/m/d',
-    'd-m-Y',
-    'm-d-Y',
-    'd-M-Y',
-    'd-M-y',
-    'm-d-y'
-  ];
+  private array $universalBankerCache = [];
+  private array $clientCache = [];
+  private array $accountCache = [];
+  private array $processedNips = [];
 
   /**
    * Excel column mappings
    */
-  public const COL_REPORT_DATE = 'textbox16';
   public const COL_CLIENT_CIF = 'textbox4';
   public const COL_CLIENT_NAME = 'textbox38';
   public const COL_ACCOUNT_NUMBER = 'textbox15';
-  public const COL_PN_SINGLE_PN = 'pn_singlepn';
+  public const COL_PN_RELATIONSHIP_OFFICER = 'pn_relationship_officer';
   public const COL_BALANCE = 'balance';
   public const COL_AVAIL_BALANCE = 'availbalance';
-  public const COL_ACCOUNT_PRODUCT_CODE = 'textbox11';
-  public const COL_PN_RO = 'pn_relationship_officer';
-  public const COL_CURRENCY = 'textbox8';
 
   /**
    * EPSILON constant for floating point comparisons
@@ -68,9 +54,10 @@ class ExcelProcessingService
    * @return array ['report_date', 'valid_rows', 'summary', 'errors', 'universal_bankers_to_update_ids']
    * @throws \InvalidArgumentException
    */
-  public function generatePreviewData(UploadedFile $file): array
+  public function parseAndValidateFile(UploadedFile $file, $date): array
   {
-    $this->reportDate = null;
+    $this->reportDate = Carbon::parse($date)->format('Y-m-d');
+
     $validRowsForPreview = [];
     $processingErrors = [];
     $summary = [
@@ -82,6 +69,9 @@ class ExcelProcessingService
     $universalBankersAffectedPreview = [];
 
     try {
+
+      $this->preloadUniversalBankers();
+
       $excelDataCollections = Excel::toCollection(new \App\Imports\AccountDataImport, $file);
 
       if ($excelDataCollections->isEmpty() || $excelDataCollections->first()->isEmpty()) {
@@ -89,14 +79,24 @@ class ExcelProcessingService
       }
 
       $excelDataRows = $excelDataCollections->first();
-      $this->parseReportDate($excelDataRows->first()->toArray());
       $summary['total_rows_in_excel'] = $excelDataRows->count();
 
       foreach ($excelDataRows as $index => $rowObject) {
         $rowNumber = $index + 2;
-        $row = $rowObject->toArray();
+        $row = collect($rowObject->toArray())
+          ->filter(function ($value, $key) {
+            $requiredKeys = [
+              self::COL_CLIENT_CIF,
+              self::COL_CLIENT_NAME,
+              self::COL_ACCOUNT_NUMBER,
+              self::COL_PN_RELATIONSHIP_OFFICER,
+              self::COL_BALANCE,
+              self::COL_AVAIL_BALANCE
+            ];
+            return in_array($key, $requiredKeys) && $value !== null;
+          })
+          ->toArray();
         $rowDataForPreview = $row;
-
         // Validate the row data
         $validator = new ExcelRowValidator($row);
         if (!$validator->isValid()) {
@@ -105,6 +105,10 @@ class ExcelProcessingService
             'errors' => $validator->getErrors(),
             'data' => $row
           ];
+
+          Log::warning("Baris {$rowNumber} tidak valid: " . json_encode($validator->getErrors()), [
+            'row_data' => $row
+          ]);
           $summary['skipped_rows']++;
           continue;
         }
@@ -112,7 +116,7 @@ class ExcelProcessingService
         $validatedData = $validator->getValidatedData();
 
         // Check for empty or invalid PN_RO
-        $pnRoValue = $validatedData[self::COL_PN_RO] ?? '';
+        $pnRoValue = $validatedData[self::COL_PN_RELATIONSHIP_OFFICER] ?? '';
         if (empty($pnRoValue) || trim($pnRoValue) === '-') {
           $processingErrors[] = [
             'row_number' => $rowNumber,
@@ -120,6 +124,9 @@ class ExcelProcessingService
             'data' => $row
           ];
           $summary['skipped_rows']++;
+          Log::warning("Baris {$rowNumber} PN Relationship Officer kosong atau tidak valid.", [
+            'row_data' => $row
+          ]);
           continue;
         }
 
@@ -132,6 +139,9 @@ class ExcelProcessingService
             'data' => $row
           ];
           $summary['skipped_rows']++;
+          Log::warning("Baris {$rowNumber} UB tidak ditemukan untuk kode: {$pnRoValue}", [
+            'row_data' => $row
+          ]);
           continue;
         }
 
@@ -147,33 +157,18 @@ class ExcelProcessingService
             'data' => $row
           ];
           $summary['skipped_rows']++;
+          Log::warning("Baris {$rowNumber} Klien tidak ditemukan untuk CIF: {$clientCif}", [
+            'row_data' => $row
+          ]);
           continue;
         } else {
           $rowDataForPreview['status_client'] = 'found';
           $rowDataForPreview['db_client_id'] = $client->id;
           $rowDataForPreview['db_client_name'] = $client->name;
         }
-
-        // Find the Account Product
-        $accountProductCode = $validatedData[self::COL_ACCOUNT_PRODUCT_CODE] ?? '';
-        $accountProduct = $this->findAccountProduct($accountProductCode);
-
-        if (!$accountProduct) {
-          $processingErrors[] = [
-            'row_number' => $rowNumber,
-            'error' => "Produk Akun dengan kode '{$accountProductCode}' tidak ditemukan.",
-            'data' => $row
-          ];
-          $summary['skipped_rows']++;
-          continue;
-        }
-
-        $rowDataForPreview['db_account_product_id'] = $accountProduct->id;
-        $rowDataForPreview['db_account_product_name'] = $accountProduct->name;
-
         // Find or prepare new account
         $accountNumber = $validatedData[self::COL_ACCOUNT_NUMBER] ?? '';
-        $account = $this->findAccount($accountNumber, $client->id);
+        $account = $this->findAccount($accountNumber);
 
         // Process balance information
         $currentBalanceFromExcel = $this->formatCurrency($validatedData[self::COL_BALANCE]);
@@ -205,9 +200,11 @@ class ExcelProcessingService
           $universalBanker
         );
         $validRowsForPreview[] = $rowDataForPreview;
+        Log::info("Baris {$rowNumber} berhasil diproses dan ditambahkan ke preview.", [
+          'row_data' => $rowDataForPreview
+        ]);
         $universalBankersAffectedPreview[$universalBanker->id] = true;
       }
-
       return [
         'report_date' => $this->reportDate,
         'valid_rows' => $validRowsForPreview,
@@ -224,38 +221,44 @@ class ExcelProcessingService
       throw $e;
     }
   }
+  private function preloadUniversalBankers(): void
+  {
+    $universalBankers = User::role('roles', fn($q) => $q->where('name', 'universal_banker'))
+      ->get()
+      ->keyBy('nip');
+
+    $this->universalBankerCache = $universalBankers->toArray();
+
+    Log::info("Pre-loaded " . count($this->universalBankerCache) . " Universal Bankers");
+  }
 
   /**
-   * Parse and set the report date from the Excel data
-   *
-   * @param array $headerRow The first row of Excel data
-   * @return void
+   * Pre-load clients dan accounts berdasarkan data Excel
    */
-  private function parseReportDate(array $headerRow): void
+  private function preloadClientsAndAccounts($excelDataRows): void
   {
-    $reportDateRaw = $headerRow[self::COL_REPORT_DATE] ?? null;
+    $cifs = [];
+    $accountNumbers = [];
 
-    if (!$reportDateRaw) {
-      Log::warning("Tanggal laporan tidak ditemukan dalam data Excel.");
-      $this->reportDate = Carbon::today()->format('Y-m-d');
-      return;
-    }
-
-    foreach (self::DATE_FORMATS as $format) {
-      try {
-        $date = Carbon::createFromFormat($format, $reportDateRaw);
-        if ($date) {
-          $this->reportDate = $date->format('Y-m-d');
-          return;
-        }
-      } catch (\Exception $e) {
-        continue;
+    foreach ($excelDataRows as $row) {
+      $rowArray = $row->toArray();
+      if (isset($rowArray[self::COL_CLIENT_CIF])) {
+        $cifs[] = $rowArray[self::COL_CLIENT_CIF];
+      }
+      if (isset($rowArray[self::COL_ACCOUNT_NUMBER])) {
+        $accountNumbers[] = $rowArray[self::COL_ACCOUNT_NUMBER];
       }
     }
 
-    // Fallback to current date if parsing fails
-    Log::warning("Format tanggal laporan tidak valid: {$reportDateRaw}. Menggunakan tanggal hari ini.");
-    $this->reportDate = Carbon::today()->format('Y-m-d');
+    // Pre-load clients
+    $clients = Client::whereIn('cif', array_unique($cifs))->get()->keyBy('cif');
+    $this->clientCache = $clients->toArray();
+
+    // Pre-load accounts
+    $accounts = Account::whereIn('account_number', array_unique($accountNumbers))->get()->keyBy('account_number');
+    $this->accountCache = $accounts->toArray();
+
+    Log::info("Pre-loaded " . count($this->clientCache) . " clients and " . count($this->accountCache) . " accounts");
   }
 
   /**
@@ -264,7 +267,7 @@ class ExcelProcessingService
    * @param string $pnRoExcel
    * @return User|null
    */
-  private function findUniversalBanker(string $pnRoExcel): ?User
+  public function findUniversalBanker(string $pnRoExcel): ?User
   {
     // Skip processing if empty or just a dash
     if (empty($pnRoExcel) || trim($pnRoExcel) === '-') {
@@ -305,7 +308,7 @@ class ExcelProcessingService
    * @param string $cif
    * @return Client|null
    */
-  private function findClient(string $cif): ?Client
+  public function findClient(string $cif): ?Client
   {
     if (empty($cif)) {
       return null;
@@ -315,52 +318,21 @@ class ExcelProcessingService
   }
 
   /**
-   * Find account product by code
-   * 
-   * @param string $code
-   * @return AccountProduct|null
-   */
-  private function findAccountProduct(string $code): ?AccountProduct
-  {
-    if (empty($code)) {
-      return null;
-    }
-
-    return AccountProduct::where('code', $code)->first();
-  }
-
-  /**
-   * Find account by account number and client ID
+   * Find account by account number
    * 
    * @param string $accountNumber
-   * @param int $clientId
    * @return Account|null
    */
-  private function findAccount(string $accountNumber, int $clientId): ?Account
+  public function findAccount(string $accountNumber): ?Account
   {
     if (empty($accountNumber)) {
       return null;
     }
 
     return Account::where('account_number', $accountNumber)
-      ->where('client_id', $clientId)
       ->first();
   }
 
-  /**
-   * Prepare preview data for a new account
-   * 
-   * @param array &$rowDataForPreview Reference to row data array
-   * @param float $currentBalanceFromExcel Current balance from Excel
-   * @return void
-   */
-  private function prepareNewAccountPreview(array &$rowDataForPreview, float $currentBalanceFromExcel): void
-  {
-    $rowDataForPreview['status_account'] = 'not_found';
-    $rowDataForPreview['db_previous_balance'] = 0; // Saldo awal 0
-    $rowDataForPreview['calculated_transaction_amount'] = $currentBalanceFromExcel; // Setoran awal
-    $rowDataForPreview['action_description'] = "Buat Rekening Baru dengan saldo " . number_format($currentBalanceFromExcel, 2);
-  }
 
   /**
    * Prepare preview data for an existing account
@@ -572,27 +544,6 @@ class ExcelProcessingService
     $currentBalanceFinal = $this->formatCurrency($rowFromPreview['editable_current_balance']);
     $availableBalanceFinal = $this->formatCurrency($rowFromPreview['editable_available_balance']);
 
-    // Handle new account creation
-    if (!$account && isset($rowFromPreview['action_account']) && $rowFromPreview['action_account'] === 'create_new') {
-      if (!$this->createNewAccount(
-        $rowFromPreview,
-        $client,
-        $universalBanker,
-        $currentBalanceFinal,
-        $availableBalanceFinal,
-        $universalBankersAffected
-      )) {
-        return false;
-      }
-      return true;
-    }
-    // Handle account not found
-    elseif (!$account) {
-      Log::warning("Finalisasi: Rekening tidak ditemukan untuk ID: " .
-        ($rowFromPreview['db_account_id'] ?? 'N/A'), ['data' => $rowFromPreview]);
-      return false;
-    }
-
     // Update existing account
     $previousBalanceDb = (float)$rowFromPreview['db_previous_balance'];
     $transactionAmountFinal = $currentBalanceFinal - $previousBalanceDb;
@@ -628,65 +579,6 @@ class ExcelProcessingService
     }
   }
 
-  /**
-   * Create a new account during finalization
-   * 
-   * @param array $rowFromPreview Row data from preview
-   * @param Client $client Client object
-   * @param User $universalBanker Universal Banker object
-   * @param float $currentBalanceFinal Final current balance
-   * @param float $availableBalanceFinal Final available balance
-   * @param array &$universalBankersAffected Reference to affected UBs array
-   * @return bool Whether creation was successful
-   */
-  private function createNewAccount(
-    array $rowFromPreview,
-    Client $client,
-    User $universalBanker,
-    float $currentBalanceFinal,
-    float $availableBalanceFinal,
-    array &$universalBankersAffected
-  ): bool {
-    try {
-      $accountProduct = AccountProduct::find($rowFromPreview['db_account_product_id']);
-      if (!$accountProduct) {
-        Log::warning("Finalisasi: Produk Akun tidak ditemukan untuk ID: " .
-          ($rowFromPreview['db_account_product_id'] ?? 'N/A'), ['data' => $rowFromPreview]);
-        return false;
-      }
-
-      $account = Account::create([
-        'client_id' => $client->id,
-        'account_product_id' => $accountProduct->id,
-        'universal_banker_id' => $universalBanker->id,
-        'account_number' => $rowFromPreview['account_number'],
-        'current_balance' => $currentBalanceFinal,
-        'available_balance' => $availableBalanceFinal,
-        'currency' => $rowFromPreview['original_excel_row'][self::COL_CURRENCY] ?? 'IDR',
-        'status' => 'active',
-        'opened_at' => $this->reportDate,
-        'last_transaction_at' => $this->reportDate,
-      ]);
-
-      // Create initial deposit transaction
-      $this->createTransactionRecord(
-        $account->id,
-        $currentBalanceFinal,
-        0,
-        $currentBalanceFinal
-      );
-
-      $universalBankersAffected[$universalBanker->id] = true;
-      Log::info("Finalisasi: Rekening baru dibuat - No: {$account->account_number}");
-      return true;
-    } catch (\Exception $e) {
-      Log::error("Finalisasi: Gagal membuat rekening baru - " . $e->getMessage(), [
-        'exception' => $e,
-        'data' => $rowFromPreview
-      ]);
-      return false;
-    }
-  }
 
   /**
    * Create a transaction record
@@ -759,6 +651,39 @@ class ExcelProcessingService
       }
     }
   }
+
+  /**
+   * Save validated data after user confirmation.
+   *
+   * @param array $dataToSave
+   * @param string $reportDate
+   * @param bool $overrideExisting
+   * @return array
+   */
+  public function saveValidatedData(array $dataToSave, string $reportDate, bool $overrideExisting = false): array
+  {
+    try {
+      $collection = collect($dataToSave);
+      $processedCount = $this->finalizeAccountData($collection, $reportDate);
+
+      return [
+        'success' => true,
+        'message' => "Berhasil menyimpan {$processedCount} data Universal Banker.",
+        'processed_count' => $processedCount
+      ];
+    } catch (\Exception $e) {
+      Log::error('Error saving validated data', [
+        'error' => $e->getMessage(),
+        'trace' => $e->getTraceAsString()
+      ]);
+
+      return [
+        'success' => false,
+        'message' => 'Gagal menyimpan data: ' . $e->getMessage()
+      ];
+    }
+  }
+
 
   /**
    * Format currency value, removing separators and handling scientific notation.

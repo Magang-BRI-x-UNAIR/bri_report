@@ -16,7 +16,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
             <ol className="inline-flex items-center space-x-1 md:space-x-2">
                 <li className="inline-flex items-center">
                     <Link
-                        href={route("dashboard")}
+                        href={route("dashboard.index")}
                         className="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700"
                     >
                         <Home className="mr-2 h-4 w-4" />

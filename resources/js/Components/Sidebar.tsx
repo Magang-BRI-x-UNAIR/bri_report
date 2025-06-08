@@ -57,7 +57,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                 {/* Sidebar header */}
                 <div className="flex h-16 items-center justify-between border-b border-[#0063bc]/30 px-4">
                     <Link
-                        href={route("dashboard")}
+                        href={route("dashboard.index")}
                         className="flex items-center"
                     >
                         <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#F37021]/80 shadow-md shadow-[#00529C]/30">
@@ -83,10 +83,10 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                 <div className="custom-scrollbar flex h-[calc(100%-4rem)] flex-col overflow-y-auto py-4">
                     <nav className="flex-grow space-y-1 px-3">
                         <SidebarItem
-                            href="dashboard"
+                            href="dashboard.index"
                             icon={Home}
                             text="Dashboard"
-                            isActive={route().current("dashboard")}
+                            isActive={route().current("dashboard.index")}
                         />
 
                         <SidebarSection title="Akun Saya">

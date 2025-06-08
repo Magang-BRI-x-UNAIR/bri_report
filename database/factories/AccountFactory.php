@@ -17,9 +17,8 @@ class AccountFactory extends Factory
      */
     public function definition(): array
     {
-        // Generate bank account number with BRI format (15 digits)
-        $prefix = "4";  // BRI account number typically starts with 4
-        $randomPart = $this->faker->numerify('##############');
+        $prefix = "9";
+        $randomPart = $this->faker->numerify('############');
         $accountNumber = $prefix . $randomPart;
 
         // Generate reasonable balances 
@@ -46,9 +45,6 @@ class AccountFactory extends Factory
             'currency' => $currency,
             'status' => $status,
             'opened_at' => $openedAt,
-            // client_id will be assigned in the seeder
-            // account_product_id will be assigned in the seeder
-            // universal_banker_id will be assigned in the seeder
         ];
     }
 

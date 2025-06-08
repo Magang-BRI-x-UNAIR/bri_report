@@ -19,13 +19,8 @@ class ClientFactory extends Factory
      */
     public function definition(): array
     {
-        // Generate a realistic CIF (Customer Information File) number
-        // Format: BRI-YYYYMM-XXXXX where XXXXX is a random number
         $joinDate = $this->faker->dateTimeBetween('-5 years', 'now');
-        $joinYear = Carbon::parse($joinDate)->format('Y');
-        $joinMonth = Carbon::parse($joinDate)->format('m');
-        $randomNumber = str_pad($this->faker->unique()->numberBetween(10000, 99999), 5, '0', STR_PAD_LEFT);
-        $cif = "BRI-{$joinYear}{$joinMonth}-{$randomNumber}";
+        $cif = $this->generateCustomCif();
 
         // Generate client name - using Indonesian locale for more realistic names
         $this->faker->locale();
@@ -115,5 +110,121 @@ class ClientFactory extends Factory
                 'joined_at' => $oldDate,
             ];
         });
+    }
+
+    /**
+     * Generate custom CIF format based on client name
+     * 
+     * @param string $name Client name to derive CIF from
+     * @return string
+     */
+    private function generateCustomCif(string $name = null): string
+    {
+        // Jika nama tidak disediakan, gunakan nama acak
+        if ($name === null) {
+            $this->faker->locale();
+            $name = $this->faker->name();
+        }
+
+        // Patterns berdasarkan contoh CIF yang diberikan
+        $patterns = [
+            // Pattern 1: RLXB439 - RIALDO FAUZIE ANDRIA
+            // 4 huruf dari nama + 3 angka
+            function ($name) {
+                $initials = $this->extractInitialsFromName($name, 4);
+                $numbers = $this->faker->numerify('###');
+                return $initials . $numbers;
+            },
+
+            // Pattern 2: SHPML26 - SHIENNY IRAWATY
+            // 5 huruf dari nama + 2 angka
+            function ($name) {
+                $initials = $this->extractInitialsFromName($name, 5);
+                $numbers = $this->faker->numerify('##');
+                return $initials . $numbers;
+            },
+
+            // Pattern 3: H114781 - HARGIANTO BN HARJOSI
+            // 1 huruf dari nama (inisial pertama) + 6 angka
+            function ($name) {
+                $firstInitial = $this->extractInitialsFromName($name, 1);
+                $numbers = $this->faker->numerify('######');
+                return $firstInitial . $numbers;
+            },
+
+            // Pattern 4: A284203 - ARMUNAH BN ALIMUN
+            // 1 huruf dari nama (inisial pertama) + 6 angka
+            function ($name) {
+                $firstInitial = $this->extractInitialsFromName($name, 1);
+                $numbers = $this->faker->numerify('######');
+                return $firstInitial . $numbers;
+            }
+        ];
+
+        // Pilih pola secara acak
+        $patternFunction = $this->faker->randomElement($patterns);
+
+        // Generate CIF berdasarkan pola yang dipilih dan nama nasabah
+        return $patternFunction($name);
+    }
+
+    /**
+     * Extract initials or meaningful characters from a name
+     * 
+     * @param string $name Full name to extract initials from
+     * @param int $length Number of characters to extract
+     * @return string Extracted initials
+     */
+    private function extractInitialsFromName(string $name, int $length): string
+    {
+        $name = strtoupper(trim($name));
+        $result = '';
+        $words = explode(' ', $name);
+
+        // Strategy 1: Extract first letter of each word
+        if (count($words) >= $length) {
+            foreach ($words as $word) {
+                if (strlen($word) > 0 && strlen($result) < $length) {
+                    $result .= substr($word, 0, 1);
+                }
+            }
+        }
+
+        // Strategy 2: Extract first two letters from first name and first letters from other names
+        if (strlen($result) < $length) {
+            $result = '';
+            $firstWord = reset($words);
+
+            if (strlen($firstWord) >= 2) {
+                $result .= substr($firstWord, 0, min(3, strlen($firstWord)));
+            } elseif (!empty($firstWord)) {
+                $result .= $firstWord;
+            }
+
+            for ($i = 1; $i < count($words) && strlen($result) < $length; $i++) {
+                $word = $words[$i];
+                if (strlen($word) > 0) {
+                    $result .= substr($word, 0, 1);
+                }
+            }
+        }
+
+        // Strategy 3: Use available characters if we still don't have enough
+        if (strlen($result) < $length) {
+            $nameWithoutSpaces = str_replace(' ', '', $name);
+            $remainingLength = $length - strlen($result);
+
+            if (strlen($nameWithoutSpaces) > strlen($result)) {
+                $additionalChars = substr($nameWithoutSpaces, strlen($result), $remainingLength);
+                $result .= $additionalChars;
+            }
+        }
+
+        // Fill with random letters if we still need more characters
+        while (strlen($result) < $length) {
+            $result .= chr(rand(65, 90)); // Random uppercase letter
+        }
+
+        return substr($result, 0, $length);
     }
 }

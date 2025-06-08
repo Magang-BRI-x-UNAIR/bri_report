@@ -75,7 +75,7 @@ const Navbar = () => {
                             {/* Tombol Dashboard hanya muncul jika user sudah login */}
                             {auth.user && (
                                 <NavLink
-                                    href={route("dashboard")}
+                                    href={route("dashboard.index")}
                                     label="Dashboard"
                                     isScrolled={isScrolled}
                                 />
@@ -174,7 +174,7 @@ const Navbar = () => {
                         {auth.user ? (
                             <>
                                 <MobileNavLink
-                                    href={route("dashboard")}
+                                    href={route("dashboard.index")}
                                     label="Dashboard"
                                     isScrolled={isScrolled}
                                 />

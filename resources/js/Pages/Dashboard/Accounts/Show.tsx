@@ -365,34 +365,6 @@ const AccountsShow = () => {
         });
     }, [account.account_transactions, chartPeriod]);
 
-    // Prepare monthly transaction data
-    const monthlyTransactionData = useMemo(() => {
-        const months: Record<string, { credit: number; debit: number }> = {};
-
-        account.account_transactions.forEach((tx) => {
-            const date = new Date(tx.created_at);
-            const monthYear = `${date.getMonth() + 1}/${date.getFullYear()}`;
-
-            if (!months[monthYear]) {
-                months[monthYear] = { credit: 0, debit: 0 };
-            }
-
-            if (tx.amount > 0) {
-                months[monthYear].credit += tx.amount;
-            } else {
-                months[monthYear].debit += Math.abs(tx.amount);
-            }
-        });
-
-        return Object.entries(months)
-            .map(([month, data]) => ({
-                month,
-                credit: data.credit,
-                debit: data.debit,
-            }))
-            .slice(-6); // Get last 6 months
-    }, [account.account_transactions]);
-
     // Filter transactions based on search and filters
     const filteredTransactions = account.account_transactions
         .filter((transaction) => {
@@ -466,37 +438,6 @@ const AccountsShow = () => {
         return null;
     };
 
-    const PieChartTooltip = ({ active, payload }: any) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-white p-4 shadow-lg rounded-lg border border-gray-100">
-                    <div className="flex items-center gap-2 mb-1">
-                        <div
-                            className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: payload[0].payload.fill }}
-                        ></div>
-                        <p className="text-sm font-semibold">
-                            {payload[0].name}
-                        </p>
-                    </div>
-                    <p className="text-base font-bold text-gray-800">
-                        {formatCurrency(payload[0].value)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">
-                        {(
-                            (payload[0].value /
-                                (transactionStats.totalCredit +
-                                    transactionStats.totalDebit)) *
-                            100
-                        ).toFixed(1)}
-                        % dari total
-                    </p>
-                </div>
-            );
-        }
-        return null;
-    };
-
     const BarChartTooltip = ({ active, payload, label }: any) => {
         if (active && payload && payload.length) {
             return (
@@ -532,64 +473,6 @@ const AccountsShow = () => {
             );
         }
         return null;
-    };
-
-    const renderActiveShape = (props: any) => {
-        const {
-            cx,
-            cy,
-            innerRadius,
-            outerRadius,
-            startAngle,
-            endAngle,
-            fill,
-            payload,
-            percent,
-            value,
-        } = props;
-
-        return (
-            <g>
-                <text
-                    x={cx}
-                    y={cy}
-                    dy={-20}
-                    textAnchor="middle"
-                    fill="#888"
-                    className="text-xs"
-                >
-                    {payload.name}
-                </text>
-                <text
-                    x={cx}
-                    y={cy}
-                    textAnchor="middle"
-                    fill="#333"
-                    className="text-base font-semibold"
-                >
-                    {formatCompactCurrency(value)}
-                </text>
-                <text
-                    x={cx}
-                    y={cy}
-                    dy={20}
-                    textAnchor="middle"
-                    fill="#888"
-                    className="text-xs"
-                >
-                    {`${(percent * 100).toFixed(1)}%`}
-                </text>
-                <Sector
-                    cx={cx}
-                    cy={cy}
-                    innerRadius={innerRadius}
-                    outerRadius={outerRadius + 5}
-                    startAngle={startAngle}
-                    endAngle={endAngle}
-                    fill={fill}
-                />
-            </g>
-        );
     };
 
     const [activeIndex, setActiveIndex] = useState(0);
@@ -648,15 +531,6 @@ const AccountsShow = () => {
                                         <h2 className="text-2xl font-bold text-white">
                                             {account.account_number}
                                         </h2>
-                                        <Badge
-                                            variant="secondary"
-                                            className="bg-blue-800/30 text-white border-blue-700/50 hover:bg-blue-800/30"
-                                        >
-                                            BRI-A-
-                                            {account.id
-                                                .toString()
-                                                .padStart(4, "0")}
-                                        </Badge>
                                     </div>
                                     <Link
                                         href={route(
@@ -1625,10 +1499,6 @@ const AccountsShow = () => {
                                     <h3 className="text-center text-lg font-medium text-gray-900">
                                         {account.account_number}
                                     </h3>
-                                    <p className="text-center text-sm text-gray-500">
-                                        ID: BRI-A-
-                                        {account.id.toString().padStart(4, "0")}
-                                    </p>
                                 </div>
 
                                 <div className="space-y-4">
@@ -1638,16 +1508,9 @@ const AccountsShow = () => {
                                             <p className="text-sm font-medium text-gray-700">
                                                 Nama Nasabah
                                             </p>
-                                            <Link
-                                                href={route(
-                                                    "clients.show",
-                                                    account.client.id
-                                                )}
-                                            >
-                                                <p className="text-sm text-blue-600 mt-1 hover:underline">
-                                                    {account.client.name}
-                                                </p>
-                                            </Link>
+                                            <p className="text-sm text-gray-600 mt-1">
+                                                {account.client.name}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -1701,7 +1564,7 @@ const AccountsShow = () => {
                                         <Users className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
                                         <div>
                                             <p className="text-sm font-medium text-gray-700">
-                                                UniversalBanker
+                                                Universal Banker
                                             </p>
                                             <p className="text-sm text-gray-600 mt-1">
                                                 {account.universal_banker.name}

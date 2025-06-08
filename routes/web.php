@@ -6,6 +6,7 @@ use App\Http\Controllers\ClientController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BranchController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\UserController;
 use Inertia\Inertia;
 
@@ -21,14 +22,23 @@ Route::get('/', function () {
 Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/', function () {
         return Inertia::render('Dashboard/Index');
-    })->middleware(['auth', 'verified'])->name('dashboard');
+    })->middleware(['auth', 'verified'])->name('dashboard.index');
+
+    Route::controller(DashboardController::class)->group(function () {
+        Route::get('import', 'import')->name('dashboard.import');
+        Route::post('import', 'process')->name('dashboard.process');
+        Route::post('import/save', 'saveImport')->name('dashboard.save');
+        Route::get('import/preview', 'preview')->name('dashboard.preview');
+        Route::get('import/preview/{batch_id}', 'previewPage')->name('dashboard.import.preview');
+        Route::get('import/status/{batch_id}', 'getImportStatus')->name('dashboard.import.status');
+    });
 
     Route::resource('account-products', AccountProductController::class);
 
     Route::prefix('clients/{client}/accounts')->controller(ClientController::class)->group(function () {
         Route::get('create', 'createAccount')->name('clients.accounts.create');
         Route::post('/',  'storeAccount')->name('clients.accounts.store');
-        Route::get('{account}/edit',  'editAccount')->name('clients.accounts.edit');
+        Route::get('{account:id}/edit',  'editAccount')->name('clients.accounts.edit');
         Route::patch('{account}',  'updateAccount')->name('clients.accounts.update');
         Route::delete('{account}',  'destroyAccount')->name('clients.accounts.destroy');
         Route::get('{account}',  'showAccount')->name('clients.accounts.show');

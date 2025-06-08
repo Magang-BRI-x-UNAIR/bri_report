@@ -6,20 +6,39 @@ use App\Models\User;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreUserRequest;
 use App\Http\Requests\UpdateUserRequest;
-use App\Models\Branch;
+use App\Services\ExcelProcessingService;
 use Inertia\Inertia;
-use App\Models\UniversalBankerDailyBalance;
+use App\Services\UserService;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
+    /**
+     * UserService instance.
+     *
+     * @var UserService
+     */
+    protected UserService $userService;
+
+
+    /**
+     * Create a new controller instance.
+     *
+     * @param UserService $userService
+     * @return void
+     */
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        //
         return Inertia::render('Dashboard/UniversalBankers/Index', [
-            'universalBankers' => User::role('universal_banker')->with(['branch'])->get(),
+            'universalBankers' => $this->userService->getAllUniversalBankers(),
         ]);
     }
 
@@ -28,9 +47,8 @@ class UserController extends Controller
      */
     public function create()
     {
-        //
         return Inertia::render('Dashboard/UniversalBankers/Create', [
-            'branches' => Branch::all(),
+            'branches' => $this->userService->getAllBranches(),
         ]);
     }
 
@@ -39,15 +57,19 @@ class UserController extends Controller
      */
     public function store(StoreUserRequest $request)
     {
-        //
         $validatedData = $request->validated();
+
         try {
-            $validatedData['password'] = bcrypt($validatedData['password']);
-            $user = User::create($validatedData);
-            $user->assignRole('universal_banker');
-            return redirect()->route('universalBankers.index')->with('success', 'UniversalBanker created successfully!');
+            $this->userService->createUniversalBanker($validatedData);
+            return redirect()->route('universalBankers.index')
+                ->with('success', 'Universal Banker created successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to create universalBanker: ' . $e->getMessage());
+            Log::error('Failed to create Universal Banker', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()
+                ->with('error', 'Failed to create Universal Banker: ' . $e->getMessage());
         }
     }
 
@@ -56,99 +78,21 @@ class UserController extends Controller
      */
     public function show(User $universalBanker)
     {
-        // Load universalBanker relationships
-        $universalBanker->load([
-            'branch',
-            'accounts',
-            'accounts.client',
-            'accounts.accountProduct',
-        ]);
+        $details = $this->userService->getUniversalBankerDetails($universalBanker);
 
-
-        // Get clients handled by this universalBanker (unique clients)
-        $clients = $universalBanker->accounts->pluck('client')->unique('id')->values();
-
-        // Get accounts with eager loading
-        $accounts = $universalBanker->accounts()
-            ->with(['client', 'accountProduct'])
-            ->where('status', 'active')
-            ->get();
-
-        // Get date range - last 60 days
-        $endDate = now()->format('Y-m-d');
-        $startDate = now()->subDays(365)->format('Y-m-d');
-
-        // Get the universalBanker's daily balance data
-        $universalBankerDailyBalances = UniversalBankerDailyBalance::where('universal_banker_id', $universalBanker->id)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->orderBy('date', 'asc')
-            ->get();
-
-        // Calculate account statistics
-        $accountStats = [
-            'total' => $accounts->count(),
-            'byStatus' => $accounts->groupBy('status')
-                ->map(fn($group) => $group->count()),
-            'byAccountProduct' => $accounts->groupBy('account_product.name')
-                ->map(fn($group) => $group->count()),
-            'totalBalance' => UniversalBankerDailyBalance::where('universal_banker_id', $universalBanker->id)
-                ->where('date', $endDate)
-                ->first()
-                ?->total_balance ?? 0,
-        ];
-
-        // Get recent accounts
-        $recentAccounts = $universalBanker->accounts()->orderBy('opened_at', 'desc')->take(5)->get();
-
-
-
-        // Format for frontend
-        $dailyBalances = $universalBankerDailyBalances->map(function ($record) {
-            return [
-                'date' => $record->date->format('Y-m-d'),
-                'totalBalance' => (float)$record->total_balance,
-                'formattedDate' => $record->date->format('d M'),
-                'change' => (float)$record->daily_change,
-            ];
-        });
-
-        $highestBalance = 0;
-        $lowestBalance = PHP_FLOAT_MAX;
-
-        // Only calculate if we have data
-        $highestBalance = $dailyBalances->max('totalBalance');
-        $lowestBalance = $dailyBalances->min('totalBalance');
-
-        // Calculate total change from first to last day
-        $firstBalance = $dailyBalances->first()['totalBalance'] ?? 0;
-        $lastBalance = $dailyBalances->last()['totalBalance'] ?? 0;
-        $totalChange = $lastBalance - $firstBalance;
-        $percentageChange = $firstBalance > 0 ? ($totalChange / $firstBalance * 100) : 0;
-
-        return Inertia::render('Dashboard/UniversalBankers/Show', [
-            'universalBanker' => $universalBanker,
-            'accountStats' => $accountStats,
-            'clients' => $clients,
-            'recentAccounts' => $recentAccounts,
-            'dailyBalances' => $dailyBalances,
-            'highestBalance' => $highestBalance,
-            'lowestBalance' => $lowestBalance,
-            'totalChange' => $totalChange,
-            'percentageChange' => $percentageChange,
-        ]);
+        return Inertia::render('Dashboard/UniversalBankers/Show', $details);
     }
-
 
     /**
      * Show the form for editing the specified resource.
      */
     public function edit(User $universalBanker)
     {
-        //
         $universalBanker->load('branch');
+
         return Inertia::render('Dashboard/UniversalBankers/Edit', [
             'user' => $universalBanker,
-            'branches' => Branch::all(),
+            'branches' => $this->userService->getAllBranches(),
         ]);
     }
 
@@ -157,25 +101,21 @@ class UserController extends Controller
      */
     public function update(UpdateUserRequest $request, User $universalBanker)
     {
-        //
         $validatedData = $request->validated();
+
         try {
-            if ($validatedData['is_change_password'] && !empty($validatedData['password'])) {
-                $validatedData['password'] = bcrypt($validatedData['password']);
-            } else {
-                unset($validatedData['password']);
-            }
-            $universalBanker->update([
-                'name' => $validatedData['name'],
-                'email' => $validatedData['email'],
-                'phone' => $validatedData['phone'] ?? null,
-                'address' => $validatedData['address'] ?? null,
-                'branch_id' => $validatedData['branch_id'],
-                'password' => $validatedData['password'] ?? $universalBanker->password, // Keep old password if not changing
-            ]);
-            return redirect()->route('universalBankers.index')->with('success', 'UniversalBanker updated successfully!');
+            $this->userService->updateUniversalBanker($universalBanker, $validatedData);
+
+            return redirect()->route('universalBankers.index')
+                ->with('success', 'Universal Banker updated successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to update universalBanker: ' . $e->getMessage());
+            Log::error('Failed to update Universal Banker', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Failed to update Universal Banker: ' . $e->getMessage());
         }
     }
 
@@ -184,12 +124,19 @@ class UserController extends Controller
      */
     public function destroy(User $universalBanker)
     {
-        //
         try {
-            $universalBanker->delete();
-            return redirect()->route('universalBankers.index')->with('success', 'UniversalBanker deleted successfully!');
+            $this->userService->deleteUniversalBanker($universalBanker);
+
+            return redirect()->route('universalBankers.index')
+                ->with('success', 'Universal Banker deleted successfully!');
         } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Failed to delete universalBanker: ' . $e->getMessage());
+            Log::error('Failed to delete Universal Banker', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return redirect()->back()
+                ->with('error', 'Failed to delete Universal Banker: ' . $e->getMessage());
         }
     }
 }
