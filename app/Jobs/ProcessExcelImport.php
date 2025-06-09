@@ -2,8 +2,8 @@
 
 namespace App\Jobs;
 
-use App\Imports\UniversalBankerImport; // Import class Importer
-use App\Services\ExcelProcessingService; // Import Service
+use App\Imports\UniversalBankerImport;
+use App\Services\ExcelProcessingService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -44,7 +44,6 @@ class ProcessExcelImport implements ShouldQueue
 
             $previewData = $importer->getPreviewData();
 
-            // Simpan hasil ke Cache
             Cache::put($this->cacheKey, ['status' => 'completed', 'data' => $previewData], now()->addHour());
         } catch (\Exception $e) {
             Log::error('Job ProcessExcelImport Gagal', ['cacheKey' => $this->cacheKey, 'error' => $e->getMessage()]);

@@ -76,6 +76,7 @@ class DashboardController extends Controller
                 $request->input('report_date'),
                 $cacheKey
             );
+
             return Inertia::location(route('dashboard.import.preview', ['batch_id' => $cacheKey]));
         } catch (\Exception $e) {
             Log::error('Gagal mengirim job import', ['error' => $e->getMessage()]);

@@ -19,9 +19,17 @@ import {
     RefreshCw,
     AlertCircle,
     FileX,
+    AlertTriangle,
+    FileSpreadsheet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/Components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
+} from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
 import {
     Table,
@@ -36,15 +44,32 @@ import type { PageProps } from "@/types";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
-// --- Tipe Data ---
 interface PreviewRow {
-    [key: string]: any;
+    account_number: string;
+    available_balance?: number;
+    balance_change?: number;
+    change_percent: number;
+    cif?: string;
+    client_name?: string;
+    current_balance?: number;
+    db_account_id?: string;
+    db_client_id?: string;
+    db_previous_balance?: number;
+    db_universal_banker_id?: string;
+    editable_available_balance?: number;
+    editable_current_balance?: number;
+    previous_available_balance?: number;
+    previous_balance?: number;
+    universal_banker_name?: string;
 }
 interface PreviewSummary {
     total_rows_in_excel?: number;
+    valid_rows?: number;
+    skipped_rows?: number;
 }
 interface PreviewData {
     report_date?: string;
+    errors?: { row_number: number; errors: string[] }[];
     valid_rows?: PreviewRow[];
     summary?: PreviewSummary;
 }
@@ -149,7 +174,6 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
         router.post(
             route("dashboard.save"),
             {
-                dataToSave: previewData.valid_rows,
                 reportDate: previewData.report_date,
             },
             {
@@ -252,207 +276,311 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
     );
 
     const renderCompleted = () => {
-        if (!previewData) return renderFailed();
-        const { valid_rows = [], summary, report_date } = previewData;
+        if (!previewData) return renderFailed(); // Fallback jika data tidak ada
+
+        const {
+            valid_rows = [],
+            errors = [],
+            summary,
+            report_date,
+        } = previewData;
+
+        // Jika tidak ada data sama sekali yang valid atau error (kasus aneh)
+        if (valid_rows.length === 0 && errors.length === 0) {
+            return (
+                <Card className="shadow-xl border-0 overflow-hidden animate-fadeIn">
+                    <CardContent className="flex flex-col items-center py-16">
+                        <FileX className="h-16 w-16 text-gray-400 mb-4" />
+                        <h2 className="text-xl font-semibold text-gray-800 mb-2">
+                            Tidak Ada Data Ditemukan
+                        </h2>
+                        <p className="text-gray-600 max-w-sm text-center">
+                            File yang Anda unggah tidak berisi data yang dapat
+                            diproses. Silakan periksa kembali file Anda dan coba
+                            lagi.
+                        </p>
+                        <Link href={route("dashboard.import")} className="mt-6">
+                            <Button className="bg-[#00529C] hover:bg-[#004A8C]">
+                                <ChevronLeft className="h-4 w-4 mr-2" />
+                                Kembali ke Halaman Import
+                            </Button>
+                        </Link>
+                    </CardContent>
+                </Card>
+            );
+        }
 
         return (
-            <div className="space-y-6">
-                {/* Header Info */}
+            <div className="space-y-6 animate-fadeIn">
+                {/* Kartu Header Utama */}
                 <Card className="shadow-lg border-0 overflow-hidden">
-                    <div className="relative overflow-hidden bg-gradient-to-r from-emerald-500 to-green-500 p-6">
-                        <div className="absolute -top-10 right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
-                        <div className="absolute bottom-0 left-10 w-24 h-24 bg-white/5 rounded-full blur-xl"></div>
-
-                        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
-                            <div className="flex items-start gap-4">
-                                <div className="p-3 bg-white/20 backdrop-blur-md rounded-xl">
+                    <div className="bg-gradient-to-r from-emerald-500 to-green-600 p-6">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
                                     <FileCheck2 className="h-8 w-8 text-white" />
                                 </div>
                                 <div>
                                     <h2 className="text-2xl font-bold text-white">
-                                        Preview Data Siap Import
+                                        Proses Import Selesai
                                     </h2>
-                                    <div className="flex items-center gap-2 mt-1.5">
-                                        <CalendarIcon className="h-4 w-4 text-white/80" />
-                                        <span className="text-white/90">
-                                            Tanggal Laporan:{" "}
-                                            {format(
-                                                new Date(
-                                                    report_date || new Date()
-                                                ),
-                                                "dd MMMM yyyy",
-                                                { locale: id }
-                                            )}
-                                        </span>
-                                    </div>
+                                    <p className="text-white/80 mt-1">
+                                        Data telah divalidasi dan siap untuk
+                                        dikonfirmasi.
+                                    </p>
                                 </div>
                             </div>
-
-                            <Badge className="mt-4 md:mt-0 bg-white/20 text-white border-white/30 px-3 py-2 text-sm backdrop-blur-sm">
-                                {valid_rows.length || 0} Data Siap Import
-                            </Badge>
+                            <div className="flex-shrink-0">
+                                <Button
+                                    onClick={handleConfirmImport}
+                                    disabled={
+                                        saveProcessing ||
+                                        valid_rows.length === 0
+                                    }
+                                    className="bg-white text-green-700 font-bold hover:bg-green-50 px-6 py-3 h-auto text-base shadow-lg transition-transform hover:scale-105"
+                                >
+                                    {saveProcessing ? (
+                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                    ) : (
+                                        <CheckCircle2 className="mr-2 h-5 w-5" />
+                                    )}
+                                    Konfirmasi & Simpan
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </Card>
 
-                {/* Data Table */}
-                <Card className="shadow-lg border-0 overflow-hidden">
-                    <ScrollArea className="h-[500px]">
-                        <Table>
-                            <TableHeader className="bg-gray-50 sticky top-0 z-10">
-                                <TableRow className="border-b border-gray-200">
-                                    <TableHead className="w-14 text-center bg-gray-100/80 font-semibold text-gray-700">
-                                        No
-                                    </TableHead>
-                                    <TableHead className="bg-gray-100/80 font-semibold text-gray-700">
-                                        CIF
-                                    </TableHead>
-                                    <TableHead className="bg-gray-100/80 font-semibold text-gray-700">
-                                        Nama Nasabah
-                                    </TableHead>
-                                    <TableHead className="bg-gray-100/80 font-semibold text-gray-700">
-                                        No. Rekening
-                                    </TableHead>
-                                    <TableHead className="text-right bg-gray-100/80 font-semibold text-gray-700 whitespace-nowrap">
-                                        Saldo Baru
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {valid_rows.map((row, index) => {
-                                    const hasBalanceChange =
-                                        Number(row.previous_balance) !==
-                                        Number(row.current_balance);
+                {/* Kartu Statistik Ringkasan */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <Card className="shadow-md border-0">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-gray-500">
+                                Total Baris File
+                            </CardTitle>
+                            <FileSpreadsheet className="h-4 w-4 text-gray-400" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-gray-800">
+                                {summary?.total_rows_in_excel || 0}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                Total baris yang terdeteksi di file.
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card className="shadow-md border-0">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-green-600">
+                                Data Valid
+                            </CardTitle>
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-green-600">
+                                {valid_rows.length || 0}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                Data yang siap untuk diimpor.
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card className="shadow-md border-0">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-red-600">
+                                Data Invalid/Dilewati
+                            </CardTitle>
+                            <XCircle className="h-4 w-4 text-red-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-red-600">
+                                {summary?.skipped_rows || 0}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                Data yang tidak akan diimpor karena error.
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <Card className="shadow-md border-0">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium text-blue-600">
+                                Tanggal Laporan
+                            </CardTitle>
+                            <CalendarIcon className="h-4 w-4 text-blue-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-blue-600">
+                                {format(
+                                    new Date(report_date || new Date()),
+                                    "dd MMM",
+                                    { locale: id }
+                                )}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                                {format(
+                                    new Date(report_date || new Date()),
+                                    "yyyy",
+                                    { locale: id }
+                                )}
+                            </p>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                                    return (
+                {/* Bagian Detail Data Valid */}
+                <Card className="shadow-lg border-0 overflow-hidden">
+                    <CardHeader>
+                        <CardTitle>
+                            Detail Data Valid yang Akan Diimpor
+                        </CardTitle>
+                        <CardDescription>
+                            Berikut adalah {valid_rows.length} baris yang akan
+                            diperbarui di database setelah Anda konfirmasi.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <ScrollArea className="h-[400px] border rounded-lg">
+                            <Table>
+                                <TableHeader className="bg-slate-50 sticky top-0 z-10">
+                                    <TableRow>
+                                        <TableHead className="w-14 text-center">
+                                            No
+                                        </TableHead>
+                                        <TableHead>Nasabah & Akun</TableHead>
+                                        <TableHead>Universal Banker</TableHead>
+                                        <TableHead className="text-right">
+                                            Saldo Saat Ini
+                                        </TableHead>
+                                        <TableHead className="text-right">
+                                            Saldo Tersedia
+                                        </TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {valid_rows.map((row, index) => (
                                         <TableRow
                                             key={index}
-                                            className={`
-                                                border-b border-gray-100 hover:bg-blue-50/30
-                                                ${
-                                                    hasBalanceChange
-                                                        ? "bg-green-50/30"
-                                                        : ""
-                                                }
-                                                ${
-                                                    index % 2 !== 0
-                                                        ? "bg-gray-50/50"
-                                                        : ""
-                                                }
-                                            `}
+                                            className="hover:bg-green-50/40"
                                         >
-                                            <TableCell className="font-medium text-center">
+                                            <TableCell className="text-center font-medium text-gray-500">
                                                 {index + 1}
                                             </TableCell>
                                             <TableCell>
-                                                <div className="font-mono text-sm">
-                                                    {row.client_cif || row.cif}
+                                                <div className="font-medium text-gray-800">
+                                                    {row.client_name || "N/A"}
+                                                </div>
+                                                <div className="text-xs text-gray-500 font-mono">
+                                                    {row.account_number ||
+                                                        "N/A"}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <div className="font-medium">
-                                                    {row.client_name}
-                                                </div>
-                                                {row.universal_banker_name && (
-                                                    <div className="text-xs text-gray-500 mt-0.5">
-                                                        Universal Banker:{" "}
-                                                        {
-                                                            row.universal_banker_name
-                                                        }
-                                                    </div>
-                                                )}
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="font-mono text-sm">
-                                                    {row.account_number}
-                                                </div>
+                                                {row.universal_banker_name ||
+                                                    "N/A"}
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <BalanceChange
                                                     before={Number(
-                                                        row.previous_balance ||
-                                                            row.db_previous_balance ||
+                                                        row.db_previous_balance ||
                                                             0
                                                     )}
                                                     after={Number(
-                                                        row.current_balance ||
-                                                            row.editable_current_balance ||
+                                                        row.editable_current_balance ||
                                                             0
                                                     )}
                                                 />
                                             </TableCell>
+                                            <TableCell className="text-right">
+                                                <BalanceChange
+                                                    before={Number(
+                                                        row.previous_available_balance ||
+                                                            0
+                                                    )}
+                                                    after={Number(
+                                                        row.editable_available_balance ||
+                                                            0
+                                                    )}
+                                                    showArrow={false}
+                                                />
+                                            </TableCell>
                                         </TableRow>
-                                    );
-                                })}
-                                {valid_rows.length === 0 && (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={5}
-                                            className="h-32 text-center"
-                                        >
-                                            <div className="flex flex-col items-center justify-center">
-                                                <FileX className="h-10 w-10 text-gray-400 mb-2" />
-                                                <p className="text-gray-500">
-                                                    Tidak ada data valid yang
-                                                    dapat diimport
-                                                </p>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </ScrollArea>
-                </Card>
-
-                {/* Footer Action Buttons */}
-                <Card className="border-0 shadow-md bg-gray-50 overflow-hidden">
-                    <CardContent className="p-6">
-                        <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
-                            <Link href={route("dashboard.import")}>
-                                <Button
-                                    variant="outline"
-                                    disabled={saveProcessing}
-                                    className="w-full sm:w-auto border-gray-300"
-                                >
-                                    <ChevronLeft className="mr-2 h-4 w-4" />
-                                    Kembali & Upload Ulang
-                                </Button>
-                            </Link>
-
-                            <Button
-                                onClick={handleConfirmImport}
-                                disabled={
-                                    saveProcessing || valid_rows.length === 0
-                                }
-                                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-6 min-w-[180px] w-full sm:w-auto shadow-md"
-                            >
-                                {saveProcessing ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                                        <span className="text-base">
-                                            Menyimpan...
-                                        </span>
-                                    </>
-                                ) : (
-                                    <>
-                                        <CheckCircle2 className="mr-2 h-5 w-5" />
-                                        <span className="text-base">
-                                            Konfirmasi & Import Data
-                                        </span>
-                                    </>
-                                )}
-                            </Button>
-                        </div>
-
-                        {valid_rows.length > 0 && (
-                            <div className="text-center text-sm text-gray-500 mt-4">
-                                Data yang telah diverifikasi akan disimpan ke
-                                database dan mengupdate saldo
-                            </div>
-                        )}
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </ScrollArea>
                     </CardContent>
                 </Card>
+
+                {/* Bagian untuk Error jika ada */}
+                {errors && errors.length > 0 && (
+                    <Card className="shadow-lg border-l-4 border-l-amber-500">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                                <CardTitle className="text-amber-800">
+                                    Detail Baris yang Dilewati
+                                </CardTitle>
+                            </div>
+                            <CardDescription>
+                                {errors.length} baris berikut tidak akan diimpor
+                                karena ada kesalahan.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrollArea className="h-[200px] border rounded-lg p-2">
+                                {errors.map((error, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="mb-2 p-3 bg-amber-50/60 rounded-md text-sm"
+                                    >
+                                        <p className="font-semibold text-amber-900">
+                                            Baris #{error.row_number}:{" "}
+                                            <span className="font-normal">
+                                                {Array.isArray(error.errors)
+                                                    ? error.errors.join(", ")
+                                                    : JSON.stringify(
+                                                          error.errors
+                                                      )}
+                                            </span>
+                                        </p>
+                                    </div>
+                                ))}
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Footer Aksi */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
+                    <Button
+                        onClick={handleConfirmImport}
+                        disabled={saveProcessing || valid_rows.length === 0}
+                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-8 py-6 text-lg w-full sm:w-auto shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                    >
+                        {saveProcessing ? (
+                            <>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                                <span>Menyimpan...</span>
+                            </>
+                        ) : (
+                            <>
+                                <CheckCircle2 className="mr-2 h-5 w-5" />
+                                <span>
+                                    Konfirmasi & Simpan {valid_rows.length} Data
+                                </span>
+                            </>
+                        )}
+                    </Button>
+                    <Link
+                        href={route("dashboard.import")}
+                        className="w-full sm:w-auto"
+                    >
+                        <Button variant="outline" className="w-full">
+                            <XCircle className="mr-2 h-4 w-4" /> Batalkan &
+                            Upload Ulang
+                        </Button>
+                    </Link>
+                </div>
             </div>
         );
     };
@@ -465,7 +593,6 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
             <div className="space-y-6 mb-8">
                 <Breadcrumb
                     items={[
-                        { label: "Dashboard", href: route("dashboard.index") },
                         {
                             label: "Import Data",
                             href: route("dashboard.import"),

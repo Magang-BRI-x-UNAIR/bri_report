@@ -4,17 +4,13 @@ namespace App\Services;
 
 use App\Models\Account;
 use App\Models\Client;
-use App\Models\AccountProduct;
 use App\Models\AccountTransaction;
 use App\Models\User;
 use App\Models\UniversalBankerDailyBalance;
-use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection as IlluminateCollection;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Services\Validators\ExcelRowValidator;
 use Illuminate\Support\Arr;
 
 
@@ -26,11 +22,6 @@ class ExcelProcessingService
    * @var string|null
    */
   private ?string $reportDate = null;
-  private array $universalBankerCache = [];
-  private array $clientCache = [];
-  private array $accountCache = [];
-  private array $processedNips = [];
-
   /**
    * Excel column mappings
    */
@@ -47,221 +38,6 @@ class ExcelProcessingService
   private const EPSILON = 0.0001;
 
   /**
-   * Generate preview data from the uploaded Excel file.
-   * Does not save anything to the main database tables yet.
-   *
-   * @param UploadedFile $file
-   * @return array ['report_date', 'valid_rows', 'summary', 'errors', 'universal_bankers_to_update_ids']
-   * @throws \InvalidArgumentException
-   */
-  public function parseAndValidateFile(UploadedFile $file, $date): array
-  {
-    $this->reportDate = Carbon::parse($date)->format('Y-m-d');
-
-    $validRowsForPreview = [];
-    $processingErrors = [];
-    $summary = [
-      'total_rows_in_excel' => 0,
-      'potential_accounts_to_update' => 0,
-      'potential_new_transactions' => 0,
-      'skipped_rows' => 0,
-    ];
-    $universalBankersAffectedPreview = [];
-
-    try {
-
-      $this->preloadUniversalBankers();
-
-      $excelDataCollections = Excel::toCollection(new \App\Imports\AccountDataImport, $file);
-
-      if ($excelDataCollections->isEmpty() || $excelDataCollections->first()->isEmpty()) {
-        throw new \InvalidArgumentException('File Excel kosong atau sheet pertama tidak mengandung data.');
-      }
-
-      $excelDataRows = $excelDataCollections->first();
-      $summary['total_rows_in_excel'] = $excelDataRows->count();
-
-      foreach ($excelDataRows as $index => $rowObject) {
-        $rowNumber = $index + 2;
-        $row = collect($rowObject->toArray())
-          ->filter(function ($value, $key) {
-            $requiredKeys = [
-              self::COL_CLIENT_CIF,
-              self::COL_CLIENT_NAME,
-              self::COL_ACCOUNT_NUMBER,
-              self::COL_PN_RELATIONSHIP_OFFICER,
-              self::COL_BALANCE,
-              self::COL_AVAIL_BALANCE
-            ];
-            return in_array($key, $requiredKeys) && $value !== null;
-          })
-          ->toArray();
-        $rowDataForPreview = $row;
-        // Validate the row data
-        $validator = new ExcelRowValidator($row);
-        if (!$validator->isValid()) {
-          $processingErrors[] = [
-            'row_number' => $rowNumber,
-            'errors' => $validator->getErrors(),
-            'data' => $row
-          ];
-
-          Log::warning("Baris {$rowNumber} tidak valid: " . json_encode($validator->getErrors()), [
-            'row_data' => $row
-          ]);
-          $summary['skipped_rows']++;
-          continue;
-        }
-
-        $validatedData = $validator->getValidatedData();
-
-        // Check for empty or invalid PN_RO
-        $pnRoValue = $validatedData[self::COL_PN_RELATIONSHIP_OFFICER] ?? '';
-        if (empty($pnRoValue) || trim($pnRoValue) === '-') {
-          $processingErrors[] = [
-            'row_number' => $rowNumber,
-            'error' => "PN Relationship Officer kosong atau tidak valid.",
-            'data' => $row
-          ];
-          $summary['skipped_rows']++;
-          Log::warning("Baris {$rowNumber} PN Relationship Officer kosong atau tidak valid.", [
-            'row_data' => $row
-          ]);
-          continue;
-        }
-
-        // Find the Universal Banker
-        $universalBanker = $this->findUniversalBanker($pnRoValue);
-        if (!$universalBanker) {
-          $processingErrors[] = [
-            'row_number' => $rowNumber,
-            'error' => "UB tidak ditemukan untuk kode: " . ($pnRoValue ?? 'N/A'),
-            'data' => $row
-          ];
-          $summary['skipped_rows']++;
-          Log::warning("Baris {$rowNumber} UB tidak ditemukan untuk kode: {$pnRoValue}", [
-            'row_data' => $row
-          ]);
-          continue;
-        }
-
-        // Find the Client
-        $clientCif = $validatedData[self::COL_CLIENT_CIF] ?? '';
-        $client = $this->findClient($clientCif);
-
-        if (!$client) {
-          $rowDataForPreview['status_client'] = 'not_found';
-          $processingErrors[] = [
-            'row_number' => $rowNumber,
-            'error' => "Klien dengan CIF '{$clientCif}' tidak ditemukan.",
-            'data' => $row
-          ];
-          $summary['skipped_rows']++;
-          Log::warning("Baris {$rowNumber} Klien tidak ditemukan untuk CIF: {$clientCif}", [
-            'row_data' => $row
-          ]);
-          continue;
-        } else {
-          $rowDataForPreview['status_client'] = 'found';
-          $rowDataForPreview['db_client_id'] = $client->id;
-          $rowDataForPreview['db_client_name'] = $client->name;
-        }
-        // Find or prepare new account
-        $accountNumber = $validatedData[self::COL_ACCOUNT_NUMBER] ?? '';
-        $account = $this->findAccount($accountNumber);
-
-        // Process balance information
-        $currentBalanceFromExcel = $this->formatCurrency($validatedData[self::COL_BALANCE]);
-        $availableBalanceFromExcel = $this->formatCurrency($validatedData[self::COL_AVAIL_BALANCE]);
-        $rowDataForPreview['excel_current_balance'] = $currentBalanceFromExcel;
-        $rowDataForPreview['excel_available_balance'] = $availableBalanceFromExcel;
-
-        if ($account) {
-          $this->prepareExistingAccountPreview(
-            $rowDataForPreview,
-            $account,
-            $universalBanker,
-            $currentBalanceFromExcel,
-            $availableBalanceFromExcel,
-            $summary
-          );
-        }
-
-        // Prepare data for frontend
-        $this->prepareRowDataForFrontend(
-          $rowDataForPreview,
-          $row,
-          $currentBalanceFromExcel,
-          $availableBalanceFromExcel,
-          $client,
-          $account,
-          $index,
-          $validatedData,
-          $universalBanker
-        );
-        $validRowsForPreview[] = $rowDataForPreview;
-        Log::info("Baris {$rowNumber} berhasil diproses dan ditambahkan ke preview.", [
-          'row_data' => $rowDataForPreview
-        ]);
-        $universalBankersAffectedPreview[$universalBanker->id] = true;
-      }
-      return [
-        'report_date' => $this->reportDate,
-        'valid_rows' => $validRowsForPreview,
-        'summary' => $summary,
-        'errors' => $processingErrors,
-        'universal_bankers_to_update_ids' => array_keys($universalBankersAffectedPreview)
-      ];
-    } catch (\Exception $e) {
-      Log::error('Error generating preview data: ' . $e->getMessage(), [
-        'exception' => $e,
-        'file' => $file->getClientOriginalName()
-      ]);
-
-      throw $e;
-    }
-  }
-  private function preloadUniversalBankers(): void
-  {
-    $universalBankers = User::role('roles', fn($q) => $q->where('name', 'universal_banker'))
-      ->get()
-      ->keyBy('nip');
-
-    $this->universalBankerCache = $universalBankers->toArray();
-
-    Log::info("Pre-loaded " . count($this->universalBankerCache) . " Universal Bankers");
-  }
-
-  /**
-   * Pre-load clients dan accounts berdasarkan data Excel
-   */
-  private function preloadClientsAndAccounts($excelDataRows): void
-  {
-    $cifs = [];
-    $accountNumbers = [];
-
-    foreach ($excelDataRows as $row) {
-      $rowArray = $row->toArray();
-      if (isset($rowArray[self::COL_CLIENT_CIF])) {
-        $cifs[] = $rowArray[self::COL_CLIENT_CIF];
-      }
-      if (isset($rowArray[self::COL_ACCOUNT_NUMBER])) {
-        $accountNumbers[] = $rowArray[self::COL_ACCOUNT_NUMBER];
-      }
-    }
-
-    // Pre-load clients
-    $clients = Client::whereIn('cif', array_unique($cifs))->get()->keyBy('cif');
-    $this->clientCache = $clients->toArray();
-
-    // Pre-load accounts
-    $accounts = Account::whereIn('account_number', array_unique($accountNumbers))->get()->keyBy('account_number');
-    $this->accountCache = $accounts->toArray();
-
-    Log::info("Pre-loaded " . count($this->clientCache) . " clients and " . count($this->accountCache) . " accounts");
-  }
-
-  /**
    * Find Universal Banker by their code (NIP) from PN_RO field
    *
    * @param string $pnRoExcel
@@ -269,14 +45,8 @@ class ExcelProcessingService
    */
   public function findUniversalBanker(string $pnRoExcel): ?User
   {
-    // Skip processing if empty or just a dash
-    if (empty($pnRoExcel) || trim($pnRoExcel) === '-') {
-      Log::info("Skipping row with empty PN Relationship Officer");
-      return null;
-    }
-
     try {
-      $officerInfo = explode(' - ', $pnRoExcel);
+      $officerInfo = explode('-', $pnRoExcel);
       $officerCode = trim($officerInfo[0]);
 
       // Check for empty officer code after parsing
@@ -284,14 +54,12 @@ class ExcelProcessingService
         Log::warning("Empty officer code after parsing '{$pnRoExcel}'");
         return null;
       }
-
       // Find Universal Banker with the given NIP
       $universalBanker = User::where('nip', $officerCode)
-        ->whereHas('roles', fn($q) => $q->where('name', 'universal_banker'))
+        ->role('universal_banker')
         ->first();
 
       if (!$universalBanker) {
-        Log::warning("Universal Banker tidak ditemukan untuk kode NIP: {$officerCode}");
         return null;
       }
 
@@ -331,90 +99,6 @@ class ExcelProcessingService
 
     return Account::where('account_number', $accountNumber)
       ->first();
-  }
-
-
-  /**
-   * Prepare preview data for an existing account
-   * 
-   * @param array &$rowDataForPreview Reference to row data array
-   * @param Account $account The account object
-   * @param User $universalBanker The Universal Banker
-   * @param float $currentBalanceFromExcel Current balance from Excel
-   * @param float $availableBalanceFromExcel Available balance from Excel
-   * @param array &$summary Reference to summary data
-   * @return void
-   */
-  private function prepareExistingAccountPreview(
-    array &$rowDataForPreview,
-    Account $account,
-    User $universalBanker,
-    float $currentBalanceFromExcel,
-    float $availableBalanceFromExcel,
-    array &$summary
-  ): void {
-    $rowDataForPreview['status_account'] = 'found';
-    $rowDataForPreview['db_account_id'] = $account->id;
-    $rowDataForPreview['db_previous_balance'] = (float)$account->current_balance;
-
-    // Validate UB ownership
-    if ($account->universal_banker_id != $universalBanker->id) {
-      $rowDataForPreview['warning_ub_mismatch'] = "UB di DB: {$account->universalBanker?->name} (ID: {$account->universal_banker_id}), UB di Excel: {$universalBanker->name} (ID: {$universalBanker->id}).";
-    }
-
-    // Calculate transaction amount
-    $transactionAmount = $currentBalanceFromExcel - (float)$account->current_balance;
-    $rowDataForPreview['calculated_transaction_amount'] = $transactionAmount;
-
-    if (abs($transactionAmount) > self::EPSILON) {
-      $summary['potential_new_transactions']++;
-      $rowDataForPreview['action_description'] = ($transactionAmount > 0 ? "Kredit " : "Debit ") . number_format(abs($transactionAmount), 2);
-    } else {
-      $rowDataForPreview['action_description'] = "Tidak ada perubahan saldo.";
-    }
-
-    if (
-      abs((float)$account->current_balance - $currentBalanceFromExcel) > self::EPSILON ||
-      abs((float)$account->available_balance - $availableBalanceFromExcel) > self::EPSILON
-    ) {
-      $summary['potential_accounts_to_update']++;
-    }
-  }
-
-  /**
-   * Prepare row data for frontend display
-   * 
-   * @param array &$rowDataForPreview Reference to row data array
-   * @param array $originalRow Original Excel row
-   * @param float $currentBalanceFromExcel Current balance from Excel
-   * @param float $availableBalanceFromExcel Available balance from Excel
-   * @param Client $client Client object
-   * @param Account|null $account Account object or null for new accounts
-   * @param int $index Row index
-   * @param array $validatedData Validated data from validator
-   * @param User $universalBanker Universal Banker object
-   * @return void
-   */
-  private function prepareRowDataForFrontend(
-    array &$rowDataForPreview,
-    array $originalRow,
-    float $currentBalanceFromExcel,
-    float $availableBalanceFromExcel,
-    Client $client,
-    ?Account $account,
-    int $index,
-    array $validatedData,
-    User $universalBanker
-  ): void {
-    $rowDataForPreview['original_excel_row'] = $originalRow;
-    $rowDataForPreview['editable_current_balance'] = $currentBalanceFromExcel;
-    $rowDataForPreview['editable_available_balance'] = $availableBalanceFromExcel;
-    $rowDataForPreview['is_editing'] = false;
-    $rowDataForPreview['id_for_frontend_key'] = $client->id . '_' . ($account ? $account->id : 'new_' . $index);
-    $rowDataForPreview['client_cif'] = $validatedData[self::COL_CLIENT_CIF];
-    $rowDataForPreview['account_number'] = $validatedData[self::COL_ACCOUNT_NUMBER];
-    $rowDataForPreview['universal_banker_name'] = $universalBanker->name;
-    $rowDataForPreview['universal_banker_id_for_commit'] = $universalBanker->id;
   }
 
   /**
