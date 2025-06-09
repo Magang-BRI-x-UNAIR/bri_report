@@ -109,34 +109,4 @@ class DashboardController extends Controller
         // Kembalikan hasilnya sebagai JSON
         return response()->json($result);
     }
-    /**
-     * Menyimpan data yang sudah disetujui dari preview.
-     * Endpoint ini akan menjadi endpoint terpisah.
-     */
-    public function saveImport(Request $request)
-    {
-        $validatedData = $request->validate([
-            'dataToSave' => 'required|array',
-            'reportDate' => 'required|date_format:Y-m-d',
-            'override_existing' => 'required|boolean',
-        ]);
-
-        try {
-            // Panggil service untuk menyimpan data
-            $result = $this->excelProcessingService->saveValidatedData(
-                $validatedData['dataToSave'],
-                $validatedData['reportDate'],
-                $validatedData['override_existing']
-            );
-
-            if ($result['success']) {
-                return redirect()->route('dashboard')->with('success', $result['message']);
-            } else {
-                return back()->with('error', $result['message']);
-            }
-        } catch (\Exception $e) {
-            Log::error('Gagal menyimpan data import', ['error' => $e->getMessage()]);
-            return back()->with('error', 'Terjadi kesalahan internal saat menyimpan data.');
-        }
-    }
 }
