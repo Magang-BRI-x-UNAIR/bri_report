@@ -16,7 +16,6 @@ return new class extends Migration
             $table->foreignId('universal_banker_id')->constrained('users')->onDelete('cascade');
             $table->date('date');
             $table->decimal('total_balance', 15, 2);
-            $table->decimal('daily_change', 15, 2)->default(0);
             $table->timestamps();
             $table->unique(['universal_banker_id', 'date']);
         });

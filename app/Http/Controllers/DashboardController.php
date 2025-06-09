@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\FinalizeExcelImport;
 use App\Jobs\ProcessExcelImport;
 use Illuminate\Http\Request;
 use App\Services\ExcelProcessingService;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
@@ -108,5 +110,53 @@ class DashboardController extends Controller
 
         // Kembalikan hasilnya sebagai JSON
         return response()->json($result);
+    }
+
+    /**
+     * Menerima konfirmasi dari user dan mengirimkan job penyimpanan ke queue.
+     */
+    public function save(Request $request)
+    {
+        $validated = $request->validate([
+            'dataToSave' => 'required|string|json',
+            'reportDate' => 'required|date',
+            'batchId' => 'required|string',
+        ]);
+
+        try {
+            $saveResultCacheKey = 'save_result_' . Str::uuid();
+
+            $dataArray = json_decode($validated['dataToSave'], true);
+
+            FinalizeExcelImport::dispatch(
+                $dataArray,
+                $validated['reportDate'],
+                Auth::id(),
+                $saveResultCacheKey
+            );
+
+            return Inertia::location(route('dashboard.import.result', ['result_id' => $saveResultCacheKey]));
+        } catch (\Exception $e) {
+            Log::error('Gagal mengirim job penyimpanan', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memulai proses penyimpanan data.');
+        }
+    }
+
+    /**
+     * Halaman untuk menampilkan status/hasil penyimpanan.
+     */
+    public function resultPage($result_id)
+    {
+        return Inertia::render('Dashboard/Import/Result', [
+            'resultId' => $result_id
+        ]);
+    }
+
+    /**
+     * API endpoint untuk mengecek status job penyimpanan.
+     */
+    public function getSaveStatus($result_id)
+    {
+        return response()->json(Cache::get($result_id));
     }
 }

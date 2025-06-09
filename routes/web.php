@@ -27,10 +27,12 @@ Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () 
     Route::controller(DashboardController::class)->group(function () {
         Route::get('import', 'import')->name('dashboard.import');
         Route::post('import', 'process')->name('dashboard.process');
-        Route::post('import/save', 'saveImport')->name('dashboard.save');
         Route::get('import/preview', 'preview')->name('dashboard.preview');
         Route::get('import/preview/{batch_id}', 'previewPage')->name('dashboard.import.preview');
         Route::get('import/status/{batch_id}', 'getImportStatus')->name('dashboard.import.status');
+        Route::post('import/save', 'save')->name('dashboard.save');
+        Route::get('import/result/{result_id}', 'resultPage')->name('dashboard.import.result');
+        Route::get('import/save-status/{result_id}', 'getSaveStatus')->name('dashboard.save.status');
     });
 
     Route::resource('account-products', AccountProductController::class);

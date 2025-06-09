@@ -166,30 +166,22 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
 
     // Fungsi konfirmasi import
     const handleConfirmImport = () => {
-        if (!previewData || !previewData.valid_rows) return;
+        if (!previewData || !previewData.valid_rows || !batchId) {
+            alert("Data preview tidak ditemukan atau tidak valid.");
+            return;
+        }
 
-        router.post(
-            route("dashboard.save"),
-            {
-                reportDate: previewData.report_date,
+        const payload = {
+            dataToSave: JSON.stringify(previewData.valid_rows),
+            reportDate: previewData.report_date,
+            batchId: batchId,
+        };
+
+        router.post(route("dashboard.save"), payload, {
+            onStart: () => {
+                setSaveProcessing(true);
             },
-            {
-                onStart: () => setSaveProcessing(true),
-                onFinish: () => setSaveProcessing(false),
-                onSuccess: () => {
-                    // Use SweetAlert or other notification library instead of alert
-                    router.visit(route("dashboard.import"), {
-                        only: ["flash"],
-                        data: { success: true },
-                        preserveState: true,
-                    });
-                },
-                onError: (errors) => {
-                    const errorMessage = Object.values(errors)[0];
-                    setErrorMessage(`Gagal menyimpan data: ${errorMessage}`);
-                },
-            }
-        );
+        });
     };
 
     // --- Render Functions ---
@@ -281,8 +273,6 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
             summary,
             report_date,
         } = previewData;
-
-        console.log("Valid Rows:", previewData);
 
         if (valid_rows.length === 0 && errors.length === 0) {
             return (

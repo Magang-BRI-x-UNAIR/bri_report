@@ -175,17 +175,33 @@ class UserService
      * @param EloquentCollection $universalBankerDailyBalances
      * @return Collection
      */
-    private function formatDailyBalances(EloquentCollection $universalBankerDailyBalances): Collection
+    /**
+     * Format daily balances untuk frontend dan hitung daily_change secara dinamis.
+     *
+     * @param Collection $dailyBalancesCollection Koleksi UniversalBankerDailyBalance yang sudah diurutkan berdasarkan tanggal.
+     * @return Collection
+     */
+    private function formatDailyBalances(Collection $dailyBalancesCollection): Collection
     {
-        return $universalBankerDailyBalances->map(function ($record) {
-            $dateInstance = $record->date instanceof \Carbon\Carbon ? $record->date : \Carbon\Carbon::parse($record->date);
-            return [
-                'date' => $dateInstance->format('Y-m-d'),
-                'totalBalance' => (float)$record->total_balance,
-                'formattedDate' => $dateInstance->format('d M'), // Pastikan locale 'id' jika diperlukan di sini atau di frontend
-                'change' => (float)$record->daily_change,
-            ];
-        });
+        $formattedBalances = new Collection();
+        $previousBalance = null;
+
+        foreach ($dailyBalancesCollection as $record) {
+            $currentBalance = (float) $record->total_balance;
+
+            $dailyChange = ($previousBalance !== null) ? ($currentBalance - $previousBalance) : 0;
+
+            $formattedBalances->push([
+                'date' => $record->date->format('Y-m-d'),
+                'totalBalance' => $currentBalance,
+                'formattedDate' => $record->date->format('d M'),
+                'change' => $dailyChange,
+            ]);
+
+            $previousBalance = $currentBalance;
+        }
+
+        return $formattedBalances;
     }
 
     /**
