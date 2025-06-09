@@ -47,19 +47,16 @@ import { id } from "date-fns/locale";
 interface PreviewRow {
     account_number: string;
     available_balance?: number;
+    previous_available_balance?: number;
     balance_change?: number;
+    current_balance?: number;
+    previous_balance?: number;
     change_percent: number;
     cif?: string;
     client_name?: string;
-    current_balance?: number;
     db_account_id?: string;
     db_client_id?: string;
-    db_previous_balance?: number;
     db_universal_banker_id?: string;
-    editable_available_balance?: number;
-    editable_current_balance?: number;
-    previous_available_balance?: number;
-    previous_balance?: number;
     universal_banker_name?: string;
 }
 interface PreviewSummary {
@@ -276,7 +273,7 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
     );
 
     const renderCompleted = () => {
-        if (!previewData) return renderFailed(); // Fallback jika data tidak ada
+        if (!previewData) return renderFailed();
 
         const {
             valid_rows = [],
@@ -285,7 +282,8 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
             report_date,
         } = previewData;
 
-        // Jika tidak ada data sama sekali yang valid atau error (kasus aneh)
+        console.log("Valid Rows:", previewData);
+
         if (valid_rows.length === 0 && errors.length === 0) {
             return (
                 <Card className="shadow-xl border-0 overflow-hidden animate-fadeIn">
@@ -481,12 +479,11 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
                                             <TableCell className="text-right">
                                                 <BalanceChange
                                                     before={Number(
-                                                        row.db_previous_balance ||
+                                                        row.previous_balance ||
                                                             0
                                                     )}
                                                     after={Number(
-                                                        row.editable_current_balance ||
-                                                            0
+                                                        row.current_balance || 0
                                                     )}
                                                 />
                                             </TableCell>
@@ -497,7 +494,7 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
                                                             0
                                                     )}
                                                     after={Number(
-                                                        row.editable_available_balance ||
+                                                        row.available_balance ||
                                                             0
                                                     )}
                                                     showArrow={false}

@@ -128,8 +128,6 @@ class UniversalBankerImport implements ToCollection, WithHeadingRow, WithChunkRe
                 'current_balance' => $currentBalance,
                 'available_balance' => $availableBalance,
                 'previous_available_balance' => $previousAvailableBalance,
-                'editable_current_balance' => $currentBalance,
-                'editable_available_balance' => $availableBalance,
                 'db_account_id' => $account->id,
                 'db_client_id' => $client->id,
                 'db_universal_banker_id' => $universalBanker->id,
@@ -168,6 +166,4 @@ class UniversalBankerImport implements ToCollection, WithHeadingRow, WithChunkRe
     {
         return 1000;
     }
-
-    
 }
