@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
+use App\Models\User;
+use App\Models\Client;
+use App\Models\Account;
 
 class DashboardController extends Controller
 {
@@ -41,7 +44,17 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Dashboard/Index');
+        // Kalkulasi data statistik
+        $stats = [
+            'totalUniversalBankers' => User::role('universal_banker')->count(),
+            'totalClients' => Client::whereHas('accounts')->distinct()->count(), // Hitung nasabah yang punya rekening
+            'totalActiveAccounts' => Account::where('status', 'active')->count(),
+            'totalPortfolio' => Account::sum('current_balance'),
+        ];
+        
+        return Inertia::render('Dashboard/Index', [
+            'stats' => $stats,
+        ]);
     }
 
 

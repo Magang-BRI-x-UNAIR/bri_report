@@ -20,11 +20,8 @@ Route::get('/', function () {
 
 
 Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () {
-    Route::get('/', function () {
-        return Inertia::render('Dashboard/Index');
-    })->middleware(['auth', 'verified'])->name('dashboard.index');
-
     Route::controller(DashboardController::class)->group(function () {
+        Route::get('/', 'index')->name('dashboard.index');
         Route::get('import', 'import')->name('dashboard.import');
         Route::post('import', 'process')->name('dashboard.process');
         Route::get('import/preview', 'preview')->name('dashboard.preview');
