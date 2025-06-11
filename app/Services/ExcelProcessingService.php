@@ -158,9 +158,6 @@ class ExcelProcessingService
             $account->save();
 
             $processedCount++;
-          } else {
-            $account->report_date = $this->reportDate;
-            $account->save();
           }
         } else {
           $skippedCount++;
