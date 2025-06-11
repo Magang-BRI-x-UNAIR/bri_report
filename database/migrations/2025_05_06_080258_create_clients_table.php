@@ -15,9 +15,9 @@ return new class extends Migration
             $table->id();
             $table->string('cif')->unique()->comment('Client CIF number');
             $table->string('name')->unique()->comment('Client name');
-            $table->string('email')->unique()->comment('Client email');
-            $table->string('phone')->nullable()->comment('Client phone number');
-            $table->timestamp('joined_at')->nullable()->comment('Date when the client joined');
+            $table->string('email')->unique()->comment('Client email')->nullable();
+            $table->string('phone')->nullable()->comment('Client phone number')->nullable();
+            $table->timestamp('joined_at')->nullable()->comment('Date when the client joined')->nullable();
             $table->timestamps();
         });
     }

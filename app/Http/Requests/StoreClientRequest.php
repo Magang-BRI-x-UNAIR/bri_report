@@ -24,10 +24,10 @@ class StoreClientRequest extends FormRequest
         return [
             //
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:clients,email',
-            'phone' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255|unique:clients,email',
+            'phone' => 'nullable|string|max:255',
             'cif' => 'required|string|max:255|unique:clients,cif',
-            'joined_at' => 'required|date',
+            'joined_at' => 'nullable|date',
         ];
     }
 }

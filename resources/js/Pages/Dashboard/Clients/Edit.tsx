@@ -38,31 +38,19 @@ const ClientsEdit = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         put(route("clients.update", client.id), {
-            onSuccess: () => {
-                // Don't reset since we're editing an existing record
-            },
+            onSuccess: () => {},
         });
     };
 
-    // Function to check if CIF is valid (numeric and correct length)
-    const validateCIF = (cif: string) => {
-        return /^\d{6}$/.test(cif);
-    };
-
-    // Function to format phone number as user types
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = e.target.value;
-        // Remove all non-numeric characters
         value = value.replace(/\D/g, "");
 
         if (value.length > 0) {
             if (value.startsWith("62")) {
-                // Do nothing, keep the 62
             } else if (value.startsWith("0")) {
-                // Replace leading 0 with 62
                 value = "62" + value.substring(1);
             } else {
-                // Add 62 prefix if neither
                 value = "62" + value;
             }
         }
@@ -139,7 +127,7 @@ const ClientsEdit = () => {
                             </h3>
 
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <label
                                         htmlFor="name"
                                         className="block text-sm font-medium text-gray-700"
@@ -173,7 +161,7 @@ const ClientsEdit = () => {
                                     )}
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <label
                                         htmlFor="cif"
                                         className="block text-sm font-medium text-gray-700"
@@ -198,27 +186,18 @@ const ClientsEdit = () => {
                                             className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
                                                 errors.cif
                                                     ? "border-red-300 bg-red-50"
-                                                    : validateCIF(data.cif) ||
-                                                      !data.cif
-                                                    ? "border-gray-300"
-                                                    : "border-orange-300 bg-orange-50"
+                                                    : "border-gray-300"
                                             }`}
                                             placeholder="Masukkan 10 digit nomor CIF"
                                             maxLength={10}
                                         />
                                     </div>
-                                    {errors.cif ? (
+                                    {errors.cif && (
                                         <p className="mt-1 text-sm text-red-600 flex items-center">
                                             <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                                             {errors.cif}
                                         </p>
-                                    ) : data.cif && !validateCIF(data.cif) ? (
-                                        <p className="mt-1 text-sm text-orange-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            Nomor CIF harus terdiri dari 6 digit
-                                            angka
-                                        </p>
-                                    ) : null}
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -233,7 +212,7 @@ const ClientsEdit = () => {
                             </h3>
 
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <label
                                         htmlFor="email"
                                         className="block text-sm font-medium text-gray-700"
@@ -271,7 +250,7 @@ const ClientsEdit = () => {
                                     )}
                                 </div>
 
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <label
                                         htmlFor="phone"
                                         className="block text-sm font-medium text-gray-700"
@@ -324,7 +303,7 @@ const ClientsEdit = () => {
                             </h3>
 
                             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div className="space-y-2">
+                                <div className="space-y-1">
                                     <label
                                         htmlFor="joined_at"
                                         className="block text-sm font-medium text-gray-700"

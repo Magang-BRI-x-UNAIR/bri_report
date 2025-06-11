@@ -24,10 +24,10 @@ class UpdateClientRequest extends FormRequest
         return [
             //
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:clients,email,' . $this->route('client')->id,
-            'phone' => 'required|string|max:255',
+            'email' => 'nullable|email|max:255|unique:clients,email,' . $this->route('client')->id,
+            'phone' => 'nullable|string|max:255',
             'cif' => 'required|string|max:255|unique:clients,cif,' . $this->route('client')->id,
-            'joined_at' => 'required|date',
+            'joined_at' => 'nullable|date',
         ];
     }
 }

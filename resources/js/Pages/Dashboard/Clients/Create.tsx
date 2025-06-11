@@ -35,10 +35,6 @@ const ClientsCreate = () => {
         });
     };
 
-    const validateCIF = (cif: string) => {
-        return /^\d{5,7}$/.test(cif);
-    };
-
     // Function to format phone number as user types
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = e.target.value;
@@ -179,27 +175,18 @@ const ClientsCreate = () => {
                                             className={`block w-full pl-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
                                                 errors.cif
                                                     ? "border-red-300 bg-red-50"
-                                                    : validateCIF(data.cif) ||
-                                                      !data.cif
-                                                    ? "border-gray-300"
-                                                    : "border-orange-300 bg-orange-50"
+                                                    : "border-gray-300"
                                             }`}
-                                            placeholder="Masukkan 10 digit nomor CIF"
-                                            maxLength={10}
+                                            placeholder="Masukkan 5-7 digit nomor CIF"
+                                            maxLength={7}
                                         />
                                     </div>
-                                    {errors.cif ? (
+                                    {errors.cif && (
                                         <p className="mt-1 text-sm text-red-600 flex items-center">
                                             <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                                             {errors.cif}
                                         </p>
-                                    ) : data.cif && !validateCIF(data.cif) ? (
-                                        <p className="mt-1 text-sm text-orange-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            Nomor CIF harus terdiri dari 10
-                                            digit angka
-                                        </p>
-                                    ) : null}
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -311,9 +298,6 @@ const ClientsCreate = () => {
                                         className="block text-sm font-medium text-gray-700"
                                     >
                                         Tanggal Bergabung
-                                        <span className="text-red-600 ml-1">
-                                            *
-                                        </span>
                                     </label>
                                     <div className="relative rounded-md shadow-sm">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
