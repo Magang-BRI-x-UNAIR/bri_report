@@ -5,7 +5,7 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import type { Account, PageProps, AccountTransaction } from "@/types";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
     CreditCard,
     User,
@@ -34,6 +34,11 @@ import {
     CalendarDays,
     Mail,
     Phone,
+    ChevronRight,
+    ArrowDown,
+    ChevronUp,
+    ChevronDown,
+    ArrowUp,
 } from "lucide-react";
 import {
     formatCompactCurrency,
@@ -98,6 +103,93 @@ const AccountsShow = () => {
     const [activeChartView, setActiveChartView] = useState("balance");
     const [selectedTransaction, setSelectedTransaction] =
         useState<AccountTransaction | null>(null);
+    // Date filtering state
+    const [dateRange, setDateRange] = useState("");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
+    const [appliedStartDate, setAppliedStartDate] = useState<Date | null>(null);
+    const [appliedEndDate, setAppliedEndDate] = useState<Date | null>(null);
+
+    // Helper function to apply custom date range
+    const applyCustomDateRange = () => {
+        if (startDate && endDate) {
+            setAppliedStartDate(new Date(startDate));
+            setAppliedEndDate(new Date(endDate));
+        }
+    };
+
+    useEffect(() => {
+        const today = new Date();
+        const getDateOnly = (date: Date) => new Date(date.setHours(0, 0, 0, 0));
+
+        if (dateRange === "today") {
+            const todayDate = getDateOnly(today);
+            setAppliedStartDate(todayDate);
+            setAppliedEndDate(
+                new Date(todayDate.getTime() + 24 * 60 * 60 * 1000 - 1)
+            );
+        } else if (dateRange === "week") {
+            const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            const diff =
+                today.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // Adjust to start on Monday
+
+            const weekStart = getDateOnly(new Date(today.setDate(diff)));
+            const weekEnd = new Date(
+                new Date(weekStart).setDate(weekStart.getDate() + 6)
+            );
+            weekEnd.setHours(23, 59, 59, 999);
+
+            setAppliedStartDate(weekStart);
+            setAppliedEndDate(weekEnd);
+        } else if (dateRange === "month") {
+            const monthStart = getDateOnly(
+                new Date(today.getFullYear(), today.getMonth(), 1)
+            );
+            const monthEnd = new Date(
+                today.getFullYear(),
+                today.getMonth() + 1,
+                0
+            );
+            monthEnd.setHours(23, 59, 59, 999);
+
+            setAppliedStartDate(monthStart);
+            setAppliedEndDate(monthEnd);
+        } else if (dateRange === "") {
+            // Reset date filters
+            setAppliedStartDate(null);
+            setAppliedEndDate(null);
+            setStartDate("");
+            setEndDate("");
+        }
+    }, [dateRange]);
+
+    // Process transactions to calculate changes between consecutive transactions
+    const processedTransactions = useMemo(() => {
+        // Sort by date ascending to calculate changes
+        const sortedTransactions = [...account.account_transactions].sort(
+            (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime()
+        );
+
+        return sortedTransactions.map((tx, index) => {
+            const previousTransaction =
+                index > 0 ? sortedTransactions[index - 1] : null;
+
+            // Calculate the amount as the difference between consecutive balances
+            const amount = previousTransaction
+                ? tx.balance - previousTransaction.balance
+                : tx.balance;
+
+            return {
+                ...tx,
+                previous_balance: previousTransaction
+                    ? previousTransaction.balance
+                    : 0,
+                amount: amount,
+            };
+        });
+    }, [account.account_transactions]);
 
     // Calculate percentage change
     const calculatePercentageChange = (
@@ -132,12 +224,8 @@ const AccountsShow = () => {
 
     // Calculate transaction statistics
     const transactionStats = useMemo(() => {
-        const credits = account.account_transactions.filter(
-            (tx) => tx.amount > 0
-        );
-        const debits = account.account_transactions.filter(
-            (tx) => tx.amount < 0
-        );
+        const credits = processedTransactions.filter((tx) => tx.amount > 0);
+        const debits = processedTransactions.filter((tx) => tx.amount < 0);
 
         const totalCredit = credits.reduce((sum, tx) => sum + tx.amount, 0);
         const totalDebit = debits.reduce(
@@ -149,7 +237,7 @@ const AccountsShow = () => {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-        const recentTransactions = account.account_transactions.filter(
+        const recentTransactions = processedTransactions.filter(
             (tx) => new Date(tx.created_at) >= thirtyDaysAgo
         );
 
@@ -166,7 +254,7 @@ const AccountsShow = () => {
         );
 
         return {
-            totalTransactions: account.account_transactions.length,
+            totalTransactions: processedTransactions.length,
             creditCount: credits.length,
             debitCount: debits.length,
             totalCredit,
@@ -177,16 +265,17 @@ const AccountsShow = () => {
             recentTotalCredit,
             recentTotalDebit,
         };
-    }, [account.account_transactions]);
+    }, [processedTransactions]);
+
     const flowDistributionData = useMemo(() => {
-        if (account.account_transactions.length === 0) {
+        if (processedTransactions.length === 0) {
             return [];
         }
 
         const totalCredit = transactionStats.totalCredit;
         const totalDebit = transactionStats.totalDebit;
 
-        // Cek jika kedua nilai adalah 0 untuk menghindari kesalahan
+        // Check if both values are 0 to avoid errors
         if (totalCredit === 0 && totalDebit === 0) {
             return [{ name: "Belum ada transaksi", value: 1, fill: "#d1d5db" }];
         }
@@ -195,7 +284,7 @@ const AccountsShow = () => {
             { name: "Kredit", value: totalCredit, fill: "#10b981" },
             { name: "Debit", value: totalDebit, fill: "#ef4444" },
         ];
-    }, [account.account_transactions, transactionStats]);
+    }, [processedTransactions, transactionStats]);
 
     const renderActiveDonutShape = (props: any) => {
         const {
@@ -315,13 +404,11 @@ const AccountsShow = () => {
     // Prepare chart data from transactions
     const chartData = useMemo(() => {
         // Sort transactions chronologically
-        const sortedTransactions = [...account.account_transactions].sort(
-            (a, b) => {
-                const dateA = new Date(a.created_at || "").getTime();
-                const dateB = new Date(b.created_at || "").getTime();
-                return dateA - dateB;
-            }
-        );
+        const sortedTransactions = [...processedTransactions].sort((a, b) => {
+            const dateA = new Date(a.created_at || "").getTime();
+            const dateB = new Date(b.created_at || "").getTime();
+            return dateA - dateB;
+        });
 
         // Filter transactions by period if needed
         const filteredTransactions = sortedTransactions.filter((tx) => {
@@ -357,33 +444,32 @@ const AccountsShow = () => {
             return {
                 date: formatShortDate(tx.created_at),
                 fullDate: tx.created_at,
-                balance: tx.new_balance,
+                balance: tx.balance,
                 amount: tx.amount,
                 credit: tx.amount > 0 ? tx.amount : 0,
                 debit: tx.amount < 0 ? Math.abs(tx.amount) : 0,
             };
         });
-    }, [account.account_transactions, chartPeriod]);
+    }, [processedTransactions, chartPeriod]);
 
-    // Filter transactions based on search and filters
-    const filteredTransactions = account.account_transactions
+    const filteredTransactions = processedTransactions
         .filter((transaction) => {
-            // Search term filter
             const searchMatch =
                 searchTerm === "" ||
-                formatCurrency(transaction.amount).includes(searchTerm);
-
-            // Transaction type filter
+                formatCurrency(transaction.balance).includes(searchTerm);
             const typeMatch =
                 transactionType === "all" ||
                 (transactionType === "credit" && transaction.amount > 0) ||
                 (transactionType === "debit" && transaction.amount < 0);
-
-            return searchMatch && typeMatch;
+            let dateMatch = true;
+            if (appliedStartDate && appliedEndDate) {
+                const txDate = new Date(transaction.created_at || "");
+                dateMatch =
+                    txDate >= appliedStartDate && txDate <= appliedEndDate;
+            }
+            return searchMatch && typeMatch && dateMatch;
         })
         .sort((a, b) => {
-            // Simple chronological sorting for now
-            // You can expand this based on sortField
             const dateA = new Date(a.created_at || "").getTime();
             const dateB = new Date(b.created_at || "").getTime();
 
@@ -1093,7 +1179,7 @@ const AccountsShow = () => {
                                                         <div className="text-xs text-gray-500">
                                                             Saldo:{" "}
                                                             {formatCurrency(
-                                                                transaction.new_balance
+                                                                transaction.balance
                                                             )}
                                                         </div>
                                                     </div>
@@ -1115,174 +1201,446 @@ const AccountsShow = () => {
 
                 {/* Transactions Tab */}
                 <TabsContent value="transactions" className="space-y-6">
-                    <Card>
-                        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
-                            <div>
-                                <CardTitle>Riwayat Transaksi</CardTitle>
-                                <CardDescription>
-                                    Semua transaksi pada rekening ini
-                                </CardDescription>
-                            </div>
-                            <div className="flex items-center space-x-3">
-                                <Badge
-                                    variant="outline"
-                                    className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-200"
-                                >
-                                    {filteredTransactions.length} Transaksi
-                                </Badge>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="h-9 gap-1"
-                                    onClick={() => setShowFilters(!showFilters)}
-                                >
-                                    <Filter className="h-4 w-4" />
-                                    Filter
-                                </Button>
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="h-9 gap-1"
-                                        >
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuItem className="flex items-center">
-                                            <Printer className="h-4 w-4 mr-2" />
-                                            Cetak Transaksi
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem className="flex items-center">
-                                            <Download className="h-4 w-4 mr-2" />
-                                            Ekspor ke Excel
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem className="flex items-center">
-                                            <Download className="h-4 w-4 mr-2" />
-                                            Ekspor ke PDF
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
+                    <Card className="overflow-hidden border-0 shadow-md">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-indigo-50 to-purple-50 border-b border-indigo-100">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                                <div>
+                                    <CardTitle className="flex items-center gap-2 text-indigo-800">
+                                        <Receipt className="h-5 w-5 text-indigo-600" />
+                                        Riwayat Transaksi
+                                    </CardTitle>
+                                    <CardDescription className="text-indigo-700/70">
+                                        Semua transaksi pada rekening ini
+                                    </CardDescription>
+                                </div>
+                                <div className="flex items-center gap-2 flex-wrap justify-end">
+                                    <Badge
+                                        variant="outline"
+                                        className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50 border-indigo-200 px-3 py-1"
+                                    >
+                                        <Receipt className="h-3.5 w-3.5 mr-1.5" />
+                                        {filteredTransactions.length} Transaksi
+                                    </Badge>
+                                    <Button
+                                        variant={
+                                            showFilters
+                                                ? "secondary"
+                                                : "outline"
+                                        }
+                                        size="sm"
+                                        className="h-9 gap-1"
+                                        onClick={() =>
+                                            setShowFilters(!showFilters)
+                                        }
+                                    >
+                                        <Filter className="h-4 w-4" />
+                                        Filter
+                                        {showFilters && (
+                                            <ChevronUp className="h-3 w-3 ml-1" />
+                                        )}
+                                        {!showFilters && (
+                                            <ChevronDown className="h-3 w-3 ml-1" />
+                                        )}
+                                    </Button>
+                                </div>
                             </div>
                         </CardHeader>
 
                         {/* Search & Filters */}
-                        <CardContent className="pt-4">
-                            <div className="bg-gray-50/60 border border-gray-100 rounded-lg p-4 mb-4">
-                                <div className="flex flex-wrap gap-3 items-center">
-                                    <div className="relative flex-1 min-w-[200px]">
-                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                                            <Search className="w-4 h-4 text-gray-400" />
+                        <CardContent className="pt-4 px-4">
+                            <div
+                                className={`rounded-lg border transition-all duration-300 mb-4 ${
+                                    showFilters
+                                        ? "border-indigo-200 bg-indigo-50/30"
+                                        : "border-gray-100 bg-gray-50/60"
+                                }`}
+                            >
+                                <div className="p-4">
+                                    <div className="flex flex-wrap gap-3 items-center">
+                                        <div className="relative flex-1 min-w-[200px]">
+                                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <Search className="w-4 h-4 text-gray-400" />
+                                            </div>
+                                            <Input
+                                                type="text"
+                                                className="pl-10 border-gray-200 focus:border-indigo-300 focus:ring-indigo-200"
+                                                placeholder="Cari transaksi..."
+                                                value={searchTerm}
+                                                onChange={(e) =>
+                                                    setSearchTerm(
+                                                        e.target.value
+                                                    )
+                                                }
+                                            />
+                                            {searchTerm && (
+                                                <button
+                                                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                                                    onClick={() =>
+                                                        setSearchTerm("")
+                                                    }
+                                                >
+                                                    <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
+                                                </button>
+                                            )}
                                         </div>
-                                        <Input
-                                            type="text"
-                                            className="pl-10"
-                                            placeholder="Cari transaksi..."
-                                            value={searchTerm}
-                                            onChange={(e) =>
-                                                setSearchTerm(e.target.value)
-                                            }
-                                        />
-                                        {searchTerm && (
-                                            <button
-                                                className="absolute inset-y-0 right-0 flex items-center pr-3"
-                                                onClick={() =>
-                                                    setSearchTerm("")
+
+                                        <div>
+                                            <Select
+                                                value={transactionType}
+                                                onValueChange={
+                                                    setTransactionType
                                                 }
                                             >
-                                                <X className="w-4 h-4 text-gray-400 hover:text-gray-600" />
-                                            </button>
-                                        )}
+                                                <SelectTrigger className="w-[180px] border-gray-200">
+                                                    <div className="flex items-center">
+                                                        {transactionType ===
+                                                            "all" && (
+                                                            <ArrowDownUp className="h-3.5 w-3.5 mr-2 text-gray-500" />
+                                                        )}
+                                                        {transactionType ===
+                                                            "credit" && (
+                                                            <ArrowUpRight className="h-3.5 w-3.5 mr-2 text-emerald-500" />
+                                                        )}
+                                                        {transactionType ===
+                                                            "debit" && (
+                                                            <ArrowDownRight className="h-3.5 w-3.5 mr-2 text-rose-500" />
+                                                        )}
+                                                        <SelectValue placeholder="Jenis Transaksi" />
+                                                    </div>
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem
+                                                        value="all"
+                                                        className="flex items-center"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <ArrowDownUp className="h-3.5 w-3.5 mr-2 text-gray-500" />
+                                                            Semua Transaksi
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem
+                                                        value="credit"
+                                                        className="flex items-center"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <ArrowUpRight className="h-3.5 w-3.5 mr-2 text-emerald-500" />
+                                                            Kredit (Masuk)
+                                                        </div>
+                                                    </SelectItem>
+                                                    <SelectItem
+                                                        value="debit"
+                                                        className="flex items-center"
+                                                    >
+                                                        <div className="flex items-center">
+                                                            <ArrowDownRight className="h-3.5 w-3.5 mr-2 text-rose-500" />
+                                                            Debit (Keluar)
+                                                        </div>
+                                                    </SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <Select
-                                            value={transactionType}
-                                            onValueChange={setTransactionType}
+                                    {showFilters && (
+                                        <div className="mt-4 pt-4 border-t border-indigo-200/50 space-y-4">
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-indigo-700 mb-1.5">
+                                                        <ArrowDownUp className="inline h-3.5 w-3.5 mr-1.5" />
+                                                        Urutkan Berdasarkan
+                                                    </label>
+                                                    <Select
+                                                        value={sortField}
+                                                        onValueChange={
+                                                            setSortField
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="w-full border-gray-200">
+                                                            <SelectValue placeholder="Urutkan berdasarkan" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="created_at">
+                                                                <Calendar className="h-3.5 w-3.5 inline mr-2" />
+                                                                Tanggal
+                                                            </SelectItem>
+                                                            <SelectItem value="amount">
+                                                                <CreditCard className="h-3.5 w-3.5 inline mr-2" />
+                                                                Jumlah
+                                                            </SelectItem>
+                                                            <SelectItem value="balance">
+                                                                <Wallet className="h-3.5 w-3.5 inline mr-2" />
+                                                                Saldo
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-indigo-700 mb-1.5">
+                                                        <ArrowUpRight className="inline h-3.5 w-3.5 mr-1.5" />
+                                                        Arah Urutan
+                                                    </label>
+                                                    <Select
+                                                        value={sortDirection}
+                                                        onValueChange={
+                                                            setSortDirection
+                                                        }
+                                                    >
+                                                        <SelectTrigger className="w-full border-gray-200">
+                                                            <SelectValue placeholder="Arah urutan" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="desc">
+                                                                <ArrowDown className="h-3.5 w-3.5 inline mr-2" />
+                                                                Terbaru -
+                                                                Terlama
+                                                            </SelectItem>
+                                                            <SelectItem value="asc">
+                                                                <ArrowUp className="h-3.5 w-3.5 inline mr-2" />
+                                                                Terlama -
+                                                                Terbaru
+                                                            </SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                                <div className="flex flex-col justify-end">
+                                                    <div className="flex space-x-2">
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            className="flex-1"
+                                                            onClick={() => {
+                                                                setSearchTerm(
+                                                                    ""
+                                                                );
+                                                                setTransactionType(
+                                                                    "all"
+                                                                );
+                                                                setSortField(
+                                                                    "created_at"
+                                                                );
+                                                                setSortDirection(
+                                                                    "desc"
+                                                                );
+                                                                setShowFilters(
+                                                                    false
+                                                                );
+                                                            }}
+                                                        >
+                                                            <X className="h-4 w-4 mr-1" />
+                                                            Reset
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            className="flex-1"
+                                                            onClick={() =>
+                                                                setShowFilters(
+                                                                    false
+                                                                )
+                                                            }
+                                                        >
+                                                            <Check className="h-4 w-4 mr-1" />
+                                                            Terapkan
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-white p-3 rounded-lg border border-gray-100 flex flex-wrap items-center gap-3 mt-2">
+                                                <div className="font-medium text-xs text-gray-500 flex items-center">
+                                                    <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                                                    Rentang Tanggal:
+                                                </div>
+                                                <div className="flex flex-1 flex-wrap gap-2">
+                                                    <Button
+                                                        variant={
+                                                            dateRange ===
+                                                            "today"
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        size="sm"
+                                                        className="h-8 text-xs"
+                                                        onClick={() =>
+                                                            setDateRange(
+                                                                "today"
+                                                            )
+                                                        }
+                                                    >
+                                                        Hari Ini
+                                                    </Button>
+                                                    <Button
+                                                        variant={
+                                                            dateRange === "week"
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        size="sm"
+                                                        className="h-8 text-xs"
+                                                        onClick={() =>
+                                                            setDateRange("week")
+                                                        }
+                                                    >
+                                                        Minggu Ini
+                                                    </Button>
+                                                    <Button
+                                                        variant={
+                                                            dateRange ===
+                                                            "month"
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        size="sm"
+                                                        className="h-8 text-xs"
+                                                        onClick={() =>
+                                                            setDateRange(
+                                                                "month"
+                                                            )
+                                                        }
+                                                    >
+                                                        Bulan Ini
+                                                    </Button>
+                                                    <Button
+                                                        variant={
+                                                            dateRange ===
+                                                            "custom"
+                                                                ? "default"
+                                                                : "outline"
+                                                        }
+                                                        size="sm"
+                                                        className="h-8 text-xs"
+                                                        onClick={() =>
+                                                            setDateRange(
+                                                                "custom"
+                                                            )
+                                                        }
+                                                    >
+                                                        <Calendar className="h-3.5 w-3.5 mr-1" />
+                                                        Kustom
+                                                    </Button>
+                                                    {dateRange && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 text-xs text-gray-500 hover:text-rose-500"
+                                                            onClick={() =>
+                                                                setDateRange("")
+                                                            }
+                                                        >
+                                                            <X className="h-3.5 w-3.5 mr-1" />
+                                                            Reset
+                                                        </Button>
+                                                    )}
+                                                </div>
+
+                                                {dateRange === "custom" && (
+                                                    <div className="w-full mt-2 flex flex-wrap gap-2 items-center">
+                                                        <div className="flex items-center gap-2">
+                                                            <Input
+                                                                type="date"
+                                                                value={
+                                                                    startDate
+                                                                }
+                                                                onChange={(e) =>
+                                                                    setStartDate(
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                className="h-8 text-xs w-auto"
+                                                            />
+                                                            <span className="text-xs text-gray-500">
+                                                                hingga
+                                                            </span>
+                                                            <Input
+                                                                type="date"
+                                                                value={endDate}
+                                                                onChange={(e) =>
+                                                                    setEndDate(
+                                                                        e.target
+                                                                            .value
+                                                                    )
+                                                                }
+                                                                className="h-8 text-xs w-auto"
+                                                            />
+                                                        </div>
+                                                        <Button
+                                                            variant="default"
+                                                            size="sm"
+                                                            className="h-8 text-xs"
+                                                            onClick={
+                                                                applyCustomDateRange
+                                                            }
+                                                        >
+                                                            <Check className="h-3.5 w-3.5 mr-1" />
+                                                            Terapkan
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Summary Bar */}
+                            {filteredTransactions.length > 0 && (
+                                <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div className="bg-gray-50 rounded-lg border border-gray-100 p-3 flex items-center justify-between">
+                                        <span className="text-sm text-gray-500">
+                                            Total Transaksi:
+                                        </span>
+                                        <Badge
+                                            variant="secondary"
+                                            className="text-gray-800 font-medium"
                                         >
-                                            <SelectTrigger className="w-[180px]">
-                                                <SelectValue placeholder="Jenis Transaksi" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="all">
-                                                    Semua Transaksi
-                                                </SelectItem>
-                                                <SelectItem value="credit">
-                                                    Kredit (Masuk)
-                                                </SelectItem>
-                                                <SelectItem value="debit">
-                                                    Debit (Keluar)
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                            {filteredTransactions.length}
+                                        </Badge>
+                                    </div>
+                                    <div className="bg-emerald-50 rounded-lg border border-emerald-100 p-3 flex items-center justify-between">
+                                        <span className="text-sm text-emerald-700">
+                                            Total Kredit:
+                                        </span>
+                                        <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                                            <ArrowUpRight className="h-3.5 w-3.5 mr-1" />
+                                            {formatCurrency(
+                                                filteredTransactions
+                                                    .filter(
+                                                        (tx) => tx.amount > 0
+                                                    )
+                                                    .reduce(
+                                                        (sum, tx) =>
+                                                            sum + tx.amount,
+                                                        0
+                                                    )
+                                            )}
+                                        </Badge>
+                                    </div>
+                                    <div className="bg-rose-50 rounded-lg border border-rose-100 p-3 flex items-center justify-between">
+                                        <span className="text-sm text-rose-700">
+                                            Total Debit:
+                                        </span>
+                                        <Badge className="bg-rose-100 text-rose-800 hover:bg-rose-100">
+                                            <ArrowDownRight className="h-3.5 w-3.5 mr-1" />
+                                            {formatCurrency(
+                                                filteredTransactions
+                                                    .filter(
+                                                        (tx) => tx.amount < 0
+                                                    )
+                                                    .reduce(
+                                                        (sum, tx) =>
+                                                            sum +
+                                                            Math.abs(tx.amount),
+                                                        0
+                                                    )
+                                            )}
+                                        </Badge>
                                     </div>
                                 </div>
-
-                                {showFilters && (
-                                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-gray-200">
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                Urutkan
-                                            </label>
-                                            <Select
-                                                value={sortField}
-                                                onValueChange={setSortField}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Urutkan berdasarkan" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="created_at">
-                                                        Tanggal
-                                                    </SelectItem>
-                                                    <SelectItem value="amount">
-                                                        Jumlah
-                                                    </SelectItem>
-                                                    <SelectItem value="balance">
-                                                        Saldo
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                                                Arah Urutan
-                                            </label>
-                                            <Select
-                                                value={sortDirection}
-                                                onValueChange={setSortDirection}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Arah urutan" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="desc">
-                                                        Terbaru - Terlama
-                                                    </SelectItem>
-                                                    <SelectItem value="asc">
-                                                        Terlama - Terbaru
-                                                    </SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="flex items-end">
-                                            <Button
-                                                className="w-full"
-                                                onClick={() =>
-                                                    setShowFilters(false)
-                                                }
-                                            >
-                                                Terapkan Filter
-                                            </Button>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            )}
 
                             {/* Transaction List */}
                             {filteredTransactions.length > 0 ? (
-                                <div className="rounded-lg border border-gray-100 overflow-hidden">
+                                <div className="rounded-lg border border-gray-100 overflow-hidden shadow-sm">
                                     <div className="overflow-x-auto">
                                         <table className="min-w-full divide-y divide-gray-200">
                                             <thead className="bg-gray-50">
@@ -1291,37 +1649,55 @@ const AccountsShow = () => {
                                                         scope="col"
                                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                                     >
-                                                        Tanggal & Waktu
+                                                        <div className="flex items-center">
+                                                            <Calendar className="h-3.5 w-3.5 mr-2" />
+                                                            Tanggal & Waktu
+                                                        </div>
                                                     </th>
                                                     <th
                                                         scope="col"
                                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                                     >
-                                                        Jenis
+                                                        <div className="flex items-center">
+                                                            <ArrowDownUp className="h-3.5 w-3.5 mr-2" />
+                                                            Jenis
+                                                        </div>
                                                     </th>
                                                     <th
                                                         scope="col"
                                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                                     >
-                                                        Jumlah
+                                                        <div className="flex items-center">
+                                                            <CreditCard className="h-3.5 w-3.5 mr-2" />
+                                                            Jumlah
+                                                        </div>
                                                     </th>
                                                     <th
                                                         scope="col"
                                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                                     >
-                                                        Saldo Sebelumnya
+                                                        <div className="flex items-center">
+                                                            <Wallet className="h-3.5 w-3.5 mr-2" />
+                                                            Saldo Sebelumnya
+                                                        </div>
                                                     </th>
                                                     <th
                                                         scope="col"
                                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                                     >
-                                                        Saldo Baru
+                                                        <div className="flex items-center">
+                                                            <Wallet className="h-3.5 w-3.5 mr-2" />
+                                                            Saldo Baru
+                                                        </div>
                                                     </th>
                                                     <th
                                                         scope="col"
                                                         className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                                                     >
-                                                        Perubahan %
+                                                        <div className="flex items-center">
+                                                            <ArrowUpRight className="h-3.5 w-3.5 mr-2" />
+                                                            Perubahan %
+                                                        </div>
                                                     </th>
                                                 </tr>
                                             </thead>
@@ -1334,39 +1710,39 @@ const AccountsShow = () => {
                                                             );
                                                         const percentChange =
                                                             calculatePercentageChange(
-                                                                transaction.new_balance,
+                                                                transaction.balance,
                                                                 transaction.previous_balance
                                                             );
                                                         return (
                                                             <tr
                                                                 key={index}
-                                                                className="hover:bg-gray-50 cursor-pointer"
+                                                                className="hover:bg-indigo-50/30 cursor-pointer transition-colors"
                                                                 onClick={() =>
                                                                     setSelectedTransaction(
                                                                         transaction
                                                                     )
                                                                 }
                                                             >
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                    <div>
-                                                                        {formatDate(
-                                                                            transaction.created_at ||
-                                                                                ""
-                                                                        )}
-                                                                    </div>
-                                                                    <div className="text-xs">
-                                                                        {formatTime(
-                                                                            transaction.created_at ||
-                                                                                ""
-                                                                        )}
+                                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                                    <div className="flex flex-col">
+                                                                        <div className="text-sm font-medium text-gray-900">
+                                                                            {formatDate(
+                                                                                transaction.created_at ||
+                                                                                    ""
+                                                                            )}
+                                                                        </div>
+                                                                        <div className="text-xs text-gray-500 mt-0.5">
+                                                                            {formatTime(
+                                                                                transaction.created_at ||
+                                                                                    ""
+                                                                            )}
+                                                                        </div>
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                                     <Badge
                                                                         variant="outline"
-                                                                        className={
-                                                                            txType.className
-                                                                        }
+                                                                        className={`${txType.className} shadow-sm`}
                                                                     >
                                                                         {
                                                                             txType.icon
@@ -1386,12 +1762,18 @@ const AccountsShow = () => {
                                                                             : "text-rose-600"
                                                                     }`}
                                                                 >
-                                                                    {formatCurrency(
-                                                                        Math.abs(
-                                                                            transaction.amount
-                                                                        ),
-                                                                        account.currency
-                                                                    )}
+                                                                    <div className="flex items-center">
+                                                                        {transaction.amount >
+                                                                        0
+                                                                            ? "+"
+                                                                            : "-"}
+                                                                        {formatCurrency(
+                                                                            Math.abs(
+                                                                                transaction.amount
+                                                                            ),
+                                                                            account.currency
+                                                                        )}
+                                                                    </div>
                                                                 </td>
                                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                                     {formatCurrency(
@@ -1399,25 +1781,25 @@ const AccountsShow = () => {
                                                                         account.currency
                                                                     )}
                                                                 </td>
-                                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                                                                    {formatCurrency(
-                                                                        transaction.new_balance,
-                                                                        account.currency
-                                                                    )}
+                                                                <td className="px-6 py-4 whitespace-nowrap">
+                                                                    <span className="text-sm font-medium text-gray-900 bg-gray-50 px-2 py-1 rounded-md border border-gray-100">
+                                                                        {formatCurrency(
+                                                                            transaction.balance,
+                                                                            account.currency
+                                                                        )}
+                                                                    </span>
                                                                 </td>
                                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                                     <Badge
                                                                         variant="outline"
                                                                         className={`
-                                                                        ${
-                                                                            percentChange >
-                                                                            0
-                                                                                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                                                : percentChange <
-                                                                                  0
-                                                                                ? "bg-rose-50 text-rose-700 border-rose-200"
-                                                                                : "bg-gray-50 text-gray-700 border-gray-200"
-                                                                        }`}
+                                                ${
+                                                    percentChange > 0
+                                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                                        : percentChange < 0
+                                                        ? "bg-rose-50 text-rose-700 border-rose-200"
+                                                        : "bg-gray-50 text-gray-700 border-gray-200"
+                                                }`}
                                                                     >
                                                                         {percentChange >
                                                                         0 ? (
@@ -1443,16 +1825,76 @@ const AccountsShow = () => {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    {/* Pagination (Optional) */}
+                                    <div className="border-t border-gray-200 px-4 py-3 bg-gray-50 flex items-center justify-between">
+                                        <div className="flex-1 flex justify-between sm:hidden">
+                                            <Button variant="outline" size="sm">
+                                                Sebelumnya
+                                            </Button>
+                                            <Button variant="outline" size="sm">
+                                                Selanjutnya
+                                            </Button>
+                                        </div>
+                                        <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                            <div>
+                                                <p className="text-sm text-gray-700">
+                                                    Menampilkan{" "}
+                                                    <span className="font-medium">
+                                                        1
+                                                    </span>{" "}
+                                                    sampai{" "}
+                                                    <span className="font-medium">
+                                                        {
+                                                            filteredTransactions.length
+                                                        }
+                                                    </span>{" "}
+                                                    dari{" "}
+                                                    <span className="font-medium">
+                                                        {
+                                                            filteredTransactions.length
+                                                        }
+                                                    </span>{" "}
+                                                    hasil
+                                                </p>
+                                            </div>
+                                            <div>
+                                                <div className="flex gap-1">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="px-2"
+                                                    >
+                                                        <ChevronLeft className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="default"
+                                                        size="sm"
+                                                        className="px-3"
+                                                    >
+                                                        1
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        className="px-2"
+                                                    >
+                                                        <ChevronRight className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             ) : (
-                                <div className="py-8 text-center border border-gray-100 rounded-lg">
-                                    <div className="mx-auto h-16 w-16 rounded-lg bg-blue-100 flex items-center justify-center mb-4">
-                                        <Receipt className="h-8 w-8 text-blue-500" />
+                                <div className="py-12 text-center border border-gray-100 rounded-lg bg-white">
+                                    <div className="mx-auto h-20 w-20 rounded-full bg-indigo-100 flex items-center justify-center mb-4">
+                                        <Receipt className="h-10 w-10 text-indigo-500" />
                                     </div>
-                                    <h3 className="text-lg font-medium text-gray-900">
+                                    <h3 className="text-xl font-medium text-gray-900 mb-2">
                                         Tidak ada transaksi
                                     </h3>
-                                    <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+                                    <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
                                         {searchTerm || transactionType !== "all"
                                             ? "Tidak ada transaksi yang cocok dengan filter yang dipilih. Coba ubah kriteria pencarian Anda."
                                             : "Rekening ini belum memiliki riwayat transaksi."}
@@ -1461,13 +1903,13 @@ const AccountsShow = () => {
                                         transactionType !== "all") && (
                                         <Button
                                             variant="outline"
-                                            className="mt-4"
                                             onClick={() => {
                                                 setSearchTerm("");
                                                 setTransactionType("all");
                                             }}
+                                            className="gap-1.5"
                                         >
-                                            <X className="h-4 w-4 mr-1.5" />
+                                            <X className="h-4 w-4" />
                                             Reset Filter
                                         </Button>
                                     )}
@@ -1475,359 +1917,452 @@ const AccountsShow = () => {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Transaction Detail Modal (shows when a transaction is selected) */}
+                    {selectedTransaction && (
+                        <div
+                            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                            onClick={() => setSelectedTransaction(null)}
+                        >
+                            <div
+                                className="bg-white rounded-lg shadow-xl max-w-md w-full overflow-hidden"
+                                onClick={(e) => e.stopPropagation()}
+                            >
+                                <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 text-white flex items-center justify-between">
+                                    <h3 className="font-medium text-white">
+                                        Detail Transaksi
+                                    </h3>
+                                    <button
+                                        className="text-white hover:text-indigo-100"
+                                        onClick={() =>
+                                            setSelectedTransaction(null)
+                                        }
+                                    >
+                                        <X className="h-5 w-5" />
+                                    </button>
+                                </div>
+                                <div className="p-6">
+                                    <div className="flex items-center justify-center mb-6">
+                                        <div
+                                            className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                                                selectedTransaction.amount > 0
+                                                    ? "bg-emerald-100"
+                                                    : "bg-rose-100"
+                                            }`}
+                                        >
+                                            {selectedTransaction.amount > 0 ? (
+                                                <ArrowUpRight className="h-8 w-8 text-emerald-600" />
+                                            ) : (
+                                                <ArrowDownRight className="h-8 w-8 text-rose-600" />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="text-center mb-6">
+                                        <div className="text-sm text-gray-500">
+                                            Jumlah Transaksi
+                                        </div>
+                                        <div
+                                            className={`text-3xl font-bold mt-1 ${
+                                                selectedTransaction.amount > 0
+                                                    ? "text-emerald-600"
+                                                    : "text-rose-600"
+                                            }`}
+                                        >
+                                            {selectedTransaction.amount > 0
+                                                ? "+"
+                                                : "-"}
+                                            {formatCurrency(
+                                                Math.abs(
+                                                    selectedTransaction.amount
+                                                )
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm text-gray-600">
+                                                Tanggal
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {formatDate(
+                                                    selectedTransaction.created_at
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm text-gray-600">
+                                                Waktu
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {formatTime(
+                                                    selectedTransaction.created_at
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm text-gray-600">
+                                                Jenis
+                                            </span>
+                                            <span className="text-sm font-medium">
+                                                {
+                                                    getTransactionType(
+                                                        selectedTransaction.amount
+                                                    ).label
+                                                }
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm text-gray-600">
+                                                Saldo Sebelumnya
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {formatCurrency(
+                                                    selectedTransaction.previous_balance
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm text-gray-600">
+                                                Saldo Setelah Transaksi
+                                            </span>
+                                            <span className="text-sm font-medium text-gray-900">
+                                                {formatCurrency(
+                                                    selectedTransaction.balance
+                                                )}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-6 flex gap-2">
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                            onClick={() =>
+                                                setSelectedTransaction(null)
+                                            }
+                                        >
+                                            Tutup
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            className="flex-1"
+                                        >
+                                            <Printer className="h-4 w-4 mr-1.5" />
+                                            Cetak
+                                        </Button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </TabsContent>
 
                 {/* Details Tab */}
                 <TabsContent value="details" className="space-y-6">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Account Info Card */}
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <div className="flex items-center justify-between">
-                                    <CardTitle>Informasi Rekening</CardTitle>
-                                    {getStatusBadge(account.status)}
-                                </div>
-                                <CardDescription>
-                                    Detail rekening nasabah
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="pt-4">
-                                <div className="mb-6">
-                                    <div className="h-24 w-24 bg-blue-50 rounded-xl flex items-center justify-center mx-auto mb-4">
-                                        <CreditCard className="h-12 w-12 text-blue-600" />
-                                    </div>
-                                    <h3 className="text-center text-lg font-medium text-gray-900">
-                                        {account.account_number}
-                                    </h3>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="flex items-start">
-                                        <User className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Nama Nasabah
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {account.client.name}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <Package className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Jenis Rekening
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {account.account_product.name}
-                                            </p>
-                                            <p className="text-xs text-gray-500 mt-0.5">
-                                                Kode:{" "}
-                                                {account.account_product.code}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <Wallet className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Saldo Saat Ini
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {formatCurrency(
-                                                    account.current_balance,
-                                                    account.currency
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <Wallet className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Saldo Tersedia
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {formatCurrency(
-                                                    account.available_balance,
-                                                    account.currency
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <Users className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Universal Banker
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {account.universal_banker.name}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <Building2 className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Cabang
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {account.universal_banker.branch
-                                                    ?.name || "Pusat"}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <CalendarDays className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Dibuka Pada
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {formatDate(account.opened_at)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="mt-6 pt-6 border-t border-gray-100">
-                                    <div className="flex justify-center space-x-3">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            className="gap-1.5"
-                                        >
-                                            <FileText className="h-4 w-4" />
-                                            Cetak Detail
-                                        </Button>
-                                        <Button size="sm" className="gap-1.5">
-                                            <Edit className="h-4 w-4" />
-                                            Ubah Status
-                                        </Button>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Client Info Card */}
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle>Informasi Nasabah</CardTitle>
-                                <CardDescription>
-                                    Detail nasabah pemilik rekening
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="pt-4">
-                                <div className="space-y-4">
-                                    <div className="flex items-start">
-                                        <User className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Nama Lengkap
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {account.client.name}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <FileText className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Nomor CIF
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {account.client.cif}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    {account.client.email && (
-                                        <div className="flex items-start">
-                                            <Mail className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-700">
-                                                    Email
-                                                </p>
-                                                <p className="text-sm text-gray-600 mt-1">
-                                                    {account.client.email}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    {account.client.phone && (
-                                        <div className="flex items-start">
-                                            <Phone className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-700">
-                                                    Telepon
-                                                </p>
-                                                <p className="text-sm text-gray-600 mt-1">
-                                                    {account.client.phone}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="flex items-start">
-                                        <CalendarDays className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Bergabung Sejak
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {formatDate(
-                                                    account.client.joined_at
-                                                )}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <Separator className="my-6" />
-
+                    {/* Account Information */}
+                    <Card className="overflow-hidden border-0 shadow-md">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-b border-blue-100">
+                            <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-sm font-medium text-gray-700 mb-3">
-                                        Rekening Lainnya
-                                    </h3>
-                                    {account.client.accounts &&
-                                    account.client.accounts.length > 1 ? (
-                                        <div className="space-y-3">
-                                            {account.client.accounts
-                                                .filter(
-                                                    (acc) =>
-                                                        acc.id !== account.id
-                                                )
-                                                .map((acc, index) => (
-                                                    <Link
-                                                        key={index}
-                                                        href={route(
-                                                            "accounts.show",
-                                                            acc.id
-                                                        )}
-                                                        className="flex items-center justify-between p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
-                                                                <CreditCard className="h-4 w-4 text-blue-600" />
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-medium text-gray-900">
-                                                                    {
-                                                                        acc.account_number
-                                                                    }
-                                                                </p>
-                                                                <p className="text-xs text-gray-500">
-                                                                    {acc
-                                                                        .account_product
-                                                                        ?.name ||
-                                                                        "Rekening"}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                    </Link>
-                                                ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-gray-500">
-                                            Nasabah tidak memiliki rekening
-                                            lain.
-                                        </p>
-                                    )}
+                                    <CardTitle className="flex items-center gap-2 text-blue-800">
+                                        <CreditCard className="h-5 w-5 text-blue-600" />
+                                        Informasi Rekening
+                                    </CardTitle>
+                                    <CardDescription className="text-blue-700/70">
+                                        Detail dan pengaturan rekening
+                                    </CardDescription>
                                 </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Product Info Card */}
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardTitle>Informasi Produk</CardTitle>
-                                <CardDescription>
-                                    Detail produk rekening
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent className="pt-4">
-                                <div className="space-y-4">
-                                    <div className="flex items-start">
-                                        <Package className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Nama Produk
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {account.account_product.name}
-                                            </p>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-0 divide-y md:divide-y-0 md:divide-x divide-gray-100">
+                                <div className="p-6">
+                                    <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                        <FileText className="h-4 w-4 mr-2 text-blue-600" />
+                                        Informasi Dasar
+                                    </h3>
+                                    <div className="rounded-lg bg-gray-50/50 border border-gray-100 overflow-hidden">
+                                        <div className="flex items-center p-3 bg-white hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                            <span className="text-sm text-gray-600 flex-1">
+                                                Nomor Rekening
+                                            </span>
+                                            <span className="text-sm font-medium bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-md">
+                                                {account.account_number}
+                                            </span>
                                         </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <FileText className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Kode Produk
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
-                                                {account.account_product.code}
-                                            </p>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex items-start">
-                                        <Info className="h-5 w-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-700">
-                                                Deskripsi
-                                            </p>
-                                            <p className="text-sm text-gray-600 mt-1">
+                                        <div className="flex items-center p-3 bg-white hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                            <span className="text-sm text-gray-600 flex-1">
+                                                Jenis Rekening
+                                            </span>
+                                            <span className="text-sm font-medium">
                                                 {account.account_product
-                                                    .description ||
-                                                    "Tidak ada deskripsi"}
-                                            </p>
+                                                    ?.name || "Tabungan"}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center p-3 bg-white hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                            <span className="text-sm text-gray-600 flex-1">
+                                                Mata Uang
+                                            </span>
+                                            <span className="text-sm font-medium flex items-center gap-1">
+                                                <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center text-xs font-bold">
+                                                    {account.currency || "IDR"}
+                                                </div>
+                                                {account.currency ||
+                                                    "Rupiah Indonesia"}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center p-3 bg-white hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                            <span className="text-sm text-gray-600 flex-1">
+                                                Tanggal Dibuka
+                                            </span>
+                                            <span className="text-sm font-medium flex items-center">
+                                                <Calendar className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                                                {formatDate(account.opened_at)}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center p-3 bg-white hover:bg-gray-50 transition-colors">
+                                            <span className="text-sm text-gray-600 flex-1">
+                                                Status
+                                            </span>
+                                            {getStatusBadge(
+                                                account.status || "active"
+                                            )}
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                                    <h3 className="text-sm font-medium text-blue-800 mb-2 flex items-center">
-                                        <Info className="h-4 w-4 mr-1.5" />
-                                        Fitur dan Manfaat
+                                <div className="p-6">
+                                    <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center">
+                                        <Wallet className="h-4 w-4 mr-2 text-blue-600" />
+                                        Informasi Keuangan
                                     </h3>
-                                    <ul className="space-y-2 text-sm text-blue-700">
-                                        <li className="flex items-start">
-                                            <Check className="h-4 w-4 mr-1.5 mt-0.5 text-blue-600" />
-                                            <span>
-                                                Bebas biaya administrasi bulanan
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <Check className="h-4 w-4 mr-1.5 mt-0.5 text-blue-600" />
-                                            <span>
-                                                Akses internet dan mobile
-                                                banking
-                                            </span>
-                                        </li>
-                                        <li className="flex items-start">
-                                            <Check className="h-4 w-4 mr-1.5 mt-0.5 text-blue-600" />
-                                            <span>
-                                                Kartu ATM/Debit dengan fitur
-                                                lengkap
-                                            </span>
-                                        </li>
-                                    </ul>
+                                    <div className="space-y-4">
+                                        <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
+                                            <div className="text-xs font-medium text-blue-600 uppercase mb-1">
+                                                Saldo Saat Ini
+                                            </div>
+                                            <div className="text-2xl font-bold text-blue-900">
+                                                {formatCurrency(
+                                                    account.current_balance
+                                                )}
+                                            </div>
+                                            <div className="mt-1 text-xs text-blue-700 flex items-center">
+                                                <ArrowUpRight className="h-3.5 w-3.5 mr-1" />
+                                                Saldo tersedia:{" "}
+                                                {formatCurrency(
+                                                    account.available_balance
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                                <div className="text-xs font-medium text-gray-500 mb-1">
+                                                    Total Transaksi
+                                                </div>
+                                                <div className="text-lg font-bold text-gray-900 flex items-center">
+                                                    <Receipt className="h-4 w-4 mr-1.5 text-gray-500" />
+                                                    {
+                                                        transactionStats.totalTransactions
+                                                    }
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                                <div className="text-xs font-medium text-gray-500 mb-1">
+                                                    Transaksi Terakhir
+                                                </div>
+                                                <div className="text-sm font-medium text-gray-900">
+                                                    {processedTransactions.length >
+                                                    0
+                                                        ? formatDate(
+                                                              processedTransactions[
+                                                                  processedTransactions.length -
+                                                                      1
+                                                              ].created_at
+                                                          )
+                                                        : "Belum ada transaksi"}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="bg-emerald-50/70 p-3 rounded-lg border border-emerald-100">
+                                                <div className="text-xs font-medium text-emerald-700 mb-1">
+                                                    Kredit
+                                                </div>
+                                                <div className="text-lg font-medium text-emerald-800">
+                                                    {
+                                                        transactionStats.creditCount
+                                                    }{" "}
+                                                    <span className="text-xs text-emerald-600">
+                                                        transaksi
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-rose-50/70 p-3 rounded-lg border border-rose-100">
+                                                <div className="text-xs font-medium text-rose-700 mb-1">
+                                                    Debit
+                                                </div>
+                                                <div className="text-lg font-medium text-rose-800">
+                                                    {
+                                                        transactionStats.debitCount
+                                                    }{" "}
+                                                    <span className="text-xs text-rose-600">
+                                                        transaksi
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                            </CardContent>
-                        </Card>
-                    </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Client Information */}
+                    <Card className="overflow-hidden border-0 shadow-md">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-emerald-100">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle className="flex items-center gap-2 text-emerald-800">
+                                        <User className="h-5 w-5 text-emerald-600" />
+                                        Informasi Nasabah
+                                    </CardTitle>
+                                    <CardDescription className="text-emerald-700/70">
+                                        Detail nasabah pemilik rekening ini
+                                    </CardDescription>
+                                </div>
+                                <Link
+                                    href={route(
+                                        "clients.show",
+                                        account.client.id
+                                    )}
+                                >
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1 border-emerald-200 bg-white/80 text-emerald-700 hover:bg-emerald-50"
+                                    >
+                                        <User className="h-4 w-4" />
+                                        Lihat Profil Nasabah
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            <div className="p-6">
+                                <div className="flex flex-col md:flex-row gap-6">
+                                    {/* Client avatar and primary info */}
+                                    <div className="flex-shrink-0 flex flex-col items-center md:items-start">
+                                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-emerald-100 to-teal-200 flex items-center justify-center mb-3 shadow-sm border-2 border-white">
+                                            <span className="text-3xl font-bold text-emerald-700">
+                                                {account.client.name?.charAt(
+                                                    0
+                                                ) || "N"}
+                                            </span>
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-gray-900 text-center md:text-left mb-1">
+                                            {account.client.name}
+                                        </h3>
+                                        <div className="flex items-center mb-3">
+                                            <Badge
+                                                variant="outline"
+                                                className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-emerald-200"
+                                            >
+                                                <Check className="h-3 w-3 mr-1" />
+                                                {account.client.status ||
+                                                    "Aktif"}
+                                            </Badge>
+                                        </div>
+                                    </div>
+
+                                    {/* Client details in two columns */}
+                                    <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div className="space-y-0 rounded-lg bg-gray-50/50 border border-gray-100 overflow-hidden">
+                                            <div className="bg-gray-100/70 px-4 py-2">
+                                                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider flex items-center">
+                                                    <FileText className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                                                    Informasi Identitas
+                                                </h4>
+                                            </div>
+
+                                            <div className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                                <span className="text-sm text-gray-600 flex-1">
+                                                    CIF
+                                                </span>
+                                                <span className="text-sm font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                                    {account.client.cif ||
+                                                        "Tidak tersedia"}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors">
+                                                <span className="text-sm text-gray-600 flex-1">
+                                                    Bergabung Sejak
+                                                </span>
+                                                <span className="text-sm font-medium flex items-center">
+                                                    <CalendarDays className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                                                    {account.client.joined_at
+                                                        ? formatDate(
+                                                              account.client
+                                                                  .joined_at
+                                                          )
+                                                        : "Tidak tersedia"}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-0 rounded-lg bg-gray-50/50 border border-gray-100 overflow-hidden">
+                                            <div className="bg-gray-100/70 px-4 py-2">
+                                                <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider flex items-center">
+                                                    <Phone className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                                                    Informasi Kontak
+                                                </h4>
+                                            </div>
+
+                                            <div className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 group">
+                                                <span className="text-sm text-gray-600 flex-1">
+                                                    Email
+                                                </span>
+                                                <a
+                                                    href={`mailto:${
+                                                        account.client.email ||
+                                                        ""
+                                                    }`}
+                                                    className="text-sm font-medium flex items-center group-hover:text-blue-600 transition-colors"
+                                                >
+                                                    <Mail className="h-3.5 w-3.5 mr-1.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                    {account.client.email ||
+                                                        "Tidak tersedia"}
+                                                </a>
+                                            </div>
+
+                                            <div className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors group">
+                                                <span className="text-sm text-gray-600 flex-1">
+                                                    Telepon
+                                                </span>
+                                                <a
+                                                    href={`tel:${
+                                                        account.client.phone ||
+                                                        ""
+                                                    }`}
+                                                    className="text-sm font-medium flex items-center group-hover:text-blue-600 transition-colors"
+                                                >
+                                                    <Phone className="h-3.5 w-3.5 mr-1.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                    {account.client.phone ||
+                                                        "Tidak tersedia"}
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </TabsContent>
             </Tabs>
         </AuthenticatedLayout>

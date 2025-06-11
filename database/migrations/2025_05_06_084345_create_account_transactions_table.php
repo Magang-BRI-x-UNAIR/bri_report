@@ -14,9 +14,7 @@ return new class extends Migration
         Schema::create('account_transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->constrained()->onDelete('cascade');
-            $table->decimal('amount', 19, 4)->comment('Transaction amount');
-            $table->decimal('previous_balance', 19, 4)->comment('Balance before transaction');
-            $table->decimal('new_balance', 19, 4)->comment('Balance after transaction');
+            $table->decimal('balance', 19, 4)->comment('Balance');
             $table->timestamps();
             $table->index('account_id');
         });

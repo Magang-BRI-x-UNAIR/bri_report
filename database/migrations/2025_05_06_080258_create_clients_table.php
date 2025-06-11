@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('name')->unique()->comment('Client name');
             $table->string('email')->unique()->comment('Client email')->nullable();
             $table->string('phone')->nullable()->comment('Client phone number')->nullable();
+            $table->enum('status', ['active', 'inactive', 'suspended'])
+                ->default('active')
+                ->comment('Client status');
             $table->timestamp('joined_at')->nullable()->comment('Date when the client joined')->nullable();
             $table->timestamps();
         });

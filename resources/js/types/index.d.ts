@@ -38,11 +38,11 @@ export interface Account {
 }
 
 export interface AccountTransaction {
+    previous_balance: number;
+    amount: number;
     id: string;
     account: Account;
-    amount: number;
-    previous_balance: number;
-    new_balance: number;
+    balance: number;
     created_at: string;
     updated_at: string;
 }
@@ -53,6 +53,7 @@ export interface Client {
     cif: string;
     email?: string;
     phone?: string;
+    status: "active" | "inactive" | "suspended";
     joined_at: string;
     created_at: string;
     updated_at: string;

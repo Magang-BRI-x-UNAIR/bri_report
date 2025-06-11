@@ -201,7 +201,6 @@ class AccountSeeder extends Seeder
             $currentDay = $startDate->copy();
             $startBalance = $account->currency === 'IDR' ? rand(1000000, 5000000) : rand(100, 500);
             $balance = $startBalance;
-            $previousBalance = 0;
 
             // Assign some random transaction patterns to this account
             $accountPatterns = [];
@@ -212,12 +211,10 @@ class AccountSeeder extends Seeder
                 }
             }
 
-            // First transaction is the opening deposit
+            // First transaction is the opening deposit - store current balance
             $transactions[] = [
                 'account_id' => $account->id,
-                'amount' => $balance,
-                'previous_balance' => 0,
-                'new_balance' => $balance,
+                'balance' => $balance,
                 'created_at' => $startDate,
                 'updated_at' => $startDate,
             ];
@@ -226,7 +223,6 @@ class AccountSeeder extends Seeder
             $openingDateStr = $startDate->format('Y-m-d');
             $universalBankerDailyData[$account->universal_banker_id][$openingDateStr]['total_balance'] += $balance;
 
-            $previousBalance = $balance;
             $currentDay = $startDate->copy()->addDay();
 
             // Generate transactions for each day until we reach end date
@@ -264,16 +260,14 @@ class AccountSeeder extends Seeder
 
                             $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
 
+                            // Store the new balance
                             $transactions[] = [
                                 'account_id' => $account->id,
-                                'amount' => $amount,
-                                'previous_balance' => $previousBalance,
-                                'new_balance' => $balance,
+                                'balance' => $balance,
                                 'created_at' => $transactionTime,
                                 'updated_at' => $transactionTime,
                             ];
 
-                            $previousBalance = $balance;
                             $dayTransactionsCount++;
                         }
                     }
@@ -291,16 +285,14 @@ class AccountSeeder extends Seeder
 
                         $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
 
+                        // Store the new balance
                         $transactions[] = [
                             'account_id' => $account->id,
-                            'amount' => $amount,
-                            'previous_balance' => $previousBalance,
-                            'new_balance' => $balance,
+                            'balance' => $balance,
                             'created_at' => $transactionTime,
                             'updated_at' => $transactionTime,
                         ];
 
-                        $previousBalance = $balance;
                         $dayTransactionsCount++;
                     }
                 }
@@ -340,26 +332,23 @@ class AccountSeeder extends Seeder
 
                     $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
 
+                    // Store the new balance
                     $transactions[] = [
                         'account_id' => $account->id,
-                        'amount' => $amount,
-                        'previous_balance' => $previousBalance,
-                        'new_balance' => $balance,
+                        'balance' => $balance,
                         'created_at' => $transactionTime,
                         'updated_at' => $transactionTime,
                     ];
 
-                    $previousBalance = $balance;
                     $dayTransactionsCount++;
                 }
 
                 // Make sure we have at least one transaction per day (even if zero amount)
                 if ($dayTransactionsCount === 0) {
+                    // Just record the same balance
                     $transactions[] = [
                         'account_id' => $account->id,
-                        'amount' => 0,
-                        'previous_balance' => $balance,
-                        'new_balance' => $balance,
+                        'balance' => $balance,
                         'created_at' => $currentDay->copy()->setTime(9, 0, 0),
                         'updated_at' => $currentDay->copy()->setTime(9, 0, 0),
                     ];

@@ -13,9 +13,7 @@ class AccountTransaction extends Model
 
     protected $fillable = [
         'account_id',
-        'amount',
-        'previous_balance',
-        'new_balance',
+        'balance',
     ];
 
 

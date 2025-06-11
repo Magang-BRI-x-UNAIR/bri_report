@@ -37,10 +37,10 @@ const AccountsCreate = () => {
         account_number: "",
         account_product_id: "",
         universal_banker_id: "",
-        currency: "IDR", // Default to IDR
+        currency: "IDR",
         initial_balance: 0,
-        opened_at: new Date().toISOString().split("T")[0], // Default to today
-        status: "active", // Default to active
+        opened_at: new Date().toISOString().split("T")[0],
+        status: "active",
     });
 
     // Currency options
@@ -51,40 +51,22 @@ const AccountsCreate = () => {
         { code: "SGD", name: "Singapore Dollar (SGD)" },
     ];
 
-    // Function to validate account number
-    const validateAccountNumber = (accountNumber: string) => {
-        return /^\d{10}$/.test(accountNumber);
-    };
-
-    // Function to generate a random account number
-    const generateAccountNumber = () => {
-        const currentYear = new Date().getFullYear().toString().substr(2, 2); // Get last 2 digits of year
-        const randomDigits = Math.floor(10000000 + Math.random() * 90000000); // Generate random 8-digit number
-        const generatedNumber = currentYear + randomDigits.toString();
-        setData("account_number", generatedNumber);
-    };
-
     // Format currency as user types
     const handleBalanceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         let value = e.target.value;
-        // Remove non-numeric characters and leading zeros
-        value = value.replace(/\D/g, "").replace(/^0+/, "");
-
-        // If value is empty, set to 0
-        if (!value) {
-            value = "0";
+        value = value.replace(/[^\d.,]/g, "");
+        const numericValue = value.replace(/,/g, "");
+        let amount = parseFloat(numericValue);
+        if (isNaN(amount)) {
+            amount = 0;
         }
-
-        setData("initial_balance", parseInt(value, 10));
+        setData("initial_balance", amount);
     };
-
     // Submit handler
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         post(route("clients.accounts.store", client.id), {
-            onSuccess: () => {
-                // Redirect handled by the controller
-            },
+            onSuccess: () => {},
         });
     };
 
@@ -188,42 +170,19 @@ const AccountsCreate = () => {
                                             className={`block w-full pl-10 pr-20 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
                                                 errors.account_number
                                                     ? "border-red-300 bg-red-50"
-                                                    : validateAccountNumber(
-                                                          data.account_number
-                                                      ) || !data.account_number
-                                                    ? "border-gray-300"
-                                                    : "border-orange-300 bg-orange-50"
+                                                    : "border-gray-300"
                                             }`}
                                             placeholder="Masukkan 10 digit nomor rekening"
                                             maxLength={10}
                                             autoFocus
                                         />
-                                        <div className="absolute inset-y-0 right-0 flex items-center">
-                                            <button
-                                                type="button"
-                                                onClick={generateAccountNumber}
-                                                className="inline-flex items-center px-2 py-1 mr-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-gray-100 hover:bg-gray-200 focus:outline-none"
-                                            >
-                                                <CircleDashed className="h-3 w-3 mr-1" />
-                                                Generate
-                                            </button>
-                                        </div>
                                     </div>
-                                    {errors.account_number ? (
+                                    {errors.account_number && (
                                         <p className="mt-1 text-sm text-red-600 flex items-center">
                                             <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
                                             {errors.account_number}
                                         </p>
-                                    ) : data.account_number &&
-                                      !validateAccountNumber(
-                                          data.account_number
-                                      ) ? (
-                                        <p className="mt-1 text-sm text-orange-600 flex items-center">
-                                            <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                            Nomor rekening harus terdiri dari 10
-                                            digit angka
-                                        </p>
-                                    ) : null}
+                                    )}
                                 </div>
 
                                 <div className="space-y-2">
