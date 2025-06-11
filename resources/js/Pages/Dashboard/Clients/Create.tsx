@@ -35,9 +35,8 @@ const ClientsCreate = () => {
         });
     };
 
-    // Function to check if CIF is valid (numeric and correct length)
     const validateCIF = (cif: string) => {
-        return /^\d{10}$/.test(cif);
+        return /^\d{5,7}$/.test(cif);
     };
 
     // Function to format phone number as user types
