@@ -177,7 +177,7 @@ const ImportPreviewPage: React.FC<PreviewPageProps> = ({ batchId }) => {
             batchId: batchId,
         };
 
-        router.post(route("dashboard.save"), payload, {
+        router.post(route("dashboard.import.save"), payload, {
             onStart: () => {
                 setSaveProcessing(true);
             },

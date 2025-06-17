@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Cache;
 use App\Models\User;
 use App\Models\Client;
 use App\Models\Account;
+use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
@@ -155,20 +156,13 @@ class DashboardController extends Controller
     /**
      * Halaman untuk menampilkan status/hasil penyimpanan.
      */
-    public function resultPage($result_id)
+    public function importResultPage($result_id)
     {
         return Inertia::render('Dashboard/Import/Result', [
             'resultId' => $result_id
         ]);
     }
 
-    /**
-     * API endpoint untuk mengecek status job penyimpanan.
-     */
-    public function getSaveStatus($result_id)
-    {
-        return response()->json(Cache::get($result_id));
-    }
 
     /**
      * Menampilkan halaman untuk ekspor data.
@@ -192,7 +186,6 @@ class DashboardController extends Controller
     {
         $validatedData = $request->validate([
             'universal_bankers' => 'required|array',
-            'universal_bankers.*' => 'exists:users,id',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
             'baseline_year' => 'required|integer|min:2000|max:2100',
@@ -200,6 +193,11 @@ class DashboardController extends Controller
 
         try {
             $cacheKey = 'export_result_' . Str::uuid();
+
+            Cache::put($cacheKey, [
+                'status' => 'processing',
+                'message' => 'Permintaan export diterima dan sedang disiapkan...'
+            ], now()->addHour());
 
             ProcessExcelExport::dispatch(
                 $validatedData['universal_bankers'],
@@ -216,5 +214,55 @@ class DashboardController extends Controller
             Log::error('Gagal memproses ekspor', ['error' => $e->getMessage()]);
             return back()->with('error', 'Gagal memproses ekspor data.');
         }
+    }
+
+    /**
+     * Halaman untuk menampilkan hasil ekspor.
+     */
+    public function exportResultPage($result_id)
+    {
+        return Inertia::render('Dashboard/Export/Result', [
+            'resultId' => $result_id
+        ]);
+    }
+
+    public function downloadExportedFile(string $result_id)
+    {
+        $cachedData = Cache::get($result_id);
+
+        if (!$cachedData || !isset($cachedData['file_path'])) {
+            return redirect()->route('dashboard.export.page')->with('error', 'Sesi unduhan tidak valid atau telah kedaluwarsa.');
+        }
+
+        $filePath = $cachedData['file_path'];
+        $fileName = $cachedData['file_name'] ?? 'Laporan_Kinerja.xlsx';
+
+        if (!str_starts_with($filePath, 'reports/')) {
+            abort(403, 'Akses tidak diizinkan.');
+        }
+
+        if (Storage::disk('local')->exists($filePath)) {
+            Cache::forget($result_id);
+            return Storage::download($filePath, $fileName);
+        }
+
+        return redirect()->route('dashboard.export.page')->with('error', 'File tidak ditemukan atau telah dihapus dari server.');
+    }
+
+    /**
+     * API endpoint untuk mengecek status ekspor.
+     */
+    public function getExportStatus($result_id)
+    {
+
+        return response()->json(Cache::get($result_id));
+    }
+
+    /**
+     * API endpoint untuk mengecek status job penyimpanan.
+     */
+    public function getSaveStatus($result_id)
+    {
+        return response()->json(Cache::get($result_id));
     }
 }

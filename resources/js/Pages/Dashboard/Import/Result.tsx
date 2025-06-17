@@ -2,13 +2,12 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import { Head, Link, router } from "@inertiajs/react";
+import { Head, Link } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import axios from "axios";
 import {
     CheckCircle2,
-    Loader2,
     XCircle,
     FileUp,
     BarChart3,
@@ -16,17 +15,9 @@ import {
     Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from "@/Components/ui/card";
-import { Progress } from "@/Components/ui/progress";
+import { Card, CardContent } from "@/Components/ui/card";
 import type { PageProps } from "@/types";
 
-// Tipe untuk data hasil dari cache
 interface SaveResult {
     status: "saving" | "completed" | "failed";
     message: string;
@@ -117,7 +108,11 @@ const ResultPage: React.FC<ResultPageProps> = ({ resultId }) => {
 
         const intervalId = setInterval(() => {
             axios
-                .get(route("dashboard.save.status", { result_id: resultId }))
+                .get(
+                    route("dashboard.import.save.status", {
+                        result_id: resultId,
+                    })
+                )
                 .then((res) => {
                     const data: SaveResult = res.data;
                     if (

@@ -124,7 +124,6 @@ class ExcelProcessingService
         }
 
         $ubId = $account->universal_banker_id;
-        $currentBalanceFromExcel = (float) $row['current_balance'];
 
         if (!isset($ubBalanceAggregates[$ubId])) {
           $ubBalanceAggregates[$ubId] = [
@@ -132,33 +131,24 @@ class ExcelProcessingService
           ];
         }
 
-        $ubBalanceAggregates[$ubId]['total_balance_from_excel'] += $currentBalanceFromExcel;
+        $ubBalanceAggregates[$ubId]['total_balance_from_excel'] += $row['current_balance'];
 
         $reportDateCarbon = Carbon::parse($this->reportDate)->endOfDay();
         $lastUpdateDate = $account->last_transaction_at;
-        $previousBalanceFromDb = (float) $account->current_balance;
-        $balanceChange = $currentBalanceFromExcel - $previousBalanceFromDb;
         if (!$lastUpdateDate || $reportDateCarbon->gt($lastUpdateDate)) {
 
-          $previousBalanceFromDb = (float) $account->current_balance;
-          $balanceChange = $currentBalanceFromExcel - $previousBalanceFromDb;
-          if (abs($balanceChange) > self::EPSILON) {
-            AccountTransaction::create([
-              'account_id' => $account->id,
-              'amount' => $balanceChange,
-              'previous_balance' => $previousBalanceFromDb,
-              'new_balance' => $currentBalanceFromExcel,
-              'created_at' => $reportDateCarbon,
-              'updated_at' => $reportDateCarbon,
-            ]);
+          AccountTransaction::create([
+            'account_id' => $account->id,
+            'balance' => $row['current_balance'],
+            'created_at' => $reportDateCarbon,
+            'updated_at' => $reportDateCarbon,
+          ]);
+          $account->current_balance = $row['current_balance'];
+          $account->available_balance = (float) $row['available_balance'];
+          $account->last_transaction_at = $reportDateCarbon;
+          $account->save();
 
-            $account->current_balance = $currentBalanceFromExcel;
-            $account->available_balance = (float) $row['available_balance'];
-            $account->last_transaction_at = $reportDateCarbon;
-            $account->save();
-
-            $processedCount++;
-          }
+          $processedCount++;
         } else {
           $skippedCount++;
           Log::info("UPDATE DILEWATI: Data untuk akun {$account->account_number} tanggal {$this->reportDate} lebih lama dari data yang ada di database ({$lastUpdateDate->toDateString()}).");

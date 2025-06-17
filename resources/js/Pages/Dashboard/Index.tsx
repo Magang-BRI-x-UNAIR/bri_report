@@ -284,10 +284,34 @@ const Dashboard = () => {
                                 </Link>
                             </CardFooter>
                         </Card>
-
                         <Card className="group overflow-hidden border border-transparent bg-white hover:border-green-200 shadow-md hover:shadow-xl transition-all duration-300">
                             <CardHeader className="pb-2">
                                 <div className="bg-gradient-to-r from-green-600 to-emerald-600 -mx-6 -mt-6 p-6 mb-4">
+                                    <FileDown className="h-8 w-8 text-white" />
+                                </div>
+                                <CardTitle className="text-lg font-semibold text-gray-900">
+                                    Export Data Saldo
+                                </CardTitle>
+                                <CardDescription>
+                                    Unduh data saldo nasabah dalam format Excel
+                                </CardDescription>
+                            </CardHeader>
+                            <CardFooter className="pt-0">
+                                <Link
+                                    href={route("dashboard.export")}
+                                    className="w-full"
+                                >
+                                    <Button className="w-full bg-green-600 hover:bg-green-700 transition-colors">
+                                        Unduh Data
+                                        <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
+                                    </Button>
+                                </Link>
+                            </CardFooter>
+                        </Card>
+
+                        <Card className="group overflow-hidden border border-transparent bg-white hover:border-emerald-200 shadow-md hover:shadow-xl transition-all duration-300">
+                            <CardHeader className="pb-2">
+                                <div className="bg-gradient-to-r from-emerald-600 to-emerald-600 -mx-6 -mt-6 p-6 mb-4">
                                     <BriefcaseBusiness className="h-8 w-8 text-white" />
                                 </div>
                                 <CardTitle className="text-lg font-semibold text-gray-900">
@@ -303,50 +327,13 @@ const Dashboard = () => {
                                     href={route("universalBankers.index")}
                                     className="w-full"
                                 >
-                                    <Button className="w-full bg-green-600 hover:bg-green-700 transition-colors">
+                                    <Button className="w-full bg-emerald-600 hover:bg-emerald-700 transition-colors">
                                         Lihat Daftar
                                         <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
                                     </Button>
                                 </Link>
                             </CardFooter>
                         </Card>
-
-                        <Card className="group overflow-hidden border border-transparent bg-white hover:border-purple-200 shadow-md hover:shadow-xl transition-all duration-300">
-                            <CardHeader className="pb-2">
-                                <div className="bg-gradient-to-r from-purple-600 to-violet-600 -mx-6 -mt-6 p-6 mb-4">
-                                    <BarChart3 className="h-8 w-8 text-white" />
-                                </div>
-                                <CardTitle className="text-lg font-semibold text-gray-900">
-                                    Laporan Analisis
-                                </CardTitle>
-                                <CardDescription>
-                                    Lihat analisis dan statistik performa
-                                    kinerja terbaru
-                                </CardDescription>
-                            </CardHeader>
-                            <CardFooter className="pt-0">
-                                <Button className="w-full bg-purple-600 hover:bg-purple-700 transition-colors">
-                                    Lihat Laporan
-                                    <ChevronRight className="h-4 w-4 ml-2 transition-transform group-hover:translate-x-1" />
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </div>
-                </div>
-
-                {/* Recent Activity Section - Add as needed */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h2 className="text-xl font-semibold tracking-tight text-gray-800">
-                            Aktivitas Terakhir
-                        </h2>
-                        <Button variant="outline" className="text-sm h-8 px-3">
-                            Lihat Semua
-                        </Button>
-                    </div>
-
-                    <div className="p-8 text-center text-gray-500">
-                        Tidak ada aktivitas terbaru
                     </div>
                 </div>
             </div>

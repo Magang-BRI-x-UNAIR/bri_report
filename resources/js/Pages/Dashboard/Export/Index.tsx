@@ -116,7 +116,7 @@ const DashboardExportPage = () => {
             return;
         }
 
-        post(route("dashboard.processExport"));
+        post(route("dashboard.export.process"));
     };
 
     return (

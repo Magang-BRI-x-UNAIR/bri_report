@@ -48,7 +48,7 @@ const DashboardImport = () => {
     const [uploadedFileName, setUploadedFileName] = useState<string | null>(
         null
     );
-    
+
     const [fileSize, setFileSize] = useState<string | null>(null);
     const [dragOver, setDragOver] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -111,8 +111,7 @@ const DashboardImport = () => {
     // Fungsi untuk submit form, sekarang menjadi sangat sederhana
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Cukup panggil post, Inertia akan menangani redirect secara otomatis
-        post(route("dashboard.process"));
+        post(route("dashboard.import.process"));
     };
 
     const resetForm = () => {
