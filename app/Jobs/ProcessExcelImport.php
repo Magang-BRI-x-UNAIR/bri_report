@@ -34,9 +34,7 @@ class ProcessExcelImport implements ShouldQueue
     public function handle(): void
     {
         try {
-            // Set status awal
             Cache::put($this->cacheKey, ['status' => 'processing', 'data' => null], now()->addHour());
-
             $processingService = new ExcelProcessingService();
             $importer = new UniversalBankerImport($processingService, $this->reportDate);
 

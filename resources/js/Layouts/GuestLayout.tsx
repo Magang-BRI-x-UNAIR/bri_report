@@ -1,8 +1,17 @@
-import type { PropsWithChildren } from "react";
+import { useEffect, type PropsWithChildren } from "react";
 import Navbar from "@/Components/Navbar";
 import Footer from "@/Components/Footer";
 
-const GuestLayout = ({ children }: PropsWithChildren) => {
+const GuestLayout = ({
+    children,
+    title,
+}: PropsWithChildren<{ title: string }>) => {
+    useEffect(() => {
+        if (title) {
+            document.title = `${title} | BRI Report`;
+        }
+    }, [title]);
+
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
             <Navbar />

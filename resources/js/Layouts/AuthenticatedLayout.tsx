@@ -5,7 +5,6 @@ import type React from "react";
 import { type ReactNode, useState, useEffect, useRef } from "react";
 import { usePage } from "@inertiajs/react";
 import Sidebar from "@/Components/Sidebar";
-import Header from "@/Components/Header";
 import { Toaster } from "@/Components/ui/toaster";
 
 interface AuthenticatedLayoutProps {

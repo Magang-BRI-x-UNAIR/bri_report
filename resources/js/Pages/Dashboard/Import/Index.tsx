@@ -35,11 +35,8 @@ import { Calendar } from "@/Components/ui/calendar";
 import { cn, formatFileSize } from "@/lib/utils";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { Badge } from "@/Components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/Components/ui/alert";
 import type { PageProps } from "@/types";
-
-// Interface props menjadi lebih sederhana, tidak perlu previewData
 interface DashboardImportPageProps extends PageProps {
     flash?: {
         error?: string;
@@ -47,18 +44,14 @@ interface DashboardImportPageProps extends PageProps {
 }
 
 const DashboardImport = () => {
-    // Props yang diterima sekarang hanya flash error jika ada validasi awal yang gagal
     const { flash } = usePage<DashboardImportPageProps>().props;
-
-    // State yang diperlukan hanya untuk UI form upload
     const [uploadedFileName, setUploadedFileName] = useState<string | null>(
         null
     );
+    
     const [fileSize, setFileSize] = useState<string | null>(null);
     const [dragOver, setDragOver] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    // useForm dari Inertia untuk mengelola state form dan status submission
     const { data, setData, post, processing, errors, reset, clearErrors } =
         useForm({
             file: null as File | null,

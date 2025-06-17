@@ -1,7 +1,7 @@
 "use client";
 
 import GuestLayout from "@/Layouts/GuestLayout";
-import { Head, Link, useForm } from "@inertiajs/react";
+import { Link, useForm } from "@inertiajs/react";
 import { type FormEventHandler, useEffect, useState } from "react";
 import {
     Eye,
@@ -25,12 +25,9 @@ const Login = () => {
     const [formFilled, setFormFilled] = useState(false);
 
     useEffect(() => {
-        // Simulate loading for animation
         const timer = setTimeout(() => setIsLoading(false), 500);
         return () => clearTimeout(timer);
     }, []);
-
-    // Check if form is filled for button state
     useEffect(() => {
         setFormFilled(data.email.trim() !== "" && data.password.trim() !== "");
     }, [data.email, data.password]);
@@ -44,11 +41,8 @@ const Login = () => {
     };
 
     return (
-        <GuestLayout>
-            <Head title="Log in" />
-
+        <GuestLayout title="Log in">
             <div className="relative min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-                {/* Background decorative elements */}
                 <div className="absolute inset-0 overflow-hidden">
                     <div className="absolute top-20 left-10 w-72 h-72 bg-[#00529C]/5 rounded-full blur-3xl"></div>
                     <div className="absolute bottom-10 right-10 w-80 h-80 bg-[#F37021]/5 rounded-full blur-3xl"></div>

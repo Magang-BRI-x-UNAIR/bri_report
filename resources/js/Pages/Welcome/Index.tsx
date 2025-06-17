@@ -19,9 +19,8 @@ const WelcomePage = () => {
     }, []);
 
     return (
-        <GuestLayout>
+        <GuestLayout title="Welcome">
             <div className="relative">
-                {/* Floating elements that move on scroll */}
                 <div
                     className="fixed hidden lg:block w-24 h-24 bg-gradient-to-br from-[#00529C]/10 to-[#00529C]/30 rounded-full blur-xl z-0"
                     style={{

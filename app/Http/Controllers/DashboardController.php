@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Jobs\FinalizeExcelImport;
 use App\Jobs\ProcessExcelImport;
+use App\Jobs\ProcessExcelExport;
 use Illuminate\Http\Request;
 use App\Services\ExcelProcessingService;
 use Illuminate\Support\Facades\Auth;
@@ -51,7 +52,7 @@ class DashboardController extends Controller
             'totalActiveAccounts' => Account::where('status', 'active')->count(),
             'totalPortfolio' => Account::sum('current_balance'),
         ];
-        
+
         return Inertia::render('Dashboard/Index', [
             'stats' => $stats,
         ]);
@@ -70,25 +71,21 @@ class DashboardController extends Controller
      * Memproses file yang diunggah dan mengembalikan data untuk preview.
      * Endpoint ini dipanggil via AJAX/Fetch dari frontend.
      */
-    public function process(Request $request)
+    public function processImport(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        $validatedData = $request->validate([
             'file' => 'required|file|mimes:xlsx,xls,csv|max:20480',
             'report_date' => 'required|date',
         ]);
 
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
         try {
-            $path = $request->file('file')->store('imports');
+            $path = $validatedData['file']->store('imports');
 
             $cacheKey = 'import_preview_' . Str::uuid();
 
             ProcessExcelImport::dispatch(
                 $path,
-                $request->input('report_date'),
+                $validatedData['report_date'],
                 $cacheKey
             );
 
@@ -171,5 +168,53 @@ class DashboardController extends Controller
     public function getSaveStatus($result_id)
     {
         return response()->json(Cache::get($result_id));
+    }
+
+    /**
+     * Menampilkan halaman untuk ekspor data.
+     */
+    public function export()
+    {
+        $universalBankers = User::role('universal_banker')
+            ->select('id', 'name')
+            ->orderBy('name')
+            ->get();
+
+        return Inertia::render('Dashboard/Export/Index', [
+            'universalBankers' => $universalBankers,
+        ]);
+    }
+
+    /**
+     * Memproses permintaan ekspor data.
+     */
+    public function processExport(Request $request)
+    {
+        $validatedData = $request->validate([
+            'universal_bankers' => 'required|array',
+            'universal_bankers.*' => 'exists:users,id',
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'baseline_year' => 'required|integer|min:2000|max:2100',
+        ]);
+
+        try {
+            $cacheKey = 'export_result_' . Str::uuid();
+
+            ProcessExcelExport::dispatch(
+                $validatedData['universal_bankers'],
+                $validatedData['start_date'],
+                $validatedData['end_date'],
+                $validatedData['baseline_year'],
+                $cacheKey
+            );
+
+            return Inertia::location(route('dashboard.export.result', [
+                'result_id' => $cacheKey
+            ]));
+        } catch (\Exception $e) {
+            Log::error('Gagal memproses ekspor', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Gagal memproses ekspor data.');
+        }
     }
 }

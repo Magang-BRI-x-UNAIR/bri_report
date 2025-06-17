@@ -20,6 +20,7 @@ import {
     Clock,
     Activity,
     BriefcaseBusiness,
+    FileDown,
 } from "lucide-react";
 import {
     Card,
@@ -140,6 +141,12 @@ const Dashboard = () => {
                                 <Button className="bg-white text-blue-700 hover:bg-blue-50 shadow-lg hover:shadow-xl transition-all">
                                     <FileUp className="h-4 w-4 mr-2" />
                                     Import Data Saldo
+                                </Button>
+                            </Link>
+                            <Link href={route("dashboard.export")}>
+                                <Button className="bg-blue-600 text-white hover:bg-blue-700 shadow-lg hover:shadow-xl transition-all">
+                                    <FileDown className="h-4 w-4 mr-2" />
+                                    Export Data Saldo
                                 </Button>
                             </Link>
                         </div>

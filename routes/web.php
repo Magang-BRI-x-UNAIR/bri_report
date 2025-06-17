@@ -23,13 +23,16 @@ Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () 
     Route::controller(DashboardController::class)->group(function () {
         Route::get('/', 'index')->name('dashboard.index');
         Route::get('import', 'import')->name('dashboard.import');
-        Route::post('import', 'process')->name('dashboard.process');
-        Route::get('import/preview', 'preview')->name('dashboard.preview');
+        Route::post('import', 'processImport')->name('dashboard.import.process');
+        Route::get('import/preview', 'preview')->name('dashboard.import.preview');
         Route::get('import/preview/{batch_id}', 'previewPage')->name('dashboard.import.preview');
         Route::get('import/status/{batch_id}', 'getImportStatus')->name('dashboard.import.status');
-        Route::post('import/save', 'save')->name('dashboard.save');
+        Route::post('import/save', 'save')->name('dashboard.import.save');
         Route::get('import/result/{result_id}', 'resultPage')->name('dashboard.import.result');
-        Route::get('import/save-status/{result_id}', 'getSaveStatus')->name('dashboard.save.status');
+        Route::get('import/save-status/{result_id}', 'getSaveStatus')->name('dashboard.import.save.status');
+        Route::get('/export', 'export')->name('dashboard.export');
+        Route::post('/export', 'processExport')->name('dashboard.export.process');
+        Route::get('export/result/{result_id}', 'exportResultPage')->name('dashboard.export.result');
     });
 
     Route::resource('account-products', AccountProductController::class);

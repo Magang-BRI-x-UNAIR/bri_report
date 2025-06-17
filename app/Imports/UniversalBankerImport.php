@@ -103,14 +103,10 @@ class UniversalBankerImport implements ToCollection, WithHeadingRow, WithChunkRe
                 $this->summary['skipped_rows']++;
                 continue;
             }
-
-            // Format nilai saldo dengan 3 desimal
             $previousBalance = $this->formatCurrencyValue($account->current_balance);
             $currentBalance = $this->formatCurrencyValue($row[self::COL_BALANCE]);
             $availableBalance = $this->formatCurrencyValue($row[self::COL_AVAIL_BALANCE]);
             $previousAvailableBalance = $this->formatCurrencyValue($account->available_balance);
-
-            // Log untuk debugging
             Log::debug("Balance values processed", [
                 'account' => $accountNumber,
                 'raw_previous' => $account ? $account->current_balance : 'null',
