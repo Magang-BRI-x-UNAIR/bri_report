@@ -63,7 +63,7 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                         <div className="mr-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#F37021]/80 shadow-md shadow-[#00529C]/30">
                             <img
                                 className="h-8 w-auto"
-                                src="/logo.png"
+                                src="/images/logo.png"
                                 alt="BRI Logo"
                             />
                         </div>

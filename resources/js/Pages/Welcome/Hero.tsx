@@ -15,7 +15,6 @@ const Hero = () => {
     const [scrolled, setScrolled] = useState(false);
 
     useEffect(() => {
-        // Trigger animation after component mounts
         setIsVisible(true);
 
         const handleScroll = () => {
@@ -92,17 +91,11 @@ const Hero = () => {
 
                         <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-6 mb-10">
                             <Link
-                                href="/dashboard"
+                                href={route("login")}
                                 className="group bg-gradient-to-r from-[#F37021] to-[#ff8c47] text-white hover:from-[#e05f10] hover:to-[#ff7c30] font-semibold px-8 py-4 rounded-lg shadow-lg transition-all duration-300 text-center flex items-center justify-center"
                             >
                                 Mulai Sekarang
                                 <ArrowRight className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
-                            </Link>
-                            <Link
-                                href="/learn-more"
-                                className="border-2 border-white text-white hover:bg-white hover:text-[#00529C] font-semibold px-8 py-4 rounded-lg transition-all duration-300 text-center"
-                            >
-                                Pelajari Lebih Lanjut
                             </Link>
                         </div>
 

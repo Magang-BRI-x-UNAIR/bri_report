@@ -7,17 +7,13 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\UserController;
-use Inertia\Inertia;
 
-Route::get('/', function () {
-    return Inertia::render('Welcome/Index', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
+Route::controller(PageController::class)->group(function () {
+    Route::get('/', 'index')->name('page.index');
+    Route::get('/about', 'about')->name('page.about');
 });
-
-
 
 Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () {
     Route::controller(DashboardController::class)->group(function () {

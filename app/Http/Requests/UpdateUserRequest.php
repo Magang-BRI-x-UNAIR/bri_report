@@ -21,10 +21,12 @@ class UpdateUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        $userId = $this->route('universalBanker')->id;
+
         return [
-            //
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $this->route('user')->id,
+            'email' => 'required|email|max:255|unique:users,email,' . $userId,
+            'nip' => 'required|string|max:255|unique:users,nip,' . $userId,
             'phone' => 'required|string|max:255',
             'address' => 'nullable|string|max:255',
             'is_change_password' => 'nullable|boolean',

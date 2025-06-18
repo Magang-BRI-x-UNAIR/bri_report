@@ -123,8 +123,8 @@ const Register = () => {
     ];
 
     return (
-        <GuestLayout>
-            <Head title="Daftar Akun Baru | Bank BRI" />
+        <GuestLayout title="Daftar Akun Baru">
+            <Head title="Daftar Akun Baru" />
 
             <div className="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
                 <div className="absolute inset-0 overflow-hidden opacity-50">
@@ -150,7 +150,7 @@ const Register = () => {
                                 >
                                     <img
                                         className="h-12 w-auto" // Ukuran logo disesuaikan
-                                        src="/logo.png" // Pastikan path logo benar
+                                        src="/images/logo.png" // Pastikan path logo benar
                                         alt="BRI Logo"
                                     />
                                 </Link>

@@ -5,7 +5,7 @@ import Footer from "@/Components/Footer";
 const GuestLayout = ({
     children,
     title,
-}: PropsWithChildren<{ title: string }>) => {
+}: PropsWithChildren<{ title?: string }>) => {
     useEffect(() => {
         if (title) {
             document.title = `${title} | BRI Report`;

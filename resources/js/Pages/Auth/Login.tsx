@@ -1,7 +1,7 @@
 "use client";
 
 import GuestLayout from "@/Layouts/GuestLayout";
-import { Link, useForm } from "@inertiajs/react";
+import { Head, Link, useForm } from "@inertiajs/react";
 import { type FormEventHandler, useEffect, useState } from "react";
 import {
     Eye,
@@ -41,7 +41,8 @@ const Login = () => {
     };
 
     return (
-        <GuestLayout title="Log in">
+        <GuestLayout>
+            <Head title="Masuk" />
             <div className="relative min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
                 <div className="absolute inset-0 overflow-hidden">
                     <div className="absolute top-20 left-10 w-72 h-72 bg-[#00529C]/5 rounded-full blur-3xl"></div>
@@ -65,7 +66,7 @@ const Login = () => {
                                     <div className="bg-[#F37021]/10 p-3 rounded-xl">
                                         <img
                                             className="h-16 w-auto"
-                                            src="/logo.png"
+                                            src="/images/logo.png"
                                             alt="BRI Logo"
                                         />
                                     </div>

@@ -118,3 +118,19 @@
         @apply bg-background text-foreground;
     }
 }
+
+@keyframes progressBar {
+    0% {
+        width: 15%;
+    }
+    50% {
+        width: 65%;
+    }
+    100% {
+        width: 85%;
+    }
+}
+
+.animate-progressBar {
+    animation: progressBar 2s ease-in-out infinite;
+}

@@ -5,6 +5,7 @@ import GuestLayout from "@/Layouts/GuestLayout";
 import Hero from "./Hero";
 import Features from "./Features";
 import HowItWorks from "./HowItWorks";
+import { Head } from "@inertiajs/react";
 
 const WelcomePage = () => {
     const [scrollY, setScrollY] = useState(0);
@@ -19,7 +20,9 @@ const WelcomePage = () => {
     }, []);
 
     return (
-        <GuestLayout title="Welcome">
+        <GuestLayout>
+            <Head title="Selamat Datang" />
+
             <div className="relative">
                 <div
                     className="fixed hidden lg:block w-24 h-24 bg-gradient-to-br from-[#00529C]/10 to-[#00529C]/30 rounded-full blur-xl z-0"

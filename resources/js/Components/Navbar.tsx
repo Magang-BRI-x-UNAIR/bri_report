@@ -31,17 +31,19 @@ const Navbar = () => {
                 <div className="flex justify-between items-center">
                     {/* Logo and Brand */}
                     <div className="flex items-center">
-                        <Link href="/" className="flex items-center space-x-3">
+                        <Link
+                            href={route("page.index")}
+                            className="flex items-center space-x-3"
+                        >
                             <div
                                 className={`rounded-xl p-1.5 ${
-                                    // Sedikit padding untuk logo
                                     isScrolled ? "bg-[#00529C]" : "bg-white/10"
                                 }`}
                             >
                                 <img
-                                    src="/logo.png" // Pastikan path logo benar
+                                    src="/images/logo.png"
                                     alt="BRI Logo"
-                                    className="h-8 w-auto" // Ukuran disesuaikan
+                                    className="h-8 w-auto"
                                 />
                             </div>
                             <span
@@ -63,16 +65,10 @@ const Navbar = () => {
                                 isScrolled={isScrolled}
                             />
                             <NavLink
-                                href="/about" // Ganti dengan rute yang sesuai jika ada
+                                href={route("page.about")}
                                 label="About"
                                 isScrolled={isScrolled}
                             />
-                            <NavLink
-                                href="/contact" // Ganti dengan rute yang sesuai jika ada
-                                label="Contact"
-                                isScrolled={isScrolled}
-                            />
-                            {/* Tombol Dashboard hanya muncul jika user sudah login */}
                             {auth.user && (
                                 <NavLink
                                     href={route("dashboard.index")}
@@ -86,7 +82,6 @@ const Navbar = () => {
                     {/* Auth Links and Actions */}
                     <div className="hidden md:flex md:items-center md:space-x-4">
                         {auth.user ? (
-                            // Jika pengguna terautentikasi, tampilkan tombol Logout
                             <Link
                                 href={route("logout")}
                                 method="post"
@@ -101,7 +96,6 @@ const Navbar = () => {
                                 Logout
                             </Link>
                         ) : (
-                            // Jika pengguna belum login, tampilkan tombol Login dan Register
                             <>
                                 <Link
                                     href={route("login")}
@@ -155,21 +149,15 @@ const Navbar = () => {
                 >
                     <div className="pt-2 pb-4 space-y-1 px-2">
                         <MobileNavLink
-                            href="/"
+                            href={route("page.index")}
                             label="Home"
                             isScrolled={isScrolled}
                         />
                         <MobileNavLink
-                            href="/about" // Sesuaikan rute
+                            href={route("page.about")}
                             label="About"
                             isScrolled={isScrolled}
                         />
-                        <MobileNavLink
-                            href="/contact" // Sesuaikan rute
-                            label="Contact"
-                            isScrolled={isScrolled}
-                        />
-
                         {/* Auth links for mobile */}
                         {auth.user ? (
                             <>
@@ -180,7 +168,7 @@ const Navbar = () => {
                                 />
                                 {/* Tombol Profile dan Settings bisa tetap ada di mobile jika diinginkan */}
                                 <MobileNavLink
-                                    href={route("profile.edit")}
+                                    href={route("profile.index")}
                                     label="Profile"
                                     isScrolled={isScrolled}
                                 />

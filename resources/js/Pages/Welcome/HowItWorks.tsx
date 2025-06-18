@@ -262,7 +262,7 @@ const HowItWorks = () => {
                 >
                     <div className="inline-block p-1 bg-gradient-to-r from-[#00529C] to-[#F37021] rounded-lg">
                         <a
-                            href="/register"
+                            href={route("login")}
                             className="inline-flex items-center bg-white text-gray-900 font-semibold px-6 py-3 rounded-md hover:bg-gray-50 transition-colors"
                         >
                             Mulai Gunakan Platform

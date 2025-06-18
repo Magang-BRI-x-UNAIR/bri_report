@@ -10,9 +10,9 @@ const Footer = () => {
                         <div className="flex items-center space-x-3">
                             <div className="bg-white/10 p-2.5 rounded-xl">
                                 <img
-                                    src="/logo.svg"
+                                    src="/images/bri-logo.png"
                                     alt="BRI Logo"
-                                    className="h-9 w-auto"
+                                    className="h-16 w-auto"
                                 />
                             </div>
                             <span className="text-xl font-bold tracking-tight">
@@ -61,32 +61,18 @@ const Footer = () => {
                             Quick Links
                         </h3>
                         <a
-                            href="/"
+                            href={route("page.index")}
                             className="text-gray-200 hover:text-[#F37021] transition-colors duration-200 flex items-center"
                         >
                             <span className="bg-white/10 h-1.5 w-1.5 rounded-full mr-2"></span>
                             Home
                         </a>
                         <a
-                            href="/about"
+                            href={route("page.about")}
                             className="text-gray-200 hover:text-[#F37021] transition-colors duration-200 flex items-center"
                         >
                             <span className="bg-white/10 h-1.5 w-1.5 rounded-full mr-2"></span>
                             About
-                        </a>
-                        <a
-                            href="/contact"
-                            className="text-gray-200 hover:text-[#F37021] transition-colors duration-200 flex items-center"
-                        >
-                            <span className="bg-white/10 h-1.5 w-1.5 rounded-full mr-2"></span>
-                            Contact
-                        </a>
-                        <a
-                            href="/dashboard"
-                            className="text-gray-200 hover:text-[#F37021] transition-colors duration-200 flex items-center"
-                        >
-                            <span className="bg-white/10 h-1.5 w-1.5 rounded-full mr-2"></span>
-                            Dashboard
                         </a>
                     </div>
 
@@ -133,20 +119,18 @@ const Footer = () => {
                         <p className="text-sm text-gray-200 flex items-start">
                             <span className="bg-white/10 h-1.5 w-1.5 rounded-full mr-2 mt-1.5"></span>
                             <span>
-                                Jl. Jenderal Sudirman Kav. 44-46, Jakarta 10210
+                                Gd. BRI Tower, No. 122-138, Jl. Basuki Rahmat,
+                                Embong Kaliasin, Genteng, Surabaya, East Java
+                                60135
                             </span>
                         </p>
                         <p className="text-sm text-gray-200 flex items-start">
                             <span className="bg-white/10 h-1.5 w-1.5 rounded-full mr-2 mt-1.5"></span>
-                            <span>Email: contact@bri.co.id</span>
+                            <span>Email: mbimobayubagaskara@gmail.com</span>
                         </p>
                         <p className="text-sm text-gray-200 flex items-start">
                             <span className="bg-white/10 h-1.5 w-1.5 rounded-full mr-2 mt-1.5"></span>
-                            <span>Phone: (021) 2500 900</span>
-                        </p>
-                        <p className="text-sm text-gray-200 flex items-start">
-                            <span className="bg-white/10 h-1.5 w-1.5 rounded-full mr-2 mt-1.5"></span>
-                            <span>Fax: (021) 2500 901</span>
+                            <span>Phone: 082140477030</span>
                         </p>
                     </div>
                 </div>
