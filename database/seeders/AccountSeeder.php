@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Account;
 use App\Models\AccountProduct;
 use App\Models\Client;
+use App\Models\UniversalBanker;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,7 @@ class AccountSeeder extends Seeder
         // Get existing clients, products and universalBankers
         $clients = Client::all();
         $accountProducts = AccountProduct::all();
-        $universalBankers = User::role('universal_banker')->get();
+        $universalBankers = UniversalBanker::all();
 
         // If no account products exist, we can't proceed
         if ($accountProducts->isEmpty()) {
@@ -45,15 +46,12 @@ class AccountSeeder extends Seeder
 
         $this->command->info('Creating accounts for clients...');
 
-        // First, clean up existing data to avoid duplicates
-        // Disable foreign key checks before truncating
         DB::statement('SET FOREIGN_KEY_CHECKS=0;');
         DB::table('account_transactions')->truncate();
         DB::table('accounts')->truncate();
-        DB::table('universalBanker_daily_balances')->truncate();
+        DB::table('universal_banker_daily_balances')->truncate();
         DB::statement('SET FOREIGN_KEY_CHECKS=1;'); // Re-enable foreign key checks
 
-        // Track our progress
         $bar = $this->command->getOutput()->createProgressBar($clients->count());
         $bar->start();
 
@@ -398,16 +396,16 @@ class AccountSeeder extends Seeder
 
         // Insert universalBanker daily balance records
         foreach (array_chunk($universalBankerBalanceRecords, 1000) as $chunk) {
-            DB::table('universalBanker_daily_balances')->insert($chunk);
+            DB::table('universal_banker_daily_balances')->insert($chunk);
         }
 
-        $this->command->info('Successfully created ' . count($universalBankerBalanceRecords) . ' universalBanker daily balance records!');
+        $this->command->info('Successfully created ' . count($universalBankerBalanceRecords) . ' universal_banker daily balance records!');
     }
 
     /**
      * Get a faker instance
      */
-    private function faker()
+    private function faker(): \Faker\Generator
     {
         return \Faker\Factory::create('id_ID');
     }

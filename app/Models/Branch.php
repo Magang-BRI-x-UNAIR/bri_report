@@ -13,8 +13,8 @@ class Branch extends Model
         'address',
     ];
 
-    public function users()
+    public function unibersalBankers()
     {
-        return $this->hasMany(User::class, 'branch_id', 'id');
+        return $this->hasMany(UniversalBanker::class, 'branch_id', 'id');
     }
 }

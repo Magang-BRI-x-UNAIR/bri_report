@@ -1,5 +1,4 @@
 export interface User {
-    nip: string;
     id: number;
     name: string;
     email: string;
@@ -8,7 +7,18 @@ export interface User {
     email_verified_at?: string;
     created_at: string;
     updated_at: string;
-    branch: Branch | null;
+}
+
+export interface UniversalBanker {
+    id: string;
+    nip: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    created_at: string;
+    updated_at: string;
+    branch: Branch;
     accounts: Account[];
 }
 
@@ -18,7 +28,7 @@ export interface Branch {
     address: string;
     created_at: string;
     updated_at: string;
-    users: User[];
+    universal_bankers: UniversalBanker[];
 }
 
 export interface Account {
@@ -31,7 +41,7 @@ export interface Account {
     opened_at: string;
     client: Client;
     account_product: AccountProduct;
-    universal_banker: User;
+    universal_banker: UniversalBanker;
     account_transactions: AccountTransaction[];
     created_at: string;
     updated_at: string;

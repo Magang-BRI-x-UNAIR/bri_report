@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('universalBanker_daily_balances', function (Blueprint $table) {
+        Schema::create('universal_banker_daily_balances', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('universal_banker_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('universal_banker_id')->constrained('universal_bankers')->onDelete('cascade');
             $table->date('date');
             $table->decimal('total_balance', 15, 2);
             $table->timestamps();

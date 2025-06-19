@@ -10,15 +10,11 @@ import {
     Users,
     ChevronRight,
     LineChart,
-    Wallet,
     UserCheck,
-    BarChart3,
     Calendar,
     ArrowUpRight,
     LayoutDashboard,
-    Settings,
     Clock,
-    Activity,
     BriefcaseBusiness,
     FileDown,
 } from "lucide-react";
@@ -47,11 +43,8 @@ const Dashboard = () => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [currentTime, setCurrentTime] = useState(new Date());
 
-    // Show animation after initial render
     useEffect(() => {
         setIsLoaded(true);
-
-        // Update time every minute
         const interval = setInterval(() => {
             setCurrentTime(new Date());
         }, 60000);
@@ -59,7 +52,6 @@ const Dashboard = () => {
         return () => clearInterval(interval);
     }, []);
 
-    // Data dummy jika 'stats' belum dikirim dari backend
     const displayStats: DashboardStats = stats || {
         totalUniversalBankers: 0,
         totalClients: 0,
@@ -154,100 +146,81 @@ const Dashboard = () => {
                 </div>
 
                 {/* Stats Cards with Enhanced Design */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                    <Card className="group overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors duration-300"></div>
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                                <div className="p-3 bg-blue-600 text-white rounded-xl shadow-md">
-                                    <UserCheck className="h-5 w-5" />
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <Link href={route("universalBankers.index")}>
+                        <Card className="group overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors duration-300"></div>
+                            <CardHeader className="pb-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="p-3 bg-blue-600 text-white rounded-xl shadow-md">
+                                        <UserCheck className="h-5 w-5" />
+                                    </div>
+                                    <ArrowUpRight className="h-5 w-5 text-blue-600 opacity-70" />
                                 </div>
-                                <ArrowUpRight className="h-5 w-5 text-blue-600 opacity-70" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-blue-700 transition-colors">
-                                {displayStats.totalUniversalBankers}
-                            </div>
-                            <p className="text-sm font-medium text-blue-800/70">
-                                Universal Banker
-                            </p>
-                            <p className="mt-1 text-xs text-gray-500">
-                                Aktif di sistem
-                            </p>
-                        </CardContent>
-                    </Card>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-blue-700 transition-colors">
+                                    {displayStats.totalUniversalBankers}
+                                </div>
+                                <p className="text-sm font-medium text-blue-800/70">
+                                    Universal Banker
+                                </p>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Aktif di sistem
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
-                    <Card className="group overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-green-500/10 group-hover:bg-green-500/20 transition-colors duration-300"></div>
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                                <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-md">
-                                    <Users className="h-5 w-5" />
+                    <Link href={route("clients.index")}>
+                        <Card className="group overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-green-500/10 group-hover:bg-green-500/20 transition-colors duration-300"></div>
+                            <CardHeader className="pb-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-md">
+                                        <Users className="h-5 w-5" />
+                                    </div>
+                                    <ArrowUpRight className="h-5 w-5 text-emerald-600 opacity-70" />
                                 </div>
-                                <ArrowUpRight className="h-5 w-5 text-emerald-600 opacity-70" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-emerald-700 transition-colors">
-                                {displayStats.totalClients}
-                            </div>
-                            <p className="text-sm font-medium text-emerald-800/70">
-                                Nasabah Aktif
-                            </p>
-                            <p className="mt-1 text-xs text-gray-500">
-                                Terdaftar di sistem
-                            </p>
-                        </CardContent>
-                    </Card>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-emerald-700 transition-colors">
+                                    {displayStats.totalClients}
+                                </div>
+                                <p className="text-sm font-medium text-emerald-800/70">
+                                    Nasabah Aktif
+                                </p>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Terdaftar di sistem
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
 
-                    <Card className="group overflow-hidden border-0 bg-gradient-to-br from-purple-50 to-purple-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors duration-300"></div>
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                                <div className="p-3 bg-purple-600 text-white rounded-xl shadow-md">
-                                    <Wallet className="h-5 w-5" />
+                    <Link href={route("accounts.index")}>
+                        <Card className="group overflow-hidden border-0 bg-gradient-to-br from-amber-50 to-amber-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                            <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors duration-300"></div>
+                            <CardHeader className="pb-2">
+                                <div className="flex items-center justify-between">
+                                    <div className="p-3 bg-amber-600 text-white rounded-xl shadow-md">
+                                        <LineChart className="h-5 w-5" />
+                                    </div>
+                                    <ArrowUpRight className="h-5 w-5 text-amber-600 opacity-70" />
                                 </div>
-                                <ArrowUpRight className="h-5 w-5 text-purple-600 opacity-70" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-purple-700 transition-colors">
-                                {formatter
-                                    .format(displayStats.totalPortfolio)
-                                    .replace("Rp", "Rp ")}
-                            </div>
-                            <p className="text-sm font-medium text-purple-800/70">
-                                Total Portofolio
-                            </p>
-                            <p className="mt-1 text-xs text-gray-500">
-                                Nilai keseluruhan
-                            </p>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="group overflow-hidden border-0 bg-gradient-to-br from-amber-50 to-amber-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                        <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors duration-300"></div>
-                        <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                                <div className="p-3 bg-amber-600 text-white rounded-xl shadow-md">
-                                    <LineChart className="h-5 w-5" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-amber-700 transition-colors">
+                                    {displayStats.totalActiveAccounts}
                                 </div>
-                                <ArrowUpRight className="h-5 w-5 text-amber-600 opacity-70" />
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-amber-700 transition-colors">
-                                {displayStats.totalActiveAccounts}
-                            </div>
-                            <p className="text-sm font-medium text-amber-800/70">
-                                Rekening Aktif
-                            </p>
-                            <p className="mt-1 text-xs text-gray-500">
-                                Dengan transaksi terbaru
-                            </p>
-                        </CardContent>
-                    </Card>
+                                <p className="text-sm font-medium text-amber-800/70">
+                                    Rekening Aktif
+                                </p>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Dengan transaksi terbaru
+                                </p>
+                            </CardContent>
+                        </Card>
+                    </Link>
                 </div>
 
                 {/* Quick Actions Section */}

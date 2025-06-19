@@ -2,25 +2,26 @@
 
 namespace App\Services;
 
-use App\Models\User;
+use App\Models\UniversalBanker;
 use App\Models\Branch;
 use App\Models\UniversalBankerDailyBalance;
+use App\Models\Account;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 
-class UserService
+class UniversalBankerService
 {
     /**
      * Get all universal bankers with their branch.
      *
-     * @return EloquentCollection<User>
+     * @return EloquentCollection<UniversalBanker>
      */
     public function getAllUniversalBankers(): EloquentCollection
     {
-        return User::role('universal_banker')->with(['branch'])->get();
+        return UniversalBanker::with('branch')
+            ->orderBy('created_at', 'desc')
+            ->get();
     }
-
-
 
     /**
      * Get all branches.
@@ -36,59 +37,34 @@ class UserService
      * Create a new universal banker.
      *
      * @param array $data
-     * @return User
+     * @return UniversalBanker
      */
-    public function createUniversalBanker(array $data): User
+    public function createUniversalBanker(array $data): UniversalBanker
     {
-        $data['password'] = bcrypt($data['password']);
-
-        $user = User::create($data);
-        $user->assignRole('universal_banker');
-
-        return $user;
+        $universalBanker = UniversalBanker::create($data);
+        return $universalBanker;
     }
 
     /**
      * Update a universal banker's information.
      *
-     * @param User $universalBanker
+     * @param UniversalBanker $universalBanker
      * @param array $data
-     * @return User
+     * @return UniversalBanker
      */
-    public function updateUniversalBanker(User $universalBanker, array $data): User
+    public function updateUniversalBanker(UniversalBanker $universalBanker, array $data): UniversalBanker
     {
-        if (isset($data['is_change_password']) && $data['is_change_password'] && !empty($data['password'])) {
-            $data['password'] = bcrypt($data['password']);
-        } else {
-            unset($data['password']);
-        }
-
-        $updateData = [
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'] ?? null,
-            'address' => $data['address'] ?? null,
-            'branch_id' => $data['branch_id'],
-            'nip' => $data['nip'] ?? $universalBanker->nip,
-        ];
-
-        if (isset($data['password'])) {
-            $updateData['password'] = $data['password'];
-        }
-
-
-        $universalBanker->update($updateData);
-
+        $universalBanker->update($data);
         return $universalBanker;
     }
 
     /**
      * Delete a universal banker.
      *
-     * @param User $universalBanker
+     * @param UniversalBanker $universalBanker
      * @return bool
      */
-    public function deleteUniversalBanker(User $universalBanker): bool
+    public function deleteUniversalBanker(UniversalBanker $universalBanker): bool
     {
         return $universalBanker->delete();
     }
@@ -96,11 +72,11 @@ class UserService
     /**
      * Get universal banker details with relationships and statistics.
      *
-     * @param User $universalBanker
+     * @param UniversalBanker $universalBanker
      * @param int $daysBack
      * @return array
      */
-    public function getUniversalBankerDetails(User $universalBanker, int $daysBack = 365): array
+    public function getUniversalBankerDetails(UniversalBanker $universalBanker, int $daysBack = 365): array
     {
         $universalBanker->load([
             'branch',
@@ -119,7 +95,7 @@ class UserService
 
         // Get daily balance data
         $universalBankerDailyBalances = UniversalBankerDailyBalance::where('universal_banker_id', $universalBanker->id)
-            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')]) // Gunakan format Y-m-d untuk query BETWEEN
+            ->whereBetween('date', [$startDate->format('Y-m-d'), $endDate->format('Y-m-d')])
             ->orderBy('date', 'asc')
             ->get();
 
@@ -144,10 +120,11 @@ class UserService
             'percentageChange' => $balanceMetrics['percentageChange'],
         ];
     }
+
     /**
      * Calculate account statistics.
      *
-     * @param EloquentCollection $accounts // Berasal dari $universalBanker->accounts yang sudah di-load
+     * @param \Illuminate\Database\Eloquent\Collection|\App\Models\Account[] $accounts // Berasal dari $universalBanker->accounts yang sudah di-load
      * @param int $universalBankerId
      * @param string $endDateString
      * @return array
@@ -172,13 +149,7 @@ class UserService
     /**
      * Format daily balances for frontend.
      *
-     * @param EloquentCollection $universalBankerDailyBalances
-     * @return Collection
-     */
-    /**
-     * Format daily balances untuk frontend dan hitung daily_change secara dinamis.
-     *
-     * @param Collection $dailyBalancesCollection Koleksi UniversalBankerDailyBalance yang sudah diurutkan berdasarkan tanggal.
+     * @param Collection $dailyBalancesCollection
      * @return Collection
      */
     private function formatDailyBalances(Collection $dailyBalancesCollection): Collection

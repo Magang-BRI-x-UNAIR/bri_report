@@ -2,33 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
+use App\Models\UniversalBanker;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\StoreUserRequest;
-use App\Http\Requests\UpdateUserRequest;
+use App\Http\Requests\StoreUniversalBankerRequest;
+use App\Http\Requests\UpdateUniversalBankerRequest;
 use Inertia\Inertia;
-use App\Services\UserService;
+use App\Services\UniversalBankerService;
 use Illuminate\Support\Facades\Log;
 
-class UserController extends Controller
+class UniversalBankerController extends Controller
 {
     /**
-     * UserService instance.
+     * UniversalBankerService instance.
      *
-     * @var UserService
+     * @var UniversalBankerService
      */
-    protected UserService $userService;
+    protected UniversalBankerService $universalBankerService;
 
 
     /**
      * Create a new controller instance.
      *
-     * @param UserService $userService
+     * @param UniversalBankerService $universalBankerService
      * @return void
      */
-    public function __construct(UserService $userService)
+    public function __construct(UniversalBankerService $universalBankerService)
     {
-        $this->userService = $userService;
+        $this->universalBankerService = $universalBankerService;
     }
 
     /**
@@ -37,7 +37,7 @@ class UserController extends Controller
     public function index()
     {
         return Inertia::render('Dashboard/UniversalBankers/Index', [
-            'universalBankers' => $this->userService->getAllUniversalBankers(),
+            'universalBankers' => $this->universalBankerService->getAllUniversalBankers(),
         ]);
     }
 
@@ -47,19 +47,19 @@ class UserController extends Controller
     public function create()
     {
         return Inertia::render('Dashboard/UniversalBankers/Create', [
-            'branches' => $this->userService->getAllBranches(),
+            'branches' => $this->universalBankerService->getAllBranches(),
         ]);
     }
 
     /**
      * Store a newly created resource in storage.
      */
-    public function store(StoreUserRequest $request)
+    public function store(StoreUniversalBankerRequest $request)
     {
         $validatedData = $request->validated();
 
         try {
-            $this->userService->createUniversalBanker($validatedData);
+            $this->universalBankerService->createUniversalBanker($validatedData);
             return redirect()->route('universalBankers.index')
                 ->with('success', 'Universal Banker created successfully!');
         } catch (\Exception $e) {
@@ -75,9 +75,9 @@ class UserController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(User $universalBanker)
+    public function show(UniversalBanker $universalBanker)
     {
-        $details = $this->userService->getUniversalBankerDetails($universalBanker);
+        $details = $this->universalBankerService->getUniversalBankerDetails($universalBanker);
 
         return Inertia::render('Dashboard/UniversalBankers/Show', $details);
     }
@@ -85,25 +85,25 @@ class UserController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(User $universalBanker)
+    public function edit(UniversalBanker $universalBanker)
     {
         $universalBanker->load('branch');
 
         return Inertia::render('Dashboard/UniversalBankers/Edit', [
-            'user' => $universalBanker,
-            'branches' => $this->userService->getAllBranches(),
+            'universalBanker' => $universalBanker,
+            'branches' => $this->universalBankerService->getAllBranches(),
         ]);
     }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(UpdateUserRequest $request, User $universalBanker)
+    public function update(UpdateUniversalBankerRequest $request, UniversalBanker $universalBanker)
     {
         $validatedData = $request->validated();
 
         try {
-            $this->userService->updateUniversalBanker($universalBanker, $validatedData);
+            $this->universalBankerService->updateUniversalBanker($universalBanker, $validatedData);
 
             return redirect()->route('universalBankers.index')
                 ->with('success', 'Universal Banker updated successfully!');
@@ -121,10 +121,10 @@ class UserController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(User $universalBanker)
+    public function destroy(UniversalBanker $universalBanker)
     {
         try {
-            $this->userService->deleteUniversalBanker($universalBanker);
+            $this->universalBankerService->deleteUniversalBanker($universalBanker);
 
             return redirect()->route('universalBankers.index')
                 ->with('success', 'Universal Banker deleted successfully!');

@@ -19,11 +19,6 @@ class ProfileController extends Controller
     {
         /** @var \App\Models\User|\Illuminate\Contracts\Auth\Authenticatable|null $user */
         $user = Auth::user();
-
-        if ($user instanceof User) {
-            $user->load(['branch']);
-        }
-
         return Inertia::render('Dashboard/Profile/Index', [
             'user' => $user,
         ]);

@@ -2,13 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Head, Link, usePage } from "@inertiajs/react";
-import type { PageProps } from "@/types";
-import type { User, Client } from "@/types";
+import type { PageProps, UniversalBanker } from "@/types";
+import type { Client } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
-    UserCircle,
     Mail,
     Building2,
     ChevronLeft,
@@ -23,13 +22,11 @@ import {
     Filter,
     ArrowUpDown,
     Clock,
-    BadgeDollarSign,
     LineChart,
     CalendarDays,
     ArrowUp,
     ArrowDown,
     BarChart3,
-    PieChart,
     ChevronRight,
     ChevronsLeft,
     ChevronsRight,
@@ -108,15 +105,12 @@ interface DailyBalance {
 }
 
 interface UniversalBankersShowPageProps extends PageProps {
-    universalBanker: User;
+    universalBanker: UniversalBanker;
     accountStats: AccountStats;
     clients: Client[];
-    recentAccounts: any[];
     dailyBalances: DailyBalance[];
     highestBalance: number;
     lowestBalance: number;
-    totalChange: number;
-    percentageChange: number;
 }
 
 const UniversalBankersShow = () => {
@@ -124,12 +118,9 @@ const UniversalBankersShow = () => {
         universalBanker,
         accountStats,
         clients,
-        recentAccounts,
         dailyBalances,
         highestBalance,
         lowestBalance,
-        totalChange,
-        percentageChange,
     } = usePage<UniversalBankersShowPageProps>().props;
 
     const [searchQuery, setSearchQuery] = useState("");
@@ -151,12 +142,9 @@ const UniversalBankersShow = () => {
 
     // Filter balance data based on date range
     const filteredBalanceData = useMemo(() => {
-        // Check if dailyBalances exists in the props
         if (!dailyBalances || dailyBalances.length === 0) {
             return [];
         }
-
-        // Handle the case when date range is invalid
         if (!dateRange.from || !dateRange.to) {
             return dailyBalances;
         }
@@ -425,17 +413,6 @@ const UniversalBankersShow = () => {
 
                 <div className="relative p-6 sm:p-8">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                        <div className="relative">
-                            <div className="h-24 w-24 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 shadow-xl flex items-center justify-center">
-                                <UserCircle className="h-16 w-16 text-white" />
-                            </div>
-                            {universalBanker.email_verified_at && (
-                                <div className="absolute -right-2 -bottom-2 bg-green-500 rounded-full p-1.5 border-2 border-white">
-                                    <BadgeCheck className="h-4 w-4 text-white" />
-                                </div>
-                            )}
-                        </div>
-
                         <div className="flex-1">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                                 <div>
@@ -548,13 +525,6 @@ const UniversalBankersShow = () => {
                         >
                             <CreditCard className="h-4 w-4" />
                             <span>Rekening</span>
-                        </TabsTrigger>
-                        <TabsTrigger
-                            value="stats"
-                            className="flex items-center gap-1.5"
-                        >
-                            <BadgeDollarSign className="h-4 w-4" />
-                            <span>Statistik</span>
                         </TabsTrigger>
                     </TabsList>
                 </div>
@@ -2091,372 +2061,6 @@ const UniversalBankersShow = () => {
                                         )}
                                     </TableBody>
                                 </Table>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* Statistics Tab Content */}
-                <TabsContent value="stats" className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardDescription>Total Nasabah</CardDescription>
-                                <CardTitle className="text-2xl flex items-center">
-                                    <Users className="h-5 w-5 mr-2 text-[#00529C]" />
-                                    {uniqueClients.length}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground">
-                                    Jumlah nasabah yang ditangani
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardDescription>
-                                    Total Rekening
-                                </CardDescription>
-                                <CardTitle className="text-2xl flex items-center">
-                                    <CreditCard className="h-5 w-5 mr-2 text-[#00529C]" />
-                                    {accountStats.total}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground">
-                                    Jumlah rekening yang dikelola
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardDescription>
-                                    Rekening Aktif
-                                </CardDescription>
-                                <CardTitle className="text-2xl flex items-center">
-                                    <BadgeCheck className="h-5 w-5 mr-2 text-green-600" />
-                                    {accountStats.byStatus?.active || 0}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground">
-                                    {calculatePercentage(
-                                        accountStats.byStatus?.active || 0,
-                                        accountStats.total
-                                    )}
-                                    % dari total rekening
-                                </p>
-                            </CardContent>
-                        </Card>
-
-                        <Card>
-                            <CardHeader className="pb-2">
-                                <CardDescription>Total Saldo</CardDescription>
-                                <CardTitle className="text-2xl flex items-center">
-                                    <DollarSign className="h-5 w-5 mr-2 text-[#00529C]" />
-                                    {
-                                        formatCurrency(
-                                            accountStats.totalBalance
-                                        ).split(",")[0]
-                                    }
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-xs text-muted-foreground">
-                                    Total saldo seluruh rekening
-                                </p>
-                            </CardContent>
-                        </Card>
-                    </div>
-
-                    {/* Status Distribution */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <BadgeCheck className="h-5 w-5 text-[#00529C]" />
-                                Distribusi Status Rekening
-                            </CardTitle>
-                            <CardDescription>
-                                Jumlah rekening berdasarkan status
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {Object.entries(
-                                    accountStats.byStatus || {}
-                                ).map(([status, count]) => {
-                                    let statusColor = "";
-                                    switch (status.toLowerCase()) {
-                                        case "active":
-                                            statusColor = "bg-green-500";
-                                            break;
-                                        case "inactive":
-                                            statusColor = "bg-gray-500";
-                                            break;
-                                        case "blocked":
-                                            statusColor = "bg-red-500";
-                                            break;
-                                        case "pending":
-                                            statusColor = "bg-yellow-500";
-                                            break;
-                                        default:
-                                            statusColor = "bg-blue-500";
-                                    }
-
-                                    return (
-                                        <div key={status}>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-sm font-medium capitalize">
-                                                    {status}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    {count} rekening (
-                                                    {calculatePercentage(
-                                                        count,
-                                                        accountStats.total
-                                                    )}
-                                                    %)
-                                                </span>
-                                            </div>
-                                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className={`h-full ${statusColor}`}
-                                                    style={{
-                                                        width: `${calculatePercentage(
-                                                            count,
-                                                            accountStats.total
-                                                        )}%`,
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Product Distribution */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <PieChart className="h-5 w-5 text-[#00529C]" />
-                                Distribusi Produk Rekening
-                            </CardTitle>
-                            <CardDescription>
-                                Jumlah rekening berdasarkan jenis produk
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                {Object.entries(
-                                    accountStats.byAccountProduct || {}
-                                ).map(([product, count]) => {
-                                    return (
-                                        <div key={product}>
-                                            <div className="flex items-center justify-between mb-1">
-                                                <span className="text-sm font-medium">
-                                                    {product}
-                                                </span>
-                                                <span className="text-sm text-muted-foreground">
-                                                    {count} rekening (
-                                                    {calculatePercentage(
-                                                        count,
-                                                        accountStats.total
-                                                    )}
-                                                    %)
-                                                </span>
-                                            </div>
-                                            <div className="h-2 w-full bg-gray-100 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-[#00529C]"
-                                                    style={{
-                                                        width: `${calculatePercentage(
-                                                            count,
-                                                            accountStats.total
-                                                        )}%`,
-                                                    }}
-                                                ></div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Balance History */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <BarChart3 className="h-5 w-5 text-[#00529C]" />
-                                Riwayat Saldo
-                            </CardTitle>
-                            <CardDescription>
-                                Perubahan saldo rekening dari waktu ke waktu
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="h-[300px] w-full">
-                                {dailyBalances.length > 0 ? (
-                                    <ResponsiveContainer
-                                        width="100%"
-                                        height="100%"
-                                    >
-                                        <AreaChart
-                                            data={dailyBalances}
-                                            margin={{
-                                                top: 5,
-                                                right: 30,
-                                                left: 30,
-                                                bottom: 5,
-                                            }}
-                                        >
-                                            <defs>
-                                                <linearGradient
-                                                    id="colorBalance2"
-                                                    x1="0"
-                                                    y1="0"
-                                                    x2="0"
-                                                    y2="1"
-                                                >
-                                                    <stop
-                                                        offset="5%"
-                                                        stopColor="#00529C"
-                                                        stopOpacity={0.8}
-                                                    />
-                                                    <stop
-                                                        offset="95%"
-                                                        stopColor="#00529C"
-                                                        stopOpacity={0.1}
-                                                    />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid
-                                                strokeDasharray="3 3"
-                                                stroke="#f0f0f0"
-                                            />
-                                            <XAxis
-                                                dataKey="formattedDate"
-                                                tick={{ fontSize: 12 }}
-                                                tickMargin={10}
-                                                axisLine={{ stroke: "#e5e7eb" }}
-                                            />
-                                            <YAxis
-                                                tickFormatter={(value) =>
-                                                    formatCompactCurrency(value)
-                                                }
-                                                domain={["auto", "auto"]}
-                                                tick={{ fontSize: 12 }}
-                                                axisLine={{ stroke: "#e5e7eb" }}
-                                            />
-                                            <RechartsTooltip
-                                                formatter={(value) => [
-                                                    formatCurrency(
-                                                        value as number
-                                                    ),
-                                                    "Total Saldo",
-                                                ]}
-                                                labelFormatter={(label) =>
-                                                    `Tanggal: ${label}`
-                                                }
-                                                contentStyle={{
-                                                    fontSize: "12px",
-                                                    borderRadius: "4px",
-                                                }}
-                                            />
-                                            <Area
-                                                type="monotone"
-                                                dataKey="totalBalance"
-                                                name="Total Saldo"
-                                                stroke="#00529C"
-                                                strokeWidth={2}
-                                                fillOpacity={1}
-                                                fill="url(#colorBalance2)"
-                                                activeDot={{
-                                                    r: 6,
-                                                    stroke: "#00529C",
-                                                    strokeWidth: 2,
-                                                    fill: "#00529C",
-                                                }}
-                                            />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="h-full flex items-center justify-center">
-                                        <div className="text-center text-gray-500">
-                                            <LineChart className="h-12 w-12 text-gray-300 mx-auto mb-2" />
-                                            <p className="font-medium">
-                                                Tidak ada data untuk ditampilkan
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Summary Card */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <LineChart className="h-5 w-5 text-[#00529C]" />
-                                Ringkasan Kinerja
-                            </CardTitle>
-                            <CardDescription>
-                                Statistik dan kinerja universalBanker
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="space-y-2">
-                                    <p className="text-sm text-muted-foreground">
-                                        Total Nasabah
-                                    </p>
-                                    <p className="text-2xl font-bold">
-                                        {uniqueClients.length}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        Sejak{" "}
-                                        {formatDate(universalBanker.created_at)}
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <p className="text-sm text-muted-foreground">
-                                        Rata-rata Saldo
-                                    </p>
-                                    <p className="text-2xl font-bold">
-                                        {formatCurrency(
-                                            accountStats.total > 0
-                                                ? accountStats.totalBalance /
-                                                      accountStats.total
-                                                : 0
-                                        )}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        Per rekening
-                                    </p>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <p className="text-sm text-muted-foreground">
-                                        Persentase Aktif
-                                    </p>
-                                    <p className="text-2xl font-bold">
-                                        {calculatePercentage(
-                                            accountStats.byStatus?.active || 0,
-                                            accountStats.total
-                                        )}
-                                        %
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        Rekening dengan status aktif
-                                    </p>
-                                </div>
                             </div>
                         </CardContent>
                     </Card>

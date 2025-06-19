@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class UniversalBankerDailyBalance extends Model
 {
     //
-    protected $table = 'universalBanker_daily_balances';
+    protected $table = 'universal_banker_daily_balances';
     protected $fillable = [
         'universal_banker_id',
         'date',
@@ -21,6 +21,6 @@ class UniversalBankerDailyBalance extends Model
 
     public function universalBanker()
     {
-        return $this->belongsTo(User::class, 'universal_banker_id');
+        return $this->belongsTo(UniversalBanker::class, 'universal_banker_id');
     }
 }

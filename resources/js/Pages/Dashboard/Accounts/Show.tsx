@@ -11,18 +11,12 @@ import {
     User,
     Calendar,
     ChevronLeft,
-    Edit,
     ArrowDownUp,
-    Package,
-    Users,
-    Building2,
     Receipt,
     Filter,
-    Download,
     Printer,
     Search,
     X,
-    AlertCircle,
     Check,
     FileText,
     BarChart4,
@@ -30,7 +24,6 @@ import {
     ArrowUpRight,
     ArrowDownRight,
     Wallet,
-    MoreHorizontal,
     CalendarDays,
     Mail,
     Phone,
@@ -39,6 +32,12 @@ import {
     ChevronUp,
     ChevronDown,
     ArrowUp,
+    MapPin,
+    UserIcon,
+    MessageSquare,
+    Building2,
+    UserX,
+    Briefcase,
 } from "lucide-react";
 import {
     formatCompactCurrency,
@@ -58,7 +57,6 @@ import {
     YAxis,
     BarChart,
     Bar,
-    Sector,
     ReferenceLine,
     ComposedChart,
 } from "recharts";
@@ -67,17 +65,11 @@ import {
     Card,
     CardContent,
     CardDescription,
+    CardFooter,
     CardHeader,
     CardTitle,
 } from "@/Components/ui/card";
 import { Badge } from "@/Components/ui/badge";
-import { Separator } from "@/Components/ui/separator";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
 import { Input } from "@/Components/ui/input";
 import {
     Select,
@@ -98,19 +90,17 @@ const AccountsShow = () => {
     const [sortField, setSortField] = useState("created_at");
     const [sortDirection, setSortDirection] = useState("desc");
     const [transactionType, setTransactionType] = useState("all");
-    const [chartPeriod, setChartPeriod] = useState("all"); // "all", "30d", "90d", "6m", "1y"
+    const [chartPeriod, setChartPeriod] = useState("all");
     const [activeTab, setActiveTab] = useState("overview");
     const [activeChartView, setActiveChartView] = useState("balance");
     const [selectedTransaction, setSelectedTransaction] =
         useState<AccountTransaction | null>(null);
-    // Date filtering state
     const [dateRange, setDateRange] = useState("");
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [appliedStartDate, setAppliedStartDate] = useState<Date | null>(null);
     const [appliedEndDate, setAppliedEndDate] = useState<Date | null>(null);
 
-    // Helper function to apply custom date range
     const applyCustomDateRange = () => {
         if (startDate && endDate) {
             setAppliedStartDate(new Date(startDate));
@@ -155,7 +145,6 @@ const AccountsShow = () => {
             setAppliedStartDate(monthStart);
             setAppliedEndDate(monthEnd);
         } else if (dateRange === "") {
-            // Reset date filters
             setAppliedStartDate(null);
             setAppliedEndDate(null);
             setStartDate("");
@@ -163,9 +152,7 @@ const AccountsShow = () => {
         }
     }, [dateRange]);
 
-    // Process transactions to calculate changes between consecutive transactions
     const processedTransactions = useMemo(() => {
-        // Sort by date ascending to calculate changes
         const sortedTransactions = [...account.account_transactions].sort(
             (a, b) =>
                 new Date(a.created_at).getTime() -
@@ -267,143 +254,7 @@ const AccountsShow = () => {
         };
     }, [processedTransactions]);
 
-    const flowDistributionData = useMemo(() => {
-        if (processedTransactions.length === 0) {
-            return [];
-        }
-
-        const totalCredit = transactionStats.totalCredit;
-        const totalDebit = transactionStats.totalDebit;
-
-        // Check if both values are 0 to avoid errors
-        if (totalCredit === 0 && totalDebit === 0) {
-            return [{ name: "Belum ada transaksi", value: 1, fill: "#d1d5db" }];
-        }
-
-        return [
-            { name: "Kredit", value: totalCredit, fill: "#10b981" },
-            { name: "Debit", value: totalDebit, fill: "#ef4444" },
-        ];
-    }, [processedTransactions, transactionStats]);
-
-    const renderActiveDonutShape = (props: any) => {
-        const {
-            cx,
-            cy,
-            innerRadius,
-            outerRadius,
-            startAngle,
-            endAngle,
-            fill,
-            payload,
-            percent,
-            value,
-        } = props;
-
-        return (
-            <g>
-                <text
-                    x={cx}
-                    y={cy - 15}
-                    dy={8}
-                    textAnchor="middle"
-                    fill="#333"
-                    fontSize={16}
-                    fontWeight="bold"
-                >
-                    {payload.name}
-                </text>
-                <text
-                    x={cx}
-                    y={cy + 15}
-                    textAnchor="middle"
-                    fill="#333"
-                    fontSize={14}
-                    fontWeight="medium"
-                >
-                    {formatCurrency(value)}
-                </text>
-                <text
-                    x={cx}
-                    y={cy + 35}
-                    textAnchor="middle"
-                    fill="#666"
-                    fontSize={12}
-                >
-                    {`${(percent * 100).toFixed(1)}%`}
-                </text>
-                <Sector
-                    cx={cx}
-                    cy={cy}
-                    innerRadius={innerRadius}
-                    outerRadius={outerRadius + 3}
-                    startAngle={startAngle}
-                    endAngle={endAngle}
-                    fill={fill}
-                    strokeWidth={0}
-                />
-                <Sector
-                    cx={cx}
-                    cy={cy}
-                    startAngle={startAngle}
-                    endAngle={endAngle}
-                    innerRadius={outerRadius + 6}
-                    outerRadius={outerRadius + 10}
-                    fill={fill}
-                    strokeWidth={0}
-                />
-            </g>
-        );
-    };
-
-    // Get status badge
-    const getStatusBadge = (status: string) => {
-        switch (status.toLowerCase()) {
-            case "active":
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-emerald-200"
-                    >
-                        <Check className="h-3 w-3 mr-1" />
-                        Aktif
-                    </Badge>
-                );
-            case "inactive":
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-amber-50 text-amber-700 hover:bg-amber-50 border-amber-200"
-                    >
-                        <AlertCircle className="h-3 w-3 mr-1" />
-                        Tidak Aktif
-                    </Badge>
-                );
-            case "blocked":
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-rose-50 text-rose-700 hover:bg-rose-50 border-rose-200"
-                    >
-                        <X className="h-3 w-3 mr-1" />
-                        Diblokir
-                    </Badge>
-                );
-            default:
-                return (
-                    <Badge
-                        variant="outline"
-                        className="bg-gray-50 text-gray-700 hover:bg-gray-50 border-gray-200"
-                    >
-                        {status}
-                    </Badge>
-                );
-        }
-    };
-
-    // Prepare chart data from transactions
     const chartData = useMemo(() => {
-        // Sort transactions chronologically
         const sortedTransactions = [...processedTransactions].sort((a, b) => {
             const dateA = new Date(a.created_at || "").getTime();
             const dateB = new Date(b.created_at || "").getTime();
@@ -561,12 +412,6 @@ const AccountsShow = () => {
         return null;
     };
 
-    const [activeIndex, setActiveIndex] = useState(0);
-    const onPieEnter = (_: any, index: number) => {
-        setActiveIndex(index);
-    };
-
-    // Calculate better Y-axis domain for balance chart
     const getBalanceDomain = (data: any[]) => {
         if (data.length === 0) return [0, 100];
 
@@ -579,12 +424,8 @@ const AccountsShow = () => {
         const max = Math.max(...balances);
         const range = max - min;
 
-        // Add 10% padding on both sides
         const padding = range * 0.1;
-        return [
-            Math.max(0, min - padding), // Don't go below 0 for balance
-            max + padding,
-        ];
+        return [Math.max(0, min - padding), max + padding];
     };
 
     return (
@@ -2122,14 +1963,6 @@ const AccountsShow = () => {
                                                 {formatDate(account.opened_at)}
                                             </span>
                                         </div>
-                                        <div className="flex items-center p-3 bg-white hover:bg-gray-50 transition-colors">
-                                            <span className="text-sm text-gray-600 flex-1">
-                                                Status
-                                            </span>
-                                            {getStatusBadge(
-                                                account.status || "active"
-                                            )}
-                                        </div>
                                     </div>
                                 </div>
 
@@ -2268,16 +2101,6 @@ const AccountsShow = () => {
                                         <h3 className="text-lg font-semibold text-gray-900 text-center md:text-left mb-1">
                                             {account.client.name}
                                         </h3>
-                                        <div className="flex items-center mb-3">
-                                            <Badge
-                                                variant="outline"
-                                                className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-emerald-200"
-                                            >
-                                                <Check className="h-3 w-3 mr-1" />
-                                                {account.client.status ||
-                                                    "Aktif"}
-                                            </Badge>
-                                        </div>
                                     </div>
 
                                     {/* Client details in two columns */}
@@ -2362,6 +2185,182 @@ const AccountsShow = () => {
                                 </div>
                             </div>
                         </CardContent>
+                    </Card>
+
+                    {/* Universal Banker Information */}
+                    <Card className="overflow-hidden border-0 shadow-md">
+                        <CardHeader className="pb-3 bg-gradient-to-r from-slate-50 to-gray-100 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <CardTitle className="flex items-center gap-2 text-slate-800">
+                                        <Briefcase className="h-5 w-5 text-slate-600" />
+                                        Informasi Universal Banker
+                                    </CardTitle>
+                                    <CardDescription className="text-slate-700/70">
+                                        Detail Universal Banker yang ditugaskan
+                                        untuk Anda
+                                    </CardDescription>
+                                </div>
+                                <Link
+                                    href={route(
+                                        "universalBankers.show",
+                                        account.universal_banker?.id
+                                    )}
+                                >
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1 border-slate-200 bg-white/80 text-slate-700 hover:bg-slate-50"
+                                    >
+                                        <User className="h-4 w-4" />
+                                        Lihat Profil Universal Banker
+                                    </Button>
+                                </Link>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {account.universal_banker ? (
+                                <div className="p-6">
+                                    <div className="flex flex-col md:flex-row gap-6">
+                                        {/* Banker avatar and primary info */}
+                                        <div className="flex-shrink-0 flex flex-col items-center md:items-start">
+                                            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-slate-100 to-gray-200 flex items-center justify-center mb-3 shadow-sm border-2 border-white">
+                                                <span className="text-3xl font-bold text-slate-700">
+                                                    {account.universal_banker.name?.charAt(
+                                                        0
+                                                    ) || "U"}
+                                                </span>
+                                            </div>
+                                            <h3 className="text-lg font-semibold text-gray-900 text-center md:text-left mb-1">
+                                                {account.universal_banker.name}
+                                            </h3>
+                                            <p className="text-sm text-gray-500 text-center md:text-left">
+                                                Universal Banker
+                                            </p>
+                                        </div>
+
+                                        {/* Banker details in two columns */}
+                                        <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                            <div className="space-y-0 rounded-lg bg-gray-50/50 border border-gray-100 overflow-hidden">
+                                                <div className="bg-gray-100/70 px-4 py-2">
+                                                    <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider flex items-center">
+                                                        <FileText className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                                                        Informasi Personal
+                                                    </h4>
+                                                </div>
+                                                <div className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                                    <span className="text-sm text-gray-600 flex-1">
+                                                        NIP
+                                                    </span>
+                                                    <span className="text-sm font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded">
+                                                        {
+                                                            account
+                                                                .universal_banker
+                                                                .nip
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <div className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors">
+                                                    <span className="text-sm text-gray-600 flex-1">
+                                                        Kantor Cabang
+                                                    </span>
+                                                    <span className="text-sm font-medium flex items-center">
+                                                        <Building2 className="h-3.5 w-3.5 mr-1.5 text-gray-400" />
+                                                        {account
+                                                            .universal_banker
+                                                            .branch?.name ||
+                                                            "N/A"}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-0 rounded-lg bg-gray-50/50 border border-gray-100 overflow-hidden">
+                                                <div className="bg-gray-100/70 px-4 py-2">
+                                                    <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wider flex items-center">
+                                                        <Phone className="h-3.5 w-3.5 mr-1.5 text-gray-500" />
+                                                        Informasi Kontak
+                                                    </h4>
+                                                </div>
+                                                <div className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-100 group">
+                                                    <span className="text-sm text-gray-600 flex-1">
+                                                        Email
+                                                    </span>
+                                                    <a
+                                                        href={`mailto:${
+                                                            account
+                                                                .universal_banker
+                                                                .email || ""
+                                                        }`}
+                                                        className="text-sm font-medium flex items-center group-hover:text-blue-600 transition-colors"
+                                                    >
+                                                        <Mail className="h-3.5 w-3.5 mr-1.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                        {account
+                                                            .universal_banker
+                                                            .email ||
+                                                            "Tidak tersedia"}
+                                                    </a>
+                                                </div>
+                                                <div className="flex items-center px-4 py-3 hover:bg-gray-50 transition-colors group">
+                                                    <span className="text-sm text-gray-600 flex-1">
+                                                        Telepon
+                                                    </span>
+                                                    <a
+                                                        href={`tel:${
+                                                            account
+                                                                .universal_banker
+                                                                .phone || ""
+                                                        }`}
+                                                        className="text-sm font-medium flex items-center group-hover:text-blue-600 transition-colors"
+                                                    >
+                                                        <Phone className="h-3.5 w-3.5 mr-1.5 text-gray-400 group-hover:text-blue-500 transition-colors" />
+                                                        {account
+                                                            .universal_banker
+                                                            .phone ||
+                                                            "Tidak tersedia"}
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="p-12 flex flex-col items-center justify-center text-center">
+                                    <div className="rounded-full bg-gray-100 p-3 mb-3">
+                                        <UserX className="h-6 w-6 text-gray-400" />
+                                    </div>
+                                    <h3 className="text-lg font-medium text-gray-900 mt-2">
+                                        Belum Ada Universal Banker
+                                    </h3>
+                                    <p className="text-gray-500 mt-1 max-w-sm text-sm">
+                                        Saat ini belum ada Universal Banker yang
+                                        ditugaskan untuk rekening ini.
+                                    </p>
+                                </div>
+                            )}
+                        </CardContent>
+                        {account.universal_banker && (
+                            <CardFooter className="px-6 py-4 bg-gray-50/50 border-t">
+                                <div className="flex items-center justify-between w-full">
+                                    <div className="text-sm text-gray-500">
+                                        Ditugaskan sejak{" "}
+                                        <span className="font-medium text-gray-600">
+                                            {formatDate(
+                                                account.universal_banker
+                                                    .created_at
+                                            )}
+                                        </span>
+                                    </div>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="gap-1"
+                                    >
+                                        <MessageSquare className="h-4 w-4" />
+                                        Hubungi
+                                    </Button>
+                                </div>
+                            </CardFooter>
+                        )}
                     </Card>
                 </TabsContent>
             </Tabs>

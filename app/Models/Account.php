@@ -42,7 +42,7 @@ class Account extends Model
 
     public function universalBanker()
     {
-        return $this->belongsTo(User::class, 'universal_banker_id');
+        return $this->belongsTo(UniversalBanker::class, 'universal_banker_id');
     }
 
     public function accountTransactions()

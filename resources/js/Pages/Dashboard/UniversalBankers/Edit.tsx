@@ -3,7 +3,7 @@
 import type React from "react";
 import { useState } from "react";
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
-import type { PageProps, Branch, User } from "@/types";
+import type { PageProps, Branch, UniversalBanker } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -19,86 +19,30 @@ import {
     X,
     Phone,
     MapPin,
-    Check,
-    Eye,
-    EyeOff,
-    KeyRound,
-    RefreshCw,
-    Info,
     Users,
 } from "lucide-react";
 
 interface UniversalBankersEditPageProps extends PageProps {
-    user: User;
+    universalBanker: UniversalBanker;
     branches: Branch[];
 }
 
 const UniversalBankersEdit = () => {
-    const { user, branches } = usePage<UniversalBankersEditPageProps>().props;
+    const { universalBanker, branches } =
+        usePage<UniversalBankersEditPageProps>().props;
 
     const { data, setData, put, processing, errors } = useForm({
-        nip: user.nip || "",
-        name: user.name || "",
-        email: user.email || "",
-        phone: user.phone || "",
-        address: user.address || "",
-        branch_id: user.branch?.id?.toString() || "",
-        is_change_password: false as boolean,
-        password: "",
-        password_confirmation: "",
+        nip: universalBanker.nip || "",
+        name: universalBanker.name || "",
+        email: universalBanker.email || "",
+        phone: universalBanker.phone || "",
+        address: universalBanker.address || "",
+        branch_id: universalBanker.branch?.id?.toString() || "",
     });
-
-    const [passwordVisible, setPasswordVisible] = useState(false);
-    const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        put(route("universalBankers.update", user.id));
-    };
-
-    // Password strength calculation
-    const getPasswordStrength = () => {
-        if (!data.password) return 0;
-
-        let strength = 0;
-        if (data.password.length >= 8) strength += 25;
-        if (/[A-Z]/.test(data.password)) strength += 25;
-        if (/\d/.test(data.password)) strength += 25;
-        if (/[!@#$%^&*(),.?":{}|<>]/.test(data.password)) strength += 25;
-
-        return strength;
-    };
-
-    const getStrengthColor = () => {
-        const strength = getPasswordStrength();
-        if (strength <= 25) return "bg-red-500";
-        if (strength <= 50) return "bg-orange-500";
-        if (strength <= 75) return "bg-yellow-500";
-        return "bg-green-500";
-    };
-
-    const getStrengthText = () => {
-        const strength = getPasswordStrength();
-        if (strength <= 25) return "Lemah";
-        if (strength <= 50) return "Sedang";
-        if (strength <= 75) return "Kuat";
-        return "Sangat Kuat";
-    };
-
-    const generatePassword = () => {
-        const length = 12;
-        const charset =
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
-        let generatedPassword = "";
-
-        for (let i = 0, n = charset.length; i < length; ++i) {
-            generatedPassword += charset.charAt(Math.floor(Math.random() * n));
-        }
-
-        setData("password", generatedPassword);
-        setData("password_confirmation", generatedPassword);
-        setPasswordVisible(true);
-        setConfirmPasswordVisible(true);
+        put(route("universalBankers.update", universalBanker.id));
     };
 
     return (
@@ -127,7 +71,7 @@ const UniversalBankersEdit = () => {
                                 <UserCog className="h-6 w-6 text-white" />
                             </div>
                             <h1 className="text-3xl font-bold tracking-tight text-white">
-                                Edit Universal Banker: {user.name}
+                                Edit Universal Banker: {universalBanker.name}
                             </h1>
                         </div>
                         <p className="mt-1.5 max-w-2xl text-blue-100 text-lg">
@@ -404,340 +348,6 @@ const UniversalBankersEdit = () => {
                                     )}
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Password Section */}
-                        <div className="bg-gray-50/50 p-5 rounded-lg border border-gray-100">
-                            <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                                <div className="bg-[#00529C]/10 rounded-md p-1.5 mr-2">
-                                    <KeyRound className="h-5 w-5 text-[#00529C]" />
-                                </div>
-                                Pengaturan Password
-                            </h3>
-
-                            <div className="space-y-2 mb-6">
-                                <div className="flex items-center">
-                                    <input
-                                        id="is_change_password"
-                                        name="is_change_password"
-                                        type="checkbox"
-                                        checked={data.is_change_password}
-                                        onChange={(e) => {
-                                            setData(
-                                                "is_change_password",
-                                                e.target.checked
-                                            );
-                                            if (!e.target.checked) {
-                                                setData("password", "");
-                                                setData(
-                                                    "password_confirmation",
-                                                    ""
-                                                );
-                                            }
-                                        }}
-                                        className="h-4 w-4 text-[#00529C] focus:ring-[#00529C] border-gray-300 rounded"
-                                    />
-                                    <label
-                                        htmlFor="is_change_password"
-                                        className="ml-2 block text-sm text-gray-700"
-                                    >
-                                        Ubah password Universal Banker
-                                    </label>
-                                </div>
-                            </div>
-
-                            {data.is_change_password && (
-                                <>
-                                    <div className="mb-5">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={generatePassword}
-                                            className="flex items-center text-sm bg-white hover:bg-[#00529C]/5 transition-colors"
-                                        >
-                                            <RefreshCw className="h-4 w-4 mr-1.5" />
-                                            Generate Password Otomatis
-                                        </Button>
-                                    </div>
-
-                                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                        <div className="space-y-2">
-                                            <label
-                                                htmlFor="password"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Password Baru
-                                                {data.is_change_password && (
-                                                    <span className="text-red-600 ml-1">
-                                                        *
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <div className="relative rounded-md shadow-sm">
-                                                <input
-                                                    type={
-                                                        passwordVisible
-                                                            ? "text"
-                                                            : "password"
-                                                    }
-                                                    id="password"
-                                                    name="password"
-                                                    value={data.password}
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            "password",
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    className={`block w-full pr-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                        errors.password
-                                                            ? "border-red-300 bg-red-50"
-                                                            : "border-gray-300"
-                                                    }`}
-                                                    placeholder="Minimal 8 karakter"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setPasswordVisible(
-                                                            !passwordVisible
-                                                        )
-                                                    }
-                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                                                >
-                                                    {passwordVisible ? (
-                                                        <EyeOff className="h-4 w-4" />
-                                                    ) : (
-                                                        <Eye className="h-4 w-4" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                            {errors.password && (
-                                                <p className="mt-1 text-sm text-red-600 flex items-center">
-                                                    <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                                    {errors.password}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <label
-                                                htmlFor="password_confirmation"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Konfirmasi Password
-                                                {data.is_change_password && (
-                                                    <span className="text-red-600 ml-1">
-                                                        *
-                                                    </span>
-                                                )}
-                                            </label>
-                                            <div className="relative rounded-md shadow-sm">
-                                                <input
-                                                    type={
-                                                        confirmPasswordVisible
-                                                            ? "text"
-                                                            : "password"
-                                                    }
-                                                    id="password_confirmation"
-                                                    name="password_confirmation"
-                                                    value={
-                                                        data.password_confirmation
-                                                    }
-                                                    onChange={(e) =>
-                                                        setData(
-                                                            "password_confirmation",
-                                                            e.target.value
-                                                        )
-                                                    }
-                                                    className={`block w-full pr-10 rounded-md focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm transition-all duration-200 ${
-                                                        errors.password_confirmation
-                                                            ? "border-red-300 bg-red-50"
-                                                            : "border-gray-300"
-                                                    }`}
-                                                    placeholder="Masukkan kembali password"
-                                                />
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        setConfirmPasswordVisible(
-                                                            !confirmPasswordVisible
-                                                        )
-                                                    }
-                                                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-                                                >
-                                                    {confirmPasswordVisible ? (
-                                                        <EyeOff className="h-4 w-4" />
-                                                    ) : (
-                                                        <Eye className="h-4 w-4" />
-                                                    )}
-                                                </button>
-                                            </div>
-                                            {errors.password_confirmation && (
-                                                <p className="mt-1 text-sm text-red-600 flex items-center">
-                                                    <AlertCircle className="h-3.5 w-3.5 mr-1 flex-shrink-0" />
-                                                    {
-                                                        errors.password_confirmation
-                                                    }
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    {data.password && (
-                                        <div className="mt-5 p-4 bg-blue-50 rounded-lg border border-blue-100 animate-fadeIn">
-                                            <div className="flex items-center justify-between mb-3">
-                                                <h4 className="text-sm font-medium text-blue-800 flex items-center">
-                                                    <Info className="h-4 w-4 mr-1.5" />
-                                                    Kekuatan Password:{" "}
-                                                    <span className="ml-1 font-semibold">
-                                                        {getStrengthText()}
-                                                    </span>
-                                                </h4>
-                                                <div className="text-xs font-medium text-blue-700">
-                                                    {getPasswordStrength()}%
-                                                </div>
-                                            </div>
-
-                                            <div className="h-2 w-full bg-blue-200 rounded-full mb-4 overflow-hidden">
-                                                <div
-                                                    className={`h-full ${getStrengthColor()} transition-all duration-300 ease-out`}
-                                                    style={{
-                                                        width: `${getPasswordStrength()}%`,
-                                                    }}
-                                                ></div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center">
-                                                        <div
-                                                            className={`h-5 w-5 rounded-full flex items-center justify-center mr-2 ${
-                                                                data.password
-                                                                    .length >= 8
-                                                                    ? "bg-green-100 text-green-600"
-                                                                    : "bg-gray-100 text-gray-400"
-                                                            }`}
-                                                        >
-                                                            {data.password
-                                                                .length >= 8 ? (
-                                                                <Check className="h-3 w-3" />
-                                                            ) : (
-                                                                ""
-                                                            )}
-                                                        </div>
-                                                        <span
-                                                            className={`text-xs ${
-                                                                data.password
-                                                                    .length >= 8
-                                                                    ? "text-green-600"
-                                                                    : "text-gray-500"
-                                                            }`}
-                                                        >
-                                                            Minimal 8 karakter
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="flex items-center">
-                                                        <div
-                                                            className={`h-5 w-5 rounded-full flex items-center justify-center mr-2 ${
-                                                                /[A-Z]/.test(
-                                                                    data.password
-                                                                )
-                                                                    ? "bg-green-100 text-green-600"
-                                                                    : "bg-gray-100 text-gray-400"
-                                                            }`}
-                                                        >
-                                                            {/[A-Z]/.test(
-                                                                data.password
-                                                            ) ? (
-                                                                <Check className="h-3 w-3" />
-                                                            ) : (
-                                                                ""
-                                                            )}
-                                                        </div>
-                                                        <span
-                                                            className={`text-xs ${
-                                                                /[A-Z]/.test(
-                                                                    data.password
-                                                                )
-                                                                    ? "text-green-600"
-                                                                    : "text-gray-500"
-                                                            }`}
-                                                        >
-                                                            Huruf kapital
-                                                        </span>
-                                                    </div>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center">
-                                                        <div
-                                                            className={`h-5 w-5 rounded-full flex items-center justify-center mr-2 ${
-                                                                /\d/.test(
-                                                                    data.password
-                                                                )
-                                                                    ? "bg-green-100 text-green-600"
-                                                                    : "bg-gray-100 text-gray-400"
-                                                            }`}
-                                                        >
-                                                            {/\d/.test(
-                                                                data.password
-                                                            ) ? (
-                                                                <Check className="h-3 w-3" />
-                                                            ) : (
-                                                                ""
-                                                            )}
-                                                        </div>
-                                                        <span
-                                                            className={`text-xs ${
-                                                                /\d/.test(
-                                                                    data.password
-                                                                )
-                                                                    ? "text-green-600"
-                                                                    : "text-gray-500"
-                                                            }`}
-                                                        >
-                                                            Angka
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="flex items-center">
-                                                        <div
-                                                            className={`h-5 w-5 rounded-full flex items-center justify-center mr-2 ${
-                                                                /[!@#$%^&*(),.?":{}|<>]/.test(
-                                                                    data.password
-                                                                )
-                                                                    ? "bg-green-100 text-green-600"
-                                                                    : "bg-gray-100 text-gray-400"
-                                                            }`}
-                                                        >
-                                                            {/[!@#$%^&*(),.?":{}|<>]/.test(
-                                                                data.password
-                                                            ) ? (
-                                                                <Check className="h-3 w-3" />
-                                                            ) : (
-                                                                ""
-                                                            )}
-                                                        </div>
-                                                        <span
-                                                            className={`text-xs ${
-                                                                /[!@#$%^&*(),.?":{}|<>]/.test(
-                                                                    data.password
-                                                                )
-                                                                    ? "text-green-600"
-                                                                    : "text-gray-500"
-                                                            }`}
-                                                        >
-                                                            Karakter spesial
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </>
-                            )}
                         </div>
 
                         <div className="border-t border-gray-200 pt-6 flex justify-between items-center">

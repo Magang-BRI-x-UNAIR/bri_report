@@ -11,12 +11,12 @@ use App\Services\ExcelProcessingService;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
 use App\Models\User;
 use App\Models\Client;
 use App\Models\Account;
+use App\Models\UniversalBanker;
 use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
@@ -48,7 +48,7 @@ class DashboardController extends Controller
     {
         // Kalkulasi data statistik
         $stats = [
-            'totalUniversalBankers' => User::role('universal_banker')->count(),
+            'totalUniversalBankers' => UniversalBanker::count(),
             'totalClients' => Client::whereHas('accounts')->distinct()->count(), // Hitung nasabah yang punya rekening
             'totalActiveAccounts' => Account::where('status', 'active')->count(),
             'totalPortfolio' => Account::sum('current_balance'),
@@ -169,8 +169,7 @@ class DashboardController extends Controller
      */
     public function export()
     {
-        $universalBankers = User::role('universal_banker')
-            ->select('id', 'name')
+        $universalBankers = UniversalBanker::select('id', 'name')
             ->orderBy('name')
             ->get();
 
@@ -226,6 +225,10 @@ class DashboardController extends Controller
         ]);
     }
 
+    /**
+     * Mengunduh file yang telah diekspor.
+     * Endpoint ini akan dipanggil setelah proses ekspor selesai.
+     */
     public function downloadExportedFile(string $result_id)
     {
         $cachedData = Cache::get($result_id);

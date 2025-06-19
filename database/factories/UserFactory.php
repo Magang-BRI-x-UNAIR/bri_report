@@ -26,12 +26,10 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'nip' => fake()->unique()->numerify('#########'),
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'phone' => fake()->optional()->phoneNumber(),
             'address' => fake()->optional()->address(),
-            'branch_id' => Branch::inRandomOrder()->first()?->id ?? Branch::factory(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
@@ -46,19 +44,5 @@ class UserFactory extends Factory
         return $this->state(fn(array $attributes) => [
             'email_verified_at' => null,
         ]);
-    }
-
-    /**
-     * Configure the user as Universal Banker.
-     */
-    public function universalBanker(): static
-    {
-        return $this->afterCreating(function ($user) {
-            // Get or create the universal_banker role
-            $role = Role::firstOrCreate(['name' => 'universal_banker']);
-
-            // Assign the role to the user
-            $user->assignRole($role);
-        });
     }
 }

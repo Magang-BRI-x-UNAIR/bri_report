@@ -115,7 +115,6 @@ class UniversalBankerImport implements ToCollection, WithHeadingRow, WithChunkRe
                 'processed_current' => $currentBalance
             ]);
 
-            // Menyusun data yang akan ditampilkan di preview
             $rowDataForPreview = [
                 'cif' => $clientCif,
                 'client_name' => $row[self::COL_CLIENT_NAME],

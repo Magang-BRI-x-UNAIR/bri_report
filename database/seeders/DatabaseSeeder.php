@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             BranchSeeder::class,
             AccountProductSeeder::class,
+            UniversalBankerSeeder::class,
             UserSeeder::class,
             ClientSeeder::class,
             AccountSeeder::class,

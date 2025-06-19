@@ -5,7 +5,7 @@ namespace App\Services;
 use App\Models\Account;
 use App\Models\Client;
 use App\Models\AccountTransaction;
-use App\Models\User;
+use App\Models\UniversalBanker;
 use App\Models\UniversalBankerDailyBalance;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
@@ -31,17 +31,12 @@ class ExcelProcessingService
   public const COL_AVAIL_BALANCE = 'availbalance';
 
   /**
-   * EPSILON constant for floating point comparisons
-   */
-  private const EPSILON = 0.0001;
-
-  /**
    * Find Universal Banker by their code (NIP) from PN_RO field
    *
    * @param string $pnRoExcel
-   * @return User|null
+   * @return UniversalBanker|null
    */
-  public function findUniversalBanker(string $pnRoExcel): ?User
+  public function findUniversalBanker(string $pnRoExcel): ?UniversalBanker
   {
     try {
       $officerInfo = explode('-', $pnRoExcel);
@@ -50,8 +45,7 @@ class ExcelProcessingService
         Log::warning("Empty officer code after parsing '{$pnRoExcel}'");
         return null;
       }
-      $universalBanker = User::where('nip', $officerCode)
-        ->role('universal_banker')
+      $universalBanker = UniversalBanker::where('nip', $officerCode)
         ->first();
 
       if (!$universalBanker) {

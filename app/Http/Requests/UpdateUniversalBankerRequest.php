@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreUserRequest extends FormRequest
+class UpdateUniversalBankerRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,12 +21,13 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
+        $universalBankerId = $this->route('universalBanker')->id;
+
         return [
-            //
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'phone' => 'nullable|string|max:255',
+            'email' => 'required|email|max:255|unique:universal_bankers,email,' . $universalBankerId,
+            'nip' => 'required|string|max:255|unique:universal_bankers,nip,' . $universalBankerId,
+            'phone' => 'required|string|max:255',
             'address' => 'nullable|string|max:255',
             'branch_id' => 'required|exists:branches,id',
         ];

@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PageController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\UniversalBankerController;
 
 Route::controller(PageController::class)->group(function () {
     Route::get('/', 'index')->name('page.index');
@@ -51,12 +51,12 @@ Route::prefix('dashboard')->middleware(['auth', 'verified'])->group(function () 
     Route::prefix('profile')->controller(ProfileController::class)->group(function () {
         Route::get('/',  'index')->name('profile.index');
         Route::get('edit', 'edit')->name('profile.edit');
-        Route::patch('update', 'update')->name('profile.update');
+        Route::put('update', 'update')->name('profile.update');
     });
 
     Route::resource('clients', ClientController::class);
     Route::resource('branches', BranchController::class);
-    Route::resource('universalBankers', UserController::class);
+    Route::resource('universalBankers', UniversalBankerController::class);
     Route::resource('accounts', AccountController::class);
 });
 

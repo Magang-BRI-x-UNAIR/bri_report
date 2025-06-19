@@ -2,8 +2,8 @@
 
 namespace App\Exports;
 
-use App\Models\User;
 use App\Models\UniversalBankerDailyBalance;
+use App\Models\UniversalBanker;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
 use Illuminate\Support\Collection;
@@ -54,7 +54,7 @@ class UniversalBankerExport implements FromCollection, ShouldAutoSize, WithEvent
             ->get()
             ->groupBy('universal_banker_id');
 
-        $universalBankers = User::with(['branch', 'accounts'])->find($this->universalBankerIds);
+        $universalBankers = UniversalBanker::with(['branch', 'accounts'])->find($this->universalBankerIds);
 
         $reportData = new Collection();
         $counter = 1;

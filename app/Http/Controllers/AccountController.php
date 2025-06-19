@@ -37,7 +37,7 @@ class AccountController extends Controller
         return Inertia::render('Dashboard/Accounts/Create', [
             'clients' => \App\Models\Client::all(),
             'accountProducts' => \App\Models\AccountProduct::all(),
-            'universalBankers' => \App\Models\User::role('universal_banker')->get(),
+            'universalBankers' => \App\Models\UniversalBanker::all(),
         ]);
     }
 
