@@ -14,6 +14,11 @@ class AccountTransaction extends Model
     protected $fillable = [
         'account_id',
         'balance',
+        'date',
+    ];
+
+    protected $casts = [
+        'date' => 'datetime',
     ];
 
 

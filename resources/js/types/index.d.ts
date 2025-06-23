@@ -48,11 +48,13 @@ export interface Account {
 }
 
 export interface AccountTransaction {
-    previous_balance: number;
-    amount: number;
     id: string;
     account: Account;
     balance: number;
+    amount: number;
+    type: "credit" | "debit";
+    previous_balance: number;
+    date: string;
     created_at: string;
     updated_at: string;
 }

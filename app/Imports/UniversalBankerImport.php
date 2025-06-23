@@ -24,13 +24,12 @@ class UniversalBankerImport implements ToCollection, WithHeadingRow, WithChunkRe
         'skipped_rows' => 0,
     ];
     private array $universalBankersAffected = [];
-
-    public const COL_CLIENT_CIF = 'textbox4';
-    public const COL_CLIENT_NAME = 'textbox38';
-    public const COL_ACCOUNT_NUMBER = 'textbox15';
+    public const COL_CLIENT_CIF = 'ciff_no';
+    public const COL_CLIENT_NAME = 'short_name';
+    public const COL_ACCOUNT_NUMBER = 'account_number';
     public const COL_PN_RELATIONSHIP_OFFICER = 'pn_relationship_officer';
     public const COL_BALANCE = 'balance';
-    public const COL_AVAIL_BALANCE = 'availbalance';
+    public const COL_AVAIL_BALANCE = 'available_balance';
 
     public function __construct(
         ExcelProcessingService $processingService,
@@ -68,6 +67,7 @@ class UniversalBankerImport implements ToCollection, WithHeadingRow, WithChunkRe
 
 
             $pnRoValue = $row[self::COL_PN_RELATIONSHIP_OFFICER];
+
             $universalBanker = $this->processingService->findUniversalBanker($pnRoValue);
 
             if (!$universalBanker) {
@@ -107,13 +107,6 @@ class UniversalBankerImport implements ToCollection, WithHeadingRow, WithChunkRe
             $currentBalance = $this->formatCurrencyValue($row[self::COL_BALANCE]);
             $availableBalance = $this->formatCurrencyValue($row[self::COL_AVAIL_BALANCE]);
             $previousAvailableBalance = $this->formatCurrencyValue($account->available_balance);
-            Log::debug("Balance values processed", [
-                'account' => $accountNumber,
-                'raw_previous' => $account ? $account->current_balance : 'null',
-                'processed_previous' => $previousBalance,
-                'raw_current' => $row[self::COL_BALANCE],
-                'processed_current' => $currentBalance
-            ]);
 
             $rowDataForPreview = [
                 'cif' => $clientCif,

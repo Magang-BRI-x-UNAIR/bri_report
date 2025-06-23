@@ -42,7 +42,7 @@ class BranchController extends Controller
     public function show(Branch $branch)
     {
         //
-        $branch->load('users');
+        $branch->load('universalBankers');
         return Inertia::render('Dashboard/Branches/Show', [
             'branch' => $branch,
         ]);

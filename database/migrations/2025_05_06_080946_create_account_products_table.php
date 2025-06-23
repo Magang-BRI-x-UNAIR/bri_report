@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('account_products', function (Blueprint $table) {
             $table->id();
             $table->string('code')->unique()->comment('Product type code');
-            $table->string('name')->unique()->comment('Product type name');
+            $table->string('name')->unique()->nullable()->comment('Product type name');
             $table->string('description')->nullable()->comment('Product type description');
             $table->timestamps();
         });

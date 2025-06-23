@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Models\UniversalBanker;
 use App\Models\Branch;
 use App\Models\UniversalBankerDailyBalance;
-use App\Models\Account;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 

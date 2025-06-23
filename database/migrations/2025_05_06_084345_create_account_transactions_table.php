@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('account_id')->constrained()->onDelete('cascade');
             $table->decimal('balance', 19, 4)->comment('Balance');
+            $table->date('date')->comment('Transaction Date');
             $table->timestamps();
             $table->index('account_id');
         });

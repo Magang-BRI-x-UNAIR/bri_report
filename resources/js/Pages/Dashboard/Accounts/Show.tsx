@@ -32,8 +32,6 @@ import {
     ChevronUp,
     ChevronDown,
     ArrowUp,
-    MapPin,
-    UserIcon,
     MessageSquare,
     Building2,
     UserX,
@@ -87,7 +85,7 @@ const AccountsShow = () => {
     const { account } = usePage<AccountsShowProps>().props;
     const [searchTerm, setSearchTerm] = useState("");
     const [showFilters, setShowFilters] = useState(false);
-    const [sortField, setSortField] = useState("created_at");
+    const [sortField, setSortField] = useState("date");
     const [sortDirection, setSortDirection] = useState("desc");
     const [transactionType, setTransactionType] = useState("all");
     const [chartPeriod, setChartPeriod] = useState("all");
@@ -119,9 +117,9 @@ const AccountsShow = () => {
                 new Date(todayDate.getTime() + 24 * 60 * 60 * 1000 - 1)
             );
         } else if (dateRange === "week") {
-            const currentDay = today.getDay(); // 0 = Sunday, 1 = Monday, etc.
+            const currentDay = today.getDay();
             const diff =
-                today.getDate() - currentDay + (currentDay === 0 ? -6 : 1); // Adjust to start on Monday
+                today.getDate() - currentDay + (currentDay === 0 ? -6 : 1);
 
             const weekStart = getDateOnly(new Date(today.setDate(diff)));
             const weekEnd = new Date(
@@ -152,11 +150,18 @@ const AccountsShow = () => {
         }
     }, [dateRange]);
 
+    // Process transactions to calculate amounts from balance differences
     const processedTransactions = useMemo(() => {
+        if (
+            !account.account_transactions ||
+            account.account_transactions.length === 0
+        ) {
+            return [];
+        }
+
+        // Sort transactions by date (oldest first) for proper calculation
         const sortedTransactions = [...account.account_transactions].sort(
-            (a, b) =>
-                new Date(a.created_at).getTime() -
-                new Date(b.created_at).getTime()
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
         );
 
         return sortedTransactions.map((tx, index) => {
@@ -174,6 +179,8 @@ const AccountsShow = () => {
                     ? previousTransaction.balance
                     : 0,
                 amount: amount,
+                // Use date field instead of created_at for consistency with new schema
+                created_at: tx.date,
             };
         });
     }, [account.account_transactions]);
@@ -183,7 +190,7 @@ const AccountsShow = () => {
         newBalance: number,
         previousBalance: number
     ) => {
-        if (previousBalance === 0) return 100;
+        if (previousBalance === 0) return newBalance > 0 ? 100 : 0;
         return (
             ((newBalance - previousBalance) / Math.abs(previousBalance)) * 100
         );
@@ -199,12 +206,19 @@ const AccountsShow = () => {
                     "text-emerald-600 bg-emerald-50 border border-emerald-200",
                 icon: <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" />,
             };
-        } else {
+        } else if (amount < 0) {
             return {
                 type: "debit",
                 label: "Debit",
                 className: "text-rose-600 bg-rose-50 border border-rose-200",
                 icon: <ArrowDownRight className="h-3.5 w-3.5 text-rose-600" />,
+            };
+        } else {
+            return {
+                type: "neutral",
+                label: "Tidak Ada Perubahan",
+                className: "text-gray-600 bg-gray-50 border border-gray-200",
+                icon: <ArrowDownUp className="h-3.5 w-3.5 text-gray-600" />,
             };
         }
     };
@@ -225,7 +239,7 @@ const AccountsShow = () => {
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
         const recentTransactions = processedTransactions.filter(
-            (tx) => new Date(tx.created_at) >= thirtyDaysAgo
+            (tx) => new Date(tx.date) >= thirtyDaysAgo
         );
 
         const recentCredits = recentTransactions.filter((tx) => tx.amount > 0);
@@ -256,8 +270,8 @@ const AccountsShow = () => {
 
     const chartData = useMemo(() => {
         const sortedTransactions = [...processedTransactions].sort((a, b) => {
-            const dateA = new Date(a.created_at || "").getTime();
-            const dateB = new Date(b.created_at || "").getTime();
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
             return dateA - dateB;
         });
 
@@ -265,7 +279,7 @@ const AccountsShow = () => {
         const filteredTransactions = sortedTransactions.filter((tx) => {
             if (chartPeriod === "all") return true;
 
-            const txDate = new Date(tx.created_at);
+            const txDate = new Date(tx.date);
             const today = new Date();
 
             switch (chartPeriod) {
@@ -293,8 +307,8 @@ const AccountsShow = () => {
         // Map transactions to chart-friendly format
         return filteredTransactions.map((tx) => {
             return {
-                date: formatShortDate(tx.created_at),
-                fullDate: tx.created_at,
+                date: formatShortDate(tx.date),
+                fullDate: tx.date,
                 balance: tx.balance,
                 amount: tx.amount,
                 credit: tx.amount > 0 ? tx.amount : 0,
@@ -314,15 +328,15 @@ const AccountsShow = () => {
                 (transactionType === "debit" && transaction.amount < 0);
             let dateMatch = true;
             if (appliedStartDate && appliedEndDate) {
-                const txDate = new Date(transaction.created_at || "");
+                const txDate = new Date(transaction.date);
                 dateMatch =
                     txDate >= appliedStartDate && txDate <= appliedEndDate;
             }
             return searchMatch && typeMatch && dateMatch;
         })
         .sort((a, b) => {
-            const dateA = new Date(a.created_at || "").getTime();
-            const dateB = new Date(b.created_at || "").getTime();
+            const dateA = new Date(a.date).getTime();
+            const dateB = new Date(b.date).getTime();
 
             return sortDirection === "asc" ? dateA - dateB : dateB - dateA;
         });
@@ -361,7 +375,7 @@ const AccountsShow = () => {
                                     ) : (
                                         <ArrowDownRight className="h-3 w-3 mr-1" />
                                     )}
-                                    Transaksi:
+                                    Perubahan:
                                 </span>
                                 <span className="font-medium">
                                     {formatCurrency(Math.abs(data.amount))}
@@ -535,7 +549,7 @@ const AccountsShow = () => {
                     </TabsTrigger>
                     <TabsTrigger value="transactions" className="text-sm">
                         <Receipt className="h-4 w-4 mr-2" />
-                        Transaksi
+                        Riwayat Saldo
                     </TabsTrigger>
                     <TabsTrigger value="details" className="text-sm">
                         <Info className="h-4 w-4 mr-2" />
@@ -551,7 +565,8 @@ const AccountsShow = () => {
                             <div>
                                 <CardTitle>Grafik Saldo</CardTitle>
                                 <CardDescription>
-                                    Perkembangan saldo rekening
+                                    Perkembangan saldo rekening dari waktu ke
+                                    waktu
                                 </CardDescription>
                             </div>
                             <div className="flex space-x-2">
@@ -592,7 +607,7 @@ const AccountsShow = () => {
                                             Saldo
                                         </SelectItem>
                                         <SelectItem value="transactions">
-                                            Transaksi
+                                            Perubahan
                                         </SelectItem>
                                         <SelectItem value="combined">
                                             Kombinasi
@@ -602,7 +617,7 @@ const AccountsShow = () => {
                             </div>
                         </CardHeader>
                         <CardContent className="pt-4">
-                            {account.account_transactions.length > 0 ? (
+                            {processedTransactions.length > 0 ? (
                                 <div className="h-72 w-full">
                                     <ResponsiveContainer
                                         width="100%"
@@ -920,11 +935,12 @@ const AccountsShow = () => {
                                 <div className="text-center py-8">
                                     <BarChart4 className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                                     <p className="text-gray-500 font-medium">
-                                        Belum ada data transaksi
+                                        Belum ada data riwayat saldo
                                     </p>
                                     <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
                                         Grafik akan ditampilkan setelah ada
-                                        transaksi pada rekening ini
+                                        riwayat perubahan saldo pada rekening
+                                        ini
                                     </p>
                                 </div>
                             )}
@@ -935,9 +951,9 @@ const AccountsShow = () => {
                     <Card>
                         <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
                             <div>
-                                <CardTitle>Transaksi Terbaru</CardTitle>
+                                <CardTitle>Perubahan Saldo Terbaru</CardTitle>
                                 <CardDescription>
-                                    5 transaksi terakhir pada rekening ini
+                                    5 perubahan saldo terakhir pada rekening ini
                                 </CardDescription>
                             </div>
                             <Button variant="outline" size="sm" asChild>
@@ -970,30 +986,33 @@ const AccountsShow = () => {
                                                                 transaction.amount >
                                                                 0
                                                                     ? "bg-emerald-50"
-                                                                    : "bg-rose-50"
+                                                                    : transaction.amount <
+                                                                      0
+                                                                    ? "bg-rose-50"
+                                                                    : "bg-gray-50"
                                                             }`}
                                                         >
                                                             {transaction.amount >
                                                             0 ? (
                                                                 <ArrowUpRight className="h-5 w-5 text-emerald-600" />
-                                                            ) : (
+                                                            ) : transaction.amount <
+                                                              0 ? (
                                                                 <ArrowDownRight className="h-5 w-5 text-rose-600" />
+                                                            ) : (
+                                                                <ArrowDownUp className="h-5 w-5 text-gray-600" />
                                                             )}
                                                         </div>
                                                         <div>
                                                             <div className="font-medium text-gray-900">
-                                                                {transaction.amount >
-                                                                0
-                                                                    ? "Kredit"
-                                                                    : "Debit"}
+                                                                {txType.label}
                                                             </div>
                                                             <div className="text-xs text-gray-500">
                                                                 {formatDate(
-                                                                    transaction.created_at
+                                                                    transaction.date
                                                                 )}{" "}
                                                                 ·{" "}
                                                                 {formatTime(
-                                                                    transaction.created_at
+                                                                    transaction.date
                                                                 )}
                                                             </div>
                                                         </div>
@@ -1004,18 +1023,27 @@ const AccountsShow = () => {
                                                                 transaction.amount >
                                                                 0
                                                                     ? "text-emerald-600"
-                                                                    : "text-rose-600"
+                                                                    : transaction.amount <
+                                                                      0
+                                                                    ? "text-rose-600"
+                                                                    : "text-gray-600"
                                                             }`}
                                                         >
                                                             {transaction.amount >
                                                             0
                                                                 ? "+"
-                                                                : "-"}
-                                                            {formatCurrency(
-                                                                Math.abs(
-                                                                    transaction.amount
-                                                                )
-                                                            )}
+                                                                : transaction.amount <
+                                                                  0
+                                                                ? "-"
+                                                                : ""}
+                                                            {transaction.amount !==
+                                                            0
+                                                                ? formatCurrency(
+                                                                      Math.abs(
+                                                                          transaction.amount
+                                                                      )
+                                                                  )
+                                                                : "Tidak ada perubahan"}
                                                         </div>
                                                         <div className="text-xs text-gray-500">
                                                             Saldo:{" "}
@@ -1032,7 +1060,7 @@ const AccountsShow = () => {
                                 <div className="text-center py-8">
                                     <Receipt className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                                     <p className="text-gray-500 font-medium">
-                                        Belum ada transaksi
+                                        Belum ada riwayat saldo
                                     </p>
                                 </div>
                             )}
@@ -1048,10 +1076,10 @@ const AccountsShow = () => {
                                 <div>
                                     <CardTitle className="flex items-center gap-2 text-indigo-800">
                                         <Receipt className="h-5 w-5 text-indigo-600" />
-                                        Riwayat Transaksi
+                                        Riwayat Saldo Rekening
                                     </CardTitle>
                                     <CardDescription className="text-indigo-700/70">
-                                        Semua transaksi pada rekening ini
+                                        Semua perubahan saldo pada rekening ini
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center gap-2 flex-wrap justify-end">
@@ -1060,7 +1088,7 @@ const AccountsShow = () => {
                                         className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50 border-indigo-200 px-3 py-1"
                                     >
                                         <Receipt className="h-3.5 w-3.5 mr-1.5" />
-                                        {filteredTransactions.length} Transaksi
+                                        {filteredTransactions.length} Entri
                                     </Badge>
                                     <Button
                                         variant={
@@ -1105,7 +1133,7 @@ const AccountsShow = () => {
                                             <Input
                                                 type="text"
                                                 className="pl-10 border-gray-200 focus:border-indigo-300 focus:ring-indigo-200"
-                                                placeholder="Cari transaksi..."
+                                                placeholder="Cari berdasarkan saldo..."
                                                 value={searchTerm}
                                                 onChange={(e) =>
                                                     setSearchTerm(
@@ -1146,7 +1174,7 @@ const AccountsShow = () => {
                                                             "debit" && (
                                                             <ArrowDownRight className="h-3.5 w-3.5 mr-2 text-rose-500" />
                                                         )}
-                                                        <SelectValue placeholder="Jenis Transaksi" />
+                                                        <SelectValue placeholder="Jenis Perubahan" />
                                                     </div>
                                                 </SelectTrigger>
                                                 <SelectContent>
@@ -1156,7 +1184,7 @@ const AccountsShow = () => {
                                                     >
                                                         <div className="flex items-center">
                                                             <ArrowDownUp className="h-3.5 w-3.5 mr-2 text-gray-500" />
-                                                            Semua Transaksi
+                                                            Semua Perubahan
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem
@@ -1165,7 +1193,7 @@ const AccountsShow = () => {
                                                     >
                                                         <div className="flex items-center">
                                                             <ArrowUpRight className="h-3.5 w-3.5 mr-2 text-emerald-500" />
-                                                            Kredit (Masuk)
+                                                            Kredit (Naik)
                                                         </div>
                                                     </SelectItem>
                                                     <SelectItem
@@ -1174,7 +1202,7 @@ const AccountsShow = () => {
                                                     >
                                                         <div className="flex items-center">
                                                             <ArrowDownRight className="h-3.5 w-3.5 mr-2 text-rose-500" />
-                                                            Debit (Keluar)
+                                                            Debit (Turun)
                                                         </div>
                                                     </SelectItem>
                                                 </SelectContent>
@@ -1200,13 +1228,13 @@ const AccountsShow = () => {
                                                             <SelectValue placeholder="Urutkan berdasarkan" />
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            <SelectItem value="created_at">
+                                                            <SelectItem value="date">
                                                                 <Calendar className="h-3.5 w-3.5 inline mr-2" />
                                                                 Tanggal
                                                             </SelectItem>
                                                             <SelectItem value="amount">
                                                                 <CreditCard className="h-3.5 w-3.5 inline mr-2" />
-                                                                Jumlah
+                                                                Perubahan
                                                             </SelectItem>
                                                             <SelectItem value="balance">
                                                                 <Wallet className="h-3.5 w-3.5 inline mr-2" />
@@ -1257,7 +1285,7 @@ const AccountsShow = () => {
                                                                     "all"
                                                                 );
                                                                 setSortField(
-                                                                    "created_at"
+                                                                    "date"
                                                                 );
                                                                 setSortDirection(
                                                                     "desc"
@@ -1428,7 +1456,7 @@ const AccountsShow = () => {
                                 <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
                                     <div className="bg-gray-50 rounded-lg border border-gray-100 p-3 flex items-center justify-between">
                                         <span className="text-sm text-gray-500">
-                                            Total Transaksi:
+                                            Total Entri:
                                         </span>
                                         <Badge
                                             variant="secondary"
@@ -1492,7 +1520,7 @@ const AccountsShow = () => {
                                                     >
                                                         <div className="flex items-center">
                                                             <Calendar className="h-3.5 w-3.5 mr-2" />
-                                                            Tanggal & Waktu
+                                                            Tanggal
                                                         </div>
                                                     </th>
                                                     <th
@@ -1510,7 +1538,7 @@ const AccountsShow = () => {
                                                     >
                                                         <div className="flex items-center">
                                                             <CreditCard className="h-3.5 w-3.5 mr-2" />
-                                                            Jumlah
+                                                            Perubahan
                                                         </div>
                                                     </th>
                                                     <th
@@ -1528,7 +1556,7 @@ const AccountsShow = () => {
                                                     >
                                                         <div className="flex items-center">
                                                             <Wallet className="h-3.5 w-3.5 mr-2" />
-                                                            Saldo Baru
+                                                            Saldo Akhir
                                                         </div>
                                                     </th>
                                                     <th
@@ -1568,14 +1596,12 @@ const AccountsShow = () => {
                                                                     <div className="flex flex-col">
                                                                         <div className="text-sm font-medium text-gray-900">
                                                                             {formatDate(
-                                                                                transaction.created_at ||
-                                                                                    ""
+                                                                                transaction.date
                                                                             )}
                                                                         </div>
                                                                         <div className="text-xs text-gray-500 mt-0.5">
                                                                             {formatTime(
-                                                                                transaction.created_at ||
-                                                                                    ""
+                                                                                transaction.date
                                                                             )}
                                                                         </div>
                                                                     </div>
@@ -1600,20 +1626,29 @@ const AccountsShow = () => {
                                                                         transaction.amount >
                                                                         0
                                                                             ? "text-emerald-600"
-                                                                            : "text-rose-600"
+                                                                            : transaction.amount <
+                                                                              0
+                                                                            ? "text-rose-600"
+                                                                            : "text-gray-600"
                                                                     }`}
                                                                 >
                                                                     <div className="flex items-center">
                                                                         {transaction.amount >
                                                                         0
                                                                             ? "+"
-                                                                            : "-"}
-                                                                        {formatCurrency(
-                                                                            Math.abs(
-                                                                                transaction.amount
-                                                                            ),
-                                                                            account.currency
-                                                                        )}
+                                                                            : transaction.amount <
+                                                                              0
+                                                                            ? "-"
+                                                                            : ""}
+                                                                        {transaction.amount !==
+                                                                        0
+                                                                            ? formatCurrency(
+                                                                                  Math.abs(
+                                                                                      transaction.amount
+                                                                                  ),
+                                                                                  account.currency
+                                                                              )
+                                                                            : "Tidak ada perubahan"}
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -1634,13 +1669,13 @@ const AccountsShow = () => {
                                                                     <Badge
                                                                         variant="outline"
                                                                         className={`
-                                                ${
-                                                    percentChange > 0
-                                                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                                                        : percentChange < 0
-                                                        ? "bg-rose-50 text-rose-700 border-rose-200"
-                                                        : "bg-gray-50 text-gray-700 border-gray-200"
-                                                }`}
+                                    ${
+                                        percentChange > 0
+                                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                            : percentChange < 0
+                                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                                            : "bg-gray-50 text-gray-700 border-gray-200"
+                                    }`}
                                                                     >
                                                                         {percentChange >
                                                                         0 ? (
@@ -1733,12 +1768,12 @@ const AccountsShow = () => {
                                         <Receipt className="h-10 w-10 text-indigo-500" />
                                     </div>
                                     <h3 className="text-xl font-medium text-gray-900 mb-2">
-                                        Tidak ada transaksi
+                                        Tidak ada riwayat saldo
                                     </h3>
                                     <p className="text-sm text-gray-500 max-w-md mx-auto mb-6">
                                         {searchTerm || transactionType !== "all"
-                                            ? "Tidak ada transaksi yang cocok dengan filter yang dipilih. Coba ubah kriteria pencarian Anda."
-                                            : "Rekening ini belum memiliki riwayat transaksi."}
+                                            ? "Tidak ada riwayat saldo yang cocok dengan filter yang dipilih. Coba ubah kriteria pencarian Anda."
+                                            : "Rekening ini belum memiliki riwayat perubahan saldo."}
                                     </p>
                                     {(searchTerm ||
                                         transactionType !== "all") && (
@@ -1759,7 +1794,7 @@ const AccountsShow = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Transaction Detail Modal (shows when a transaction is selected) */}
+                    {/* Transaction Detail Modal */}
                     {selectedTransaction && (
                         <div
                             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -1771,7 +1806,7 @@ const AccountsShow = () => {
                             >
                                 <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4 text-white flex items-center justify-between">
                                     <h3 className="font-medium text-white">
-                                        Detail Transaksi
+                                        Detail Perubahan Saldo
                                     </h3>
                                     <button
                                         className="text-white hover:text-indigo-100"
@@ -1788,36 +1823,49 @@ const AccountsShow = () => {
                                             className={`w-16 h-16 rounded-full flex items-center justify-center ${
                                                 selectedTransaction.amount > 0
                                                     ? "bg-emerald-100"
-                                                    : "bg-rose-100"
+                                                    : selectedTransaction.amount <
+                                                      0
+                                                    ? "bg-rose-100"
+                                                    : "bg-gray-100"
                                             }`}
                                         >
                                             {selectedTransaction.amount > 0 ? (
                                                 <ArrowUpRight className="h-8 w-8 text-emerald-600" />
-                                            ) : (
+                                            ) : selectedTransaction.amount <
+                                              0 ? (
                                                 <ArrowDownRight className="h-8 w-8 text-rose-600" />
+                                            ) : (
+                                                <ArrowDownUp className="h-8 w-8 text-gray-600" />
                                             )}
                                         </div>
                                     </div>
 
                                     <div className="text-center mb-6">
                                         <div className="text-sm text-gray-500">
-                                            Jumlah Transaksi
+                                            Perubahan Saldo
                                         </div>
                                         <div
                                             className={`text-3xl font-bold mt-1 ${
                                                 selectedTransaction.amount > 0
                                                     ? "text-emerald-600"
-                                                    : "text-rose-600"
+                                                    : selectedTransaction.amount <
+                                                      0
+                                                    ? "text-rose-600"
+                                                    : "text-gray-600"
                                             }`}
                                         >
                                             {selectedTransaction.amount > 0
                                                 ? "+"
-                                                : "-"}
-                                            {formatCurrency(
-                                                Math.abs(
-                                                    selectedTransaction.amount
-                                                )
-                                            )}
+                                                : selectedTransaction.amount < 0
+                                                ? "-"
+                                                : ""}
+                                            {selectedTransaction.amount !== 0
+                                                ? formatCurrency(
+                                                      Math.abs(
+                                                          selectedTransaction.amount
+                                                      )
+                                                  )
+                                                : "Tidak ada perubahan"}
                                         </div>
                                     </div>
 
@@ -1828,7 +1876,7 @@ const AccountsShow = () => {
                                             </span>
                                             <span className="text-sm font-medium text-gray-900">
                                                 {formatDate(
-                                                    selectedTransaction.created_at
+                                                    selectedTransaction.date
                                                 )}
                                             </span>
                                         </div>
@@ -1838,7 +1886,7 @@ const AccountsShow = () => {
                                             </span>
                                             <span className="text-sm font-medium text-gray-900">
                                                 {formatTime(
-                                                    selectedTransaction.created_at
+                                                    selectedTransaction.date
                                                 )}
                                             </span>
                                         </div>
@@ -1866,7 +1914,7 @@ const AccountsShow = () => {
                                         </div>
                                         <div className="flex justify-between py-2 border-b border-gray-100">
                                             <span className="text-sm text-gray-600">
-                                                Saldo Setelah Transaksi
+                                                Saldo Setelah Perubahan
                                             </span>
                                             <span className="text-sm font-medium text-gray-900">
                                                 {formatCurrency(
@@ -1993,7 +2041,7 @@ const AccountsShow = () => {
                                         <div className="grid grid-cols-2 gap-3">
                                             <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
                                                 <div className="text-xs font-medium text-gray-500 mb-1">
-                                                    Total Transaksi
+                                                    Total Entri
                                                 </div>
                                                 <div className="text-lg font-bold text-gray-900 flex items-center">
                                                     <Receipt className="h-4 w-4 mr-1.5 text-gray-500" />
@@ -2005,7 +2053,7 @@ const AccountsShow = () => {
 
                                             <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
                                                 <div className="text-xs font-medium text-gray-500 mb-1">
-                                                    Transaksi Terakhir
+                                                    Perubahan Terakhir
                                                 </div>
                                                 <div className="text-sm font-medium text-gray-900">
                                                     {processedTransactions.length >
@@ -2014,9 +2062,9 @@ const AccountsShow = () => {
                                                               processedTransactions[
                                                                   processedTransactions.length -
                                                                       1
-                                                              ].created_at
+                                                              ].date
                                                           )
-                                                        : "Belum ada transaksi"}
+                                                        : "Belum ada perubahan"}
                                                 </div>
                                             </div>
                                         </div>
@@ -2031,7 +2079,7 @@ const AccountsShow = () => {
                                                         transactionStats.creditCount
                                                     }{" "}
                                                     <span className="text-xs text-emerald-600">
-                                                        transaksi
+                                                        entri
                                                     </span>
                                                 </div>
                                             </div>
@@ -2045,7 +2093,7 @@ const AccountsShow = () => {
                                                         transactionStats.debitCount
                                                     }{" "}
                                                     <span className="text-xs text-rose-600">
-                                                        transaksi
+                                                        entri
                                                     </span>
                                                 </div>
                                             </div>
@@ -2198,24 +2246,26 @@ const AccountsShow = () => {
                                     </CardTitle>
                                     <CardDescription className="text-slate-700/70">
                                         Detail Universal Banker yang ditugaskan
-                                        untuk Anda
+                                        untuk rekening ini
                                     </CardDescription>
                                 </div>
-                                <Link
-                                    href={route(
-                                        "universalBankers.show",
-                                        account.universal_banker?.id
-                                    )}
-                                >
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="gap-1 border-slate-200 bg-white/80 text-slate-700 hover:bg-slate-50"
+                                {account.universal_banker && (
+                                    <Link
+                                        href={route(
+                                            "universalBankers.show",
+                                            account.universal_banker?.id
+                                        )}
                                     >
-                                        <User className="h-4 w-4" />
-                                        Lihat Profil Universal Banker
-                                    </Button>
-                                </Link>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-1 border-slate-200 bg-white/80 text-slate-700 hover:bg-slate-50"
+                                        >
+                                            <User className="h-4 w-4" />
+                                            Lihat Profil Universal Banker
+                                        </Button>
+                                    </Link>
+                                )}
                             </div>
                         </CardHeader>
                         <CardContent className="p-0">

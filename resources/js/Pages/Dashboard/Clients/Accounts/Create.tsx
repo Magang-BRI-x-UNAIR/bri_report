@@ -1,13 +1,12 @@
 import type React from "react";
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
-import { PageProps, Client, AccountProduct, User } from "@/types";
+import { PageProps, Client, AccountProduct, UniversalBanker } from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import {
     CreditCard,
     FileText,
-    User as UserIcon,
     ChevronLeft,
     AlertCircle,
     Save,
@@ -17,7 +16,6 @@ import {
     BadgeInfo,
     Briefcase,
     Building,
-    CircleDashed,
     Users,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
@@ -25,7 +23,7 @@ import { formatCurrency } from "@/lib/utils";
 interface CreateAccountPageProps extends PageProps {
     client: Client;
     accountProducts: AccountProduct[];
-    universalBankers: User[];
+    universalBankers: UniversalBanker[];
 }
 
 const AccountsCreate = () => {

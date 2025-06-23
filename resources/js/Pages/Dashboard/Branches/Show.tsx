@@ -99,7 +99,7 @@ const BranchesShow = () => {
                                     Total Universal Banker
                                 </p>
                                 <p className="text-white text-2xl font-bold mt-1">
-                                    {branch.users.length}
+                                    {branch.universal_bankers.length}
                                 </p>
                             </div>
                             <div className="p-4 text-center">
@@ -119,7 +119,6 @@ const BranchesShow = () => {
                 {/* Branch Info Card -  */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="p-5 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
-                        
                         <div className="flex items-center space-x-2">
                             <Building2 className="h-5 w-5 text-[#00529C]" />
                             <h2 className="font-medium text-gray-900">
@@ -161,7 +160,8 @@ const BranchesShow = () => {
                                         Jumlah Universal Banker
                                     </p>
                                     <p className="text-sm text-gray-600 mt-1">
-                                        {branch.users.length} Universal Banker
+                                        {branch.universal_bankers.length}{" "}
+                                        Universal Banker
                                     </p>
                                 </div>
                             </div>
@@ -207,52 +207,16 @@ const BranchesShow = () => {
 
                         <div className="flex items-center space-x-3">
                             <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#00529C]">
-                                {branch.users.length} Universal Banker
+                                {branch.universal_bankers.length} Universal
+                                Banker
                             </span>
                         </div>
                     </div>
-
-                    {/* UniversalBanker Stats Summary */}
-                    {branch.users.length > 0 && (
-                        <div className="bg-gray-50/60 p-3 border-b border-gray-100">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="flex items-center justify-center p-2 border-r border-gray-200">
-                                    <div className="text-center">
-                                        <p className="text-xs text-gray-500">
-                                            Universal Banker Terverifikasi
-                                        </p>
-                                        <p className="text-lg font-medium text-green-600">
-                                            {
-                                                branch.users.filter(
-                                                    (u) => u.email_verified_at
-                                                ).length
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center justify-center p-2">
-                                    <div className="text-center">
-                                        <p className="text-xs text-gray-500">
-                                            Menunggu Verifikasi
-                                        </p>
-                                        <p className="text-lg font-medium text-amber-600">
-                                            {
-                                                branch.users.filter(
-                                                    (u) => !u.email_verified_at
-                                                ).length
-                                            }
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     <div className="divide-y divide-gray-100">
-                        {branch.users.length > 0 ? (
-                            branch.users.map((user) => (
+                        {branch.universal_bankers.length > 0 ? (
+                            branch.universal_bankers.map((universalBanker) => (
                                 <div
-                                    key={user.id}
+                                    key={universalBanker.id}
                                     className="p-4 hover:bg-blue-50/30 transition-colors duration-150"
                                 >
                                     <div className="flex items-center">
@@ -263,15 +227,15 @@ const BranchesShow = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between">
                                                 <p className="text-sm font-medium text-gray-900 truncate">
-                                                    {user.name}
+                                                    {universalBanker.name}
                                                 </p>
                                                 <div className="flex items-center">
                                                     <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
                                                         Universal Banker
                                                     </span>
                                                     <p className="text-xs text-gray-500 ml-2">
-                                                        ID:{" "}
-                                                        {user.id
+                                                        PN:{" "}
+                                                        {universalBanker.nip
                                                             .toString()
                                                             .padStart(4, "0")}
                                                     </p>
@@ -281,24 +245,10 @@ const BranchesShow = () => {
                                             <div className="mt-1 flex items-center text-sm text-gray-500">
                                                 <Mail className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
                                                 <span className="truncate">
-                                                    {user.email}
+                                                    {universalBanker.email ??
+                                                        "Email tidak tersedia"}
                                                 </span>
                                             </div>
-
-                                            {user.email_verified_at ? (
-                                                <div className="mt-2">
-                                                    <span className="inline-flex items-center rounded-md bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700">
-                                                        <Check className="h-3 w-3 mr-1" />
-                                                        Email Terverifikasi
-                                                    </span>
-                                                </div>
-                                            ) : (
-                                                <div className="mt-2">
-                                                    <span className="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
-                                                        Belum Terverifikasi
-                                                    </span>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -328,11 +278,11 @@ const BranchesShow = () => {
                         )}
                     </div>
 
-                    {branch.users.length > 0 && (
+                    {branch.universal_bankers.length > 0 && (
                         <div className="bg-gray-50 px-4 py-3 flex items-center justify-between border-t border-gray-200">
                             <div className="text-sm text-gray-500">
-                                Menampilkan {branch.users.length} Universal
-                                Banker
+                                Menampilkan {branch.universal_bankers.length}{" "}
+                                Universal Banker
                             </div>
                             <div>
                                 <Link href={route("universalBankers.index")}>

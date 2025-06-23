@@ -4,7 +4,12 @@ import type React from "react";
 
 import { useState, useEffect, useMemo } from "react";
 import { Head, Link, useForm } from "@inertiajs/react";
-import type { PageProps, Client, AccountProduct, User } from "@/types";
+import type {
+    PageProps,
+    Client,
+    AccountProduct,
+    UniversalBanker,
+} from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -37,7 +42,6 @@ import {
     DollarSign,
     Briefcase,
     Users,
-    CheckCircle,
     Wallet,
     Check,
     Plus,
@@ -52,18 +56,7 @@ import { formatCurrency } from "@/lib/utils";
 interface CreateAccountPageProps extends PageProps {
     clients: Client[];
     accountProducts: AccountProduct[];
-    universalBankers: User[];
-}
-
-interface FormData {
-    client_id: string;
-    account_product_id: string;
-    universal_banker_id: string;
-    account_number: string;
-    current_balance: number;
-    available_balance: number;
-    currency: string;
-    status: string;
+    universalBankers: UniversalBanker[];
 }
 
 const AccountsCreate = ({
@@ -89,7 +82,6 @@ const AccountsCreate = ({
             current_balance: 0,
             available_balance: 0,
             currency: "IDR",
-            status: "active",
         });
 
     const currencies = [
@@ -99,28 +91,6 @@ const AccountsCreate = ({
         { code: "SGD", name: "Singapore Dollar (SGD)", symbol: "S$" },
     ];
 
-    const statusOptions = [
-        {
-            value: "active",
-            label: "Aktif",
-            color: "bg-green-100 text-green-800",
-            description: "Rekening dapat digunakan untuk transaksi",
-        },
-        {
-            value: "inactive",
-            label: "Tidak Aktif",
-            color: "bg-gray-100 text-gray-800",
-            description: "Rekening tidak dapat digunakan sementara",
-        },
-        {
-            value: "blocked",
-            label: "Diblokir",
-            color: "bg-red-100 text-red-800",
-            description: "Rekening diblokir karena alasan keamanan",
-        },
-    ];
-
-    // Simulate recent clients (in real app, this would come from localStorage or API)
     useEffect(() => {
         const recent = clients.slice(0, 3);
         setRecentClients(recent);
@@ -140,8 +110,6 @@ const AccountsCreate = ({
         return () =>
             document.removeEventListener("mousedown", handleClickOutside);
     }, []);
-
-    // Update the handleClientSelect function
 
     const handleClientSelect = (clientId: string) => {
         setData("client_id", clientId);
@@ -235,20 +203,6 @@ const AccountsCreate = ({
         if (errors[field]) {
             clearErrors(field);
         }
-    };
-
-    const getStatusBadge = (status: string) => {
-        const statusOption = statusOptions.find(
-            (option) => option.value === status
-        );
-        return (
-            statusOption || {
-                value: status,
-                label: status,
-                color: "bg-blue-100 text-blue-800",
-                description: "",
-            }
-        );
     };
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -819,81 +773,6 @@ const AccountsCreate = ({
                                             {errors.currency}
                                         </p>
                                     )}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label htmlFor="status">
-                                        Status Rekening{" "}
-                                        <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Select
-                                        value={data.status}
-                                        onValueChange={(value) => {
-                                            setData("status", value);
-                                            if (errors.status) {
-                                                clearErrors("status");
-                                            }
-                                        }}
-                                    >
-                                        <SelectTrigger
-                                            className={
-                                                errors.status
-                                                    ? "border-red-500"
-                                                    : ""
-                                            }
-                                        >
-                                            <SelectValue placeholder="Pilih status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {statusOptions.map((status) => (
-                                                <SelectItem
-                                                    key={status.value}
-                                                    value={status.value}
-                                                >
-                                                    <div className="flex flex-col">
-                                                        <span className="font-medium">
-                                                            {status.label}
-                                                        </span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.status && (
-                                        <p className="text-sm text-red-600 flex items-center gap-1">
-                                            <AlertCircle className="h-3.5 w-3.5" />
-                                            {errors.status}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <Label>Status yang Dipilih</Label>
-                                    <div className="pt-1">
-                                        <Badge
-                                            className={
-                                                getStatusBadge(data.status)
-                                                    .color
-                                            }
-                                        >
-                                            {data.status === "active" && (
-                                                <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                                            )}
-                                            {data.status === "inactive" && (
-                                                <X className="h-3.5 w-3.5 mr-1" />
-                                            )}
-                                            {data.status === "blocked" && (
-                                                <AlertCircle className="h-3.5 w-3.5 mr-1" />
-                                            )}
-                                            {getStatusBadge(data.status).label}
-                                        </Badge>
-                                        <p className="text-xs text-gray-500 mt-1">
-                                            {
-                                                getStatusBadge(data.status)
-                                                    .description
-                                            }
-                                        </p>
-                                    </div>
                                 </div>
                             </div>
                         </CardContent>

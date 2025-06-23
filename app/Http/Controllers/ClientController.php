@@ -9,9 +9,9 @@ use Inertia\Inertia;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Account;
 use App\Models\AccountProduct;
-use App\Models\Branch;
 use App\Models\User;
 use Illuminate\Http\Request;
+use App\Models\UniversalBanker;
 
 class ClientController extends Controller
 {
@@ -116,7 +116,7 @@ class ClientController extends Controller
     public function createAccount(Client $client)
     {
         $accountProducts = AccountProduct::all();
-        $universalBankers = User::with('branch')->get();
+        $universalBankers = UniversalBanker::with('branch')->get();
 
         return Inertia::render('Dashboard/Clients/Accounts/Create', [
             'client' => $client,
@@ -133,7 +133,7 @@ class ClientController extends Controller
         $validatedData = $request->validate([
             'account_number' => 'required|string|max:255|unique:accounts,account_number',
             'account_product_id' => 'required|exists:account_products,id',
-            'universal_banker_id' => 'required|exists:users,id',
+            'universal_banker_id' => 'required|exists:universal_bankers,id',
             'currency' => 'required|string|max:3',
             'initial_balance' => 'required|numeric|min:50000',
             'status' => 'required|string|max:255',
@@ -159,7 +159,7 @@ class ClientController extends Controller
 
     public function showAccount(Client $client, Account $account)
     {
-        $account->load('accountProduct', 'universalBanker', 'universalBanker.branch');
+        $account->load('accountProduct', 'universalBanker', 'universalBanker.branch', 'accountTransactions');
 
         return Inertia::render('Dashboard/Clients/Accounts/Show', [
             'client' => $client,
@@ -173,7 +173,7 @@ class ClientController extends Controller
     public function editAccount(Client $client, Account $account)
     {
         $accountProducts = AccountProduct::all();
-        $universalBankers = User::with('branch')->get();
+        $universalBankers = UniversalBanker::with('branch')->get();
         $account->load('accountProduct', 'universalBanker');
 
         return Inertia::render('Dashboard/Clients/Accounts/Edit', [
@@ -191,7 +191,7 @@ class ClientController extends Controller
     {
         $validatedData = $request->validate([
             'account_product_id' => 'required|exists:account_products,id',
-            'universal_banker_id' => 'required|exists:users,id',
+            'universal_banker_id' => 'required|exists:universal_bankers,id',
             'account_number' => 'required|string|max:255|unique:accounts,account_number,' . $account->id,
             'current_balance' => 'required|numeric|min:0',
             'available_balance' => 'required|numeric|min:0',

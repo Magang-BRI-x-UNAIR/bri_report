@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('account_number')->unique()->comment('Account/rekening number');
             $table->decimal('current_balance', 19, 4)->default(0)->comment('Current account balance');
             $table->decimal('available_balance', 19, 4)->default(0)->comment('Available balance that can be used');
-            $table->string('currency', 3)->default('IDR')->comment('Account currency');
+            $table->string('currency', 3)->default('IDR')->nullable()->comment('Account currency');
             $table->enum('status', ['active', 'inactive', 'blocked'])->default('active')->comment('Account status: active, inactive, blocked');
             $table->timestamp('opened_at')->nullable()->comment('Date when account was opened');
             $table->timestamp('last_transaction_at')->nullable()->comment('Date of last transaction');

@@ -2,7 +2,13 @@
 
 import type React from "react";
 import { Head, Link, useForm, usePage } from "@inertiajs/react";
-import type { PageProps, Client, AccountProduct, User, Account } from "@/types";
+import type {
+    PageProps,
+    Client,
+    AccountProduct,
+    Account,
+    UniversalBanker,
+} from "@/types";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
@@ -47,7 +53,7 @@ interface EditAccountPageProps extends PageProps {
     client: Client;
     account: Account;
     accountProducts: AccountProduct[];
-    universalBankers: User[];
+    universalBankers: UniversalBanker[];
 }
 
 interface FormData {
@@ -224,6 +230,13 @@ const AccountsEdit = () => {
                         {
                             label: client.name,
                             href: route("clients.show", { client: client.id }),
+                        },
+                        {
+                            label: account.account_number,
+                            href: route("clients.accounts.show", {
+                                client: client.id,
+                                account: account.id,
+                            }),
                         },
                         { label: "Edit Rekening" },
                     ]}

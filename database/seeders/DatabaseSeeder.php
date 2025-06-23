@@ -3,6 +3,8 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class DatabaseSeeder extends Seeder
 {
@@ -14,12 +16,19 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             RolePermissionSeeder::class,
-            BranchSeeder::class,
-            AccountProductSeeder::class,
-            UniversalBankerSeeder::class,
             UserSeeder::class,
-            ClientSeeder::class,
-            AccountSeeder::class,
         ]);
+        $path = storage_path('app/public/sql/import_data.sql');
+        try {
+            if (File::exists($path)) {
+                $sql = File::get($path);
+                DB::unprepared($sql);
+                $this->command->info('Sukses: File import_data.sql dari storage/public berhasil diimpor!');
+            } else {
+                $this->command->error('Gagal: File tidak ditemukan pada path: ' . $path);
+            }
+        } catch (\Exception $e) {
+            $this->command->error('Terjadi error saat mengimpor SQL: ' . $e->getMessage());
+        }
     }
 }

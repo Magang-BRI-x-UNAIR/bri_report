@@ -23,12 +23,12 @@ class ExcelProcessingService
   /**
    * Excel column mappings
    */
-  public const COL_CLIENT_CIF = 'textbox4';
-  public const COL_CLIENT_NAME = 'textbox38';
-  public const COL_ACCOUNT_NUMBER = 'textbox15';
+  public const COL_CLIENT_CIF = 'ciff_no';
+  public const COL_CLIENT_NAME = 'short_name';
+  public const COL_ACCOUNT_NUMBER = 'account_number';
   public const COL_PN_RELATIONSHIP_OFFICER = 'pn_relationship_officer';
   public const COL_BALANCE = 'balance';
-  public const COL_AVAIL_BALANCE = 'availbalance';
+  public const COL_AVAIL_BALANCE = 'available_balance';
 
   /**
    * Find Universal Banker by their code (NIP) from PN_RO field
@@ -129,14 +129,12 @@ class ExcelProcessingService
 
         $reportDateCarbon = Carbon::parse($this->reportDate)->endOfDay();
         $lastUpdateDate = $account->last_transaction_at;
+        AccountTransaction::create([
+          'account_id' => $account->id,
+          'balance' => $row['current_balance'],
+          'date' => $reportDateCarbon,
+        ]);
         if (!$lastUpdateDate || $reportDateCarbon->gt($lastUpdateDate)) {
-
-          AccountTransaction::create([
-            'account_id' => $account->id,
-            'balance' => $row['current_balance'],
-            'created_at' => $reportDateCarbon,
-            'updated_at' => $reportDateCarbon,
-          ]);
           $account->current_balance = $row['current_balance'];
           $account->available_balance = (float) $row['available_balance'];
           $account->last_transaction_at = $reportDateCarbon;

@@ -36,6 +36,7 @@ import {
     Wallet,
     Mail,
     Phone,
+    Minus,
 } from "lucide-react";
 import { formatDate, formatCurrency } from "@/lib/utils";
 
@@ -48,7 +49,6 @@ const AccountShow = () => {
     const { client, account } = usePage<ShowAccountPageProps>().props;
     const [activeTab, setActiveTab] = useState("overview");
 
-    // Status badge styling and icon mapping
     const getStatusBadge = (status: string) => {
         switch (status) {
             case "active":
@@ -78,7 +78,35 @@ const AccountShow = () => {
         }
     };
 
-    // Transaction type badge
+    // Calculate transaction changes from balance history
+    const getTransactionWithChanges = (transactions: AccountTransaction[]) => {
+        if (!transactions || transactions.length === 0) return [];
+        const sortedTransactions = [...transactions].sort(
+            (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+
+        return sortedTransactions.map((transaction, index) => {
+            let amount = 0;
+            let previousBalance = 0;
+
+            if (index === 0) {
+                amount = transaction.balance;
+                previousBalance = 0;
+            } else {
+                previousBalance = sortedTransactions[index - 1].balance;
+                amount = transaction.balance - previousBalance;
+            }
+
+            return {
+                ...transaction,
+                amount,
+                previousBalance,
+                change: amount,
+            };
+        });
+    };
+
+    // Transaction type badge based on balance change
     const getTransactionTypeBadge = (amount: number) => {
         if (amount > 0) {
             return {
@@ -86,28 +114,43 @@ const AccountShow = () => {
                 color: "bg-green-100 text-green-800 border-green-200",
                 icon: <ArrowDownLeft className="w-3.5 h-3.5 mr-1" />,
             };
-        } else {
+        } else if (amount < 0) {
             return {
                 label: "Debit",
                 color: "bg-red-100 text-red-800 border-red-200",
                 icon: <ArrowUpRight className="w-3.5 h-3.5 mr-1" />,
+            };
+        } else {
+            return {
+                label: "Tidak Ada Perubahan",
+                color: "bg-gray-100 text-gray-800 border-gray-200",
+                icon: <Minus className="w-3.5 h-3.5 mr-1" />,
             };
         }
     };
 
     const statusBadge = getStatusBadge(account.status);
 
+    // Process transactions with calculated changes
+    const transactionsWithChanges = getTransactionWithChanges(
+        account.account_transactions || []
+    );
+
     // Get recent transactions (5 most recent)
-    const recentTransactions = account.account_transactions
-        ? [...account.account_transactions]
-              .sort((a, b) => {
-                  return (
-                      new Date(b.created_at).getTime() -
-                      new Date(a.created_at).getTime()
-                  );
-              })
-              .slice(0, 5)
-        : [];
+    const recentTransactions = transactionsWithChanges
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 5);
+
+    // Calculate transaction statistics
+    const totalTransactions = transactionsWithChanges.length;
+    const totalCredits = transactionsWithChanges
+        .filter((tx) => tx.amount > 0)
+        .reduce((sum, tx) => sum + tx.amount, 0);
+    const totalDebits = Math.abs(
+        transactionsWithChanges
+            .filter((tx) => tx.amount < 0)
+            .reduce((sum, tx) => sum + tx.amount, 0)
+    );
 
     return (
         <AuthenticatedLayout>
@@ -271,8 +314,7 @@ const AccountShow = () => {
                                     </div>
                                 </div>
 
-                                {account.account_transactions &&
-                                account.account_transactions.length > 0 ? (
+                                {totalTransactions > 0 && (
                                     <div className="mt-6 bg-blue-50 p-4 rounded-lg border border-blue-200">
                                         <div className="flex items-center justify-between">
                                             <div className="flex items-center">
@@ -283,17 +325,12 @@ const AccountShow = () => {
                                             </div>
                                         </div>
                                         <div className="grid gap-4 md:grid-cols-3 mt-4">
-                                            {/* This is just sample data - you would calculate these from real transactions */}
                                             <div className="bg-white p-3 rounded-md border border-gray-200">
                                                 <p className="text-xs text-gray-500">
                                                     Total Transaksi
                                                 </p>
                                                 <p className="text-lg font-semibold text-gray-900">
-                                                    {
-                                                        account
-                                                            .account_transactions
-                                                            .length
-                                                    }
+                                                    {totalTransactions}
                                                 </p>
                                             </div>
                                             <div className="bg-white p-3 rounded-md border border-gray-200">
@@ -303,18 +340,7 @@ const AccountShow = () => {
                                                 <p className="text-lg font-semibold text-green-600">
                                                     +
                                                     {formatCurrency(
-                                                        account.account_transactions
-                                                            .filter(
-                                                                (tx) =>
-                                                                    tx.amount >
-                                                                    0
-                                                            )
-                                                            .reduce(
-                                                                (sum, tx) =>
-                                                                    sum +
-                                                                    tx.amount,
-                                                                0
-                                                            ),
+                                                        totalCredits,
                                                         account.currency
                                                     )}
                                                 </p>
@@ -326,27 +352,14 @@ const AccountShow = () => {
                                                 <p className="text-lg font-semibold text-red-600">
                                                     -
                                                     {formatCurrency(
-                                                        Math.abs(
-                                                            account.account_transactions
-                                                                .filter(
-                                                                    (tx) =>
-                                                                        tx.amount <
-                                                                        0
-                                                                )
-                                                                .reduce(
-                                                                    (sum, tx) =>
-                                                                        sum +
-                                                                        tx.amount,
-                                                                    0
-                                                                )
-                                                        ),
+                                                        totalDebits,
                                                         account.currency
                                                     )}
                                                 </p>
                                             </div>
                                         </div>
                                     </div>
-                                ) : null}
+                                )}
                             </CardContent>
                         </Card>
 
@@ -442,9 +455,7 @@ const AccountShow = () => {
                                 {recentTransactions.length > 0 ? (
                                     <div className="divide-y divide-gray-200">
                                         {recentTransactions.map(
-                                            (
-                                                transaction: AccountTransaction
-                                            ) => {
+                                            (transaction) => {
                                                 const txBadge =
                                                     getTransactionTypeBadge(
                                                         transaction.amount
@@ -470,7 +481,7 @@ const AccountShow = () => {
                                                                 </Badge>
                                                                 <span className="ml-3 text-sm text-gray-600">
                                                                     {formatDate(
-                                                                        transaction.created_at
+                                                                        transaction.date
                                                                     )}
                                                                 </span>
                                                             </div>
@@ -479,24 +490,29 @@ const AccountShow = () => {
                                                                     transaction.amount >
                                                                     0
                                                                         ? "text-green-600"
-                                                                        : "text-red-600"
+                                                                        : transaction.amount <
+                                                                          0
+                                                                        ? "text-red-600"
+                                                                        : "text-gray-600"
                                                                 }`}
                                                             >
                                                                 {transaction.amount >
                                                                 0
                                                                     ? "+"
                                                                     : ""}
-                                                                {formatCurrency(
-                                                                    transaction.amount,
-                                                                    account.currency
-                                                                )}
+                                                                {transaction.amount !==
+                                                                0
+                                                                    ? formatCurrency(
+                                                                          transaction.amount,
+                                                                          account.currency
+                                                                      )
+                                                                    : "Tidak ada perubahan"}
                                                             </div>
                                                         </div>
                                                         <div className="mt-1 text-xs text-gray-500">
-                                                            Saldo setelah
-                                                            transaksi:{" "}
+                                                            Saldo:{" "}
                                                             {formatCurrency(
-                                                                transaction.new_balance,
+                                                                transaction.balance,
                                                                 account.currency
                                                             )}
                                                         </div>
@@ -541,10 +557,11 @@ const AccountShow = () => {
                                             <div className="bg-gray-200 rounded-md p-1.5">
                                                 <ArrowUpRight className="h-5 w-5 text-gray-700" />
                                             </div>
-                                            Transaksi Rekening
+                                            Riwayat Saldo Rekening
                                         </CardTitle>
                                         <CardDescription className="mt-1">
-                                            Riwayat transaksi rekening
+                                            Riwayat perubahan saldo rekening
+                                            berdasarkan tanggal
                                         </CardDescription>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -572,8 +589,7 @@ const AccountShow = () => {
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                {account.account_transactions &&
-                                account.account_transactions.length > 0 ? (
+                                {transactionsWithChanges.length > 0 ? (
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-sm">
                                             <thead>
@@ -585,19 +601,28 @@ const AccountShow = () => {
                                                         Tipe
                                                     </th>
                                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Jumlah
+                                                        Perubahan
                                                     </th>
                                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                         Saldo Sebelumnya
                                                     </th>
                                                     <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Saldo Baru
+                                                        Saldo Akhir
                                                     </th>
                                                 </tr>
                                             </thead>
                                             <tbody className="divide-y divide-gray-200">
-                                                {account.account_transactions.map(
-                                                    (transaction) => {
+                                                {transactionsWithChanges
+                                                    .sort(
+                                                        (a, b) =>
+                                                            new Date(
+                                                                b.date
+                                                            ).getTime() -
+                                                            new Date(
+                                                                a.date
+                                                            ).getTime()
+                                                    )
+                                                    .map((transaction) => {
                                                         const txBadge =
                                                             getTransactionTypeBadge(
                                                                 transaction.amount
@@ -612,7 +637,7 @@ const AccountShow = () => {
                                                                 <td className="px-4 py-4 whitespace-nowrap">
                                                                     <div className="text-sm font-medium text-gray-900">
                                                                         {formatDate(
-                                                                            transaction.created_at
+                                                                            transaction.date
                                                                         )}
                                                                     </div>
                                                                 </td>
@@ -636,23 +661,29 @@ const AccountShow = () => {
                                                                             transaction.amount >
                                                                             0
                                                                                 ? "text-green-600"
-                                                                                : "text-red-600"
+                                                                                : transaction.amount <
+                                                                                  0
+                                                                                ? "text-red-600"
+                                                                                : "text-gray-600"
                                                                         }`}
                                                                     >
                                                                         {transaction.amount >
                                                                         0
                                                                             ? "+"
                                                                             : ""}
-                                                                        {formatCurrency(
-                                                                            transaction.amount,
-                                                                            account.currency
-                                                                        )}
+                                                                        {transaction.amount !==
+                                                                        0
+                                                                            ? formatCurrency(
+                                                                                  transaction.amount,
+                                                                                  account.currency
+                                                                              )
+                                                                            : "Tidak ada perubahan"}
                                                                     </div>
                                                                 </td>
                                                                 <td className="px-4 py-4 text-right whitespace-nowrap">
                                                                     <div className="text-sm text-gray-900">
                                                                         {formatCurrency(
-                                                                            transaction.previous_balance,
+                                                                            transaction.previousBalance,
                                                                             account.currency
                                                                         )}
                                                                     </div>
@@ -660,15 +691,14 @@ const AccountShow = () => {
                                                                 <td className="px-4 py-4 text-right whitespace-nowrap">
                                                                     <div className="font-medium text-gray-900">
                                                                         {formatCurrency(
-                                                                            transaction.new_balance,
+                                                                            transaction.balance,
                                                                             account.currency
                                                                         )}
                                                                     </div>
                                                                 </td>
                                                             </tr>
                                                         );
-                                                    }
-                                                )}
+                                                    })}
                                             </tbody>
                                         </table>
                                     </div>
@@ -678,11 +708,11 @@ const AccountShow = () => {
                                             <CreditCard className="h-8 w-8 text-blue-600" />
                                         </div>
                                         <h3 className="text-lg font-medium text-gray-900 mb-1">
-                                            Belum Ada Transaksi
+                                            Belum Ada Riwayat Saldo
                                         </h3>
                                         <p className="text-gray-500 max-w-sm mx-auto">
                                             Rekening ini belum memiliki riwayat
-                                            transaksi.
+                                            perubahan saldo.
                                         </p>
                                     </div>
                                 )}
@@ -690,7 +720,7 @@ const AccountShow = () => {
                         </Card>
                     </TabsContent>
 
-                    {/* Detail Tab Content */}
+                    {/* Detail Tab Content - Keep the existing detail tab content */}
                     <TabsContent value="details" className="space-y-6">
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                             {/* Account Information */}
@@ -950,10 +980,9 @@ const AccountShow = () => {
                                                     Email
                                                 </p>
                                                 <p className="mt-1">
-                                                    {
-                                                        account.universal_banker
-                                                            .email
-                                                    }
+                                                    {account.universal_banker
+                                                        .email ??
+                                                        "Tidak ada email"}
                                                 </p>
                                             </div>
 
