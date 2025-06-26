@@ -13,10 +13,19 @@ class BranchSeeder extends Seeder
      */
     public function run(): void
     {
-        //
         Branch::create([
-            'name' => 'KC Surabaya Kaliasin',
-            'address' => 'Jl. Jendral Sudirman No. 1, Jakarta',
+            'name' => 'Kantor Cabang Jakarta',
+            'address' => 'Jl. Jendral Sudirman No. 2, Jakarta',
+        ]);
+
+        Branch::create([
+            'name' => 'Kantor Cabang Bandung',
+            'address' => 'Jl. Asia Afrika No. 3, Bandung',
+        ]);
+
+        Branch::create([
+            'name' => 'Kantor Cabang Surabaya',
+            'address' => 'Jl. Basuki Rahmat No. 4, Surabaya',
         ]);
     }
 }

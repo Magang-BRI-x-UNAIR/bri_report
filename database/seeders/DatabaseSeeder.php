@@ -15,8 +15,14 @@ class DatabaseSeeder extends Seeder
     {
 
         $this->call([
+            AccountProductSeeder::class,
             RolePermissionSeeder::class,
+            BranchSeeder::class,
+            UniversalBankerSeeder::class,
             UserSeeder::class,
+            ClientSeeder::class,
+            AccountSeeder::class,
+
         ]);
         $path = storage_path('app/public/sql/import_data.sql');
         try {

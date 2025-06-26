@@ -166,6 +166,7 @@ class AccountSeeder extends Seeder
 
         $transactions = [];
         $universalBankerDailyBalances = [];
+        $now = Carbon::now();
 
         // For consistent transaction patterns
         $transactionPatterns = [
@@ -213,8 +214,9 @@ class AccountSeeder extends Seeder
             $transactions[] = [
                 'account_id' => $account->id,
                 'balance' => $balance,
-                'created_at' => $startDate,
-                'updated_at' => $startDate,
+                'date' => $startDate->format('Y-m-d'),
+                'created_at' => $now,
+                'updated_at' => $now,
             ];
 
             // Update universalBanker daily data for opening day
@@ -256,14 +258,13 @@ class AccountSeeder extends Seeder
                             $balance += $amount;
                             $dayTotalChange += $amount;
 
-                            $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
-
-                            // Store the new balance
+                            // Store the new balance with the date field
                             $transactions[] = [
                                 'account_id' => $account->id,
                                 'balance' => $balance,
-                                'created_at' => $transactionTime,
-                                'updated_at' => $transactionTime,
+                                'date' => $dateStr,
+                                'created_at' => $now,
+                                'updated_at' => $now,
                             ];
 
                             $dayTransactionsCount++;
@@ -281,14 +282,13 @@ class AccountSeeder extends Seeder
                         $balance += $amount;
                         $dayTotalChange += $amount;
 
-                        $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
-
-                        // Store the new balance
+                        // Store the new balance with the date field
                         $transactions[] = [
                             'account_id' => $account->id,
                             'balance' => $balance,
-                            'created_at' => $transactionTime,
-                            'updated_at' => $transactionTime,
+                            'date' => $dateStr,
+                            'created_at' => $now,
+                            'updated_at' => $now,
                         ];
 
                         $dayTransactionsCount++;
@@ -328,14 +328,13 @@ class AccountSeeder extends Seeder
                     $balance += $amount;
                     $dayTotalChange += $amount;
 
-                    $transactionTime = $currentDay->copy()->setTime(rand(8, 17), rand(0, 59), rand(0, 59));
-
-                    // Store the new balance
+                    // Store the new balance with date field
                     $transactions[] = [
                         'account_id' => $account->id,
                         'balance' => $balance,
-                        'created_at' => $transactionTime,
-                        'updated_at' => $transactionTime,
+                        'date' => $dateStr,
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ];
 
                     $dayTransactionsCount++;
@@ -347,8 +346,9 @@ class AccountSeeder extends Seeder
                     $transactions[] = [
                         'account_id' => $account->id,
                         'balance' => $balance,
-                        'created_at' => $currentDay->copy()->setTime(9, 0, 0),
-                        'updated_at' => $currentDay->copy()->setTime(9, 0, 0),
+                        'date' => $dateStr,
+                        'created_at' => $now,
+                        'updated_at' => $now,
                     ];
 
                     $dayTransactionsCount++;
