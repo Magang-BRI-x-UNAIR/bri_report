@@ -14,10 +14,14 @@ import {
     ListFilter,
     ArrowUpDown,
     X,
-    Save,
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
+
+// Import modal components
+import CreateBranchModal from "./Partials/CreateBranchModal";
+import EditBranchModal from "./Partials/EditBranchModal";
+import DeleteBranchModal from "./Partials/DeleteBranchModal";
 
 interface BranchesIndexProps extends PageProps {
     branches: Branch[];
@@ -30,19 +34,11 @@ const BranchesIndex = () => {
     const [sortField, setSortField] = useState("name");
     const [sortDirection, setSortDirection] = useState("asc");
 
-    // Modal state
-    const [showModal, setShowModal] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [currentBranch, setCurrentBranch] = useState<Partial<Branch>>({
-        name: "",
-        address: "",
-    });
-    // Tambahkan state untuk modal delete
+    // Modal states
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [branchToDelete, setBranchToDelete] = useState<Branch | null>(null);
-    const [errors, setErrors] = useState<{ name?: string; address?: string }>(
-        {}
-    );
+    const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
 
     // Filter branches based on search term
     const filteredBranches = branches
@@ -77,106 +73,19 @@ const BranchesIndex = () => {
         setSearchTerm("");
     };
 
-    // Modal functions
+    // Modal handlers
     const openCreateModal = () => {
-        setIsEditing(false);
-        setCurrentBranch({ name: "", address: "" });
-        setErrors({});
-        setShowModal(true);
+        setShowCreateModal(true);
     };
 
     const openEditModal = (branch: Branch) => {
-        setIsEditing(true);
-        setCurrentBranch({ ...branch });
-        setErrors({});
-        setShowModal(true);
+        setCurrentBranch(branch);
+        setShowEditModal(true);
     };
 
-    const closeModal = () => {
-        setShowModal(false);
-    };
-
-    const handleInputChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-        const { name, value } = e.target;
-        setCurrentBranch((prev) => ({ ...prev, [name]: value }));
-
-        // Clear error for this field when user types
-        if (errors[name as keyof typeof errors]) {
-            setErrors((prev) => ({ ...prev, [name]: undefined }));
-        }
-    };
-
-    const validateForm = () => {
-        const newErrors: { name?: string; address?: string } = {};
-
-        if (!currentBranch.name?.trim()) {
-            newErrors.name = "Nama cabang harus diisi";
-        }
-
-        if (!currentBranch.address?.trim()) {
-            newErrors.address = "Alamat cabang harus diisi";
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!validateForm()) {
-            return;
-        }
-
-        if (isEditing) {
-            // Update existing branch
-            router.put(
-                route("branches.update", currentBranch.id),
-                currentBranch as any,
-                {
-                    onSuccess: () => {
-                        closeModal();
-                    },
-                    onError: (errors) => {
-                        setErrors(errors);
-                    },
-                }
-            );
-        } else {
-            // Create new branch
-            router.post(route("branches.store"), currentBranch as any, {
-                onSuccess: () => {
-                    closeModal();
-                },
-                onError: (errors) => {
-                    setErrors(errors);
-                },
-            });
-        }
-    };
-    // Fungsi untuk membuka modal delete
     const openDeleteModal = (branch: Branch) => {
-        setBranchToDelete(branch);
+        setCurrentBranch(branch);
         setShowDeleteModal(true);
-    };
-
-    // Fungsi untuk menutup modal delete
-    const closeDeleteModal = () => {
-        setShowDeleteModal(false);
-        setBranchToDelete(null);
-    };
-
-    // Fungsi untuk menghapus cabang
-    const handleDelete = () => {
-        if (!branchToDelete) return;
-
-        router.delete(route("branches.destroy", branchToDelete.id), {
-            onSuccess: () => {
-                closeDeleteModal();
-            },
-        });
     };
 
     return (
@@ -519,239 +428,26 @@ const BranchesIndex = () => {
                     </div>
                 )}
             </div>
-            {/* Modal Confirmation untuk Delete */}
-            {showDeleteModal && branchToDelete && (
-                <div
-                    className="fixed inset-0 z-50 overflow-y-auto"
-                    aria-labelledby="modal-title"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div className="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
-                        {/* Backdrop */}
-                        <div
-                            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                            aria-hidden="true"
-                            onClick={closeDeleteModal}
-                        ></div>
 
-                        {/* Modal panel */}
-                        <span
-                            className="hidden sm:inline-block sm:align-middle sm:h-screen"
-                            aria-hidden="true"
-                        >
-                            &#8203;
-                        </span>
-                        <div
-                            className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="bg-red-600 px-4 py-3 sm:px-6 flex justify-between items-center">
-                                <h3 className="text-lg leading-6 font-medium text-white">
-                                    Konfirmasi Penghapusan
-                                </h3>
-                                <button
-                                    type="button"
-                                    className="bg-red-600 rounded-md text-white hover:bg-red-700 focus:outline-none"
-                                    onClick={closeDeleteModal}
-                                >
-                                    <span className="sr-only">Close</span>
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
+            {/* Render modals */}
+            <CreateBranchModal
+                isOpen={showCreateModal}
+                closeModal={() => setShowCreateModal(false)}
+            />
 
-                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                <div className="sm:flex sm:items-start">
-                                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                        <Trash2 className="h-6 w-6 text-red-600" />
-                                    </div>
-                                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                        <h3
-                                            className="text-lg leading-6 font-medium text-gray-900"
-                                            id="modal-title"
-                                        >
-                                            Hapus Cabang
-                                        </h3>
-                                        <div className="mt-2">
-                                            <p className="text-sm text-gray-500">
-                                                Apakah Anda yakin ingin
-                                                menghapus cabang{" "}
-                                                <span className="font-medium text-gray-900">
-                                                    "{branchToDelete.name}"
-                                                </span>
-                                                ? Tindakan ini tidak dapat
-                                                dibatalkan dan semua data
-                                                terkait cabang ini akan dihapus
-                                                secara permanen.
-                                            </p>
-                                        </div>
-                                        <div className="mt-3 border-t border-gray-200 pt-3">
-                                            <div className="flex items-center text-sm text-gray-500">
-                                                <Building2 className="h-4 w-4 text-gray-400 mr-2" />
-                                                <span>
-                                                    ID: BRI-
-                                                    {branchToDelete.id
-                                                        .toString()
-                                                        .padStart(4, "0")}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-start mt-1.5 text-sm text-gray-500">
-                                                <MapPin className="h-4 w-4 text-gray-400 mr-2 mt-0.5" />
-                                                <span>
-                                                    {branchToDelete.address}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                <button
-                                    type="button"
-                                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
-                                    onClick={handleDelete}
-                                >
-                                    Hapus Cabang
-                                </button>
-                                <button
-                                    type="button"
-                                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00529C] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                                    onClick={closeDeleteModal}
-                                >
-                                    Batalkan
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {currentBranch && (
+                <EditBranchModal
+                    isOpen={showEditModal}
+                    closeModal={() => setShowEditModal(false)}
+                    branch={currentBranch}
+                />
             )}
 
-            {/* Modal for Create/Edit Branch */}
-            {showModal && (
-                <div
-                    className="fixed inset-0 z-50 overflow-y-auto"
-                    aria-labelledby="modal-title"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div className="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
-                        {/* Backdrop */}
-                        <div
-                            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                            aria-hidden="true"
-                            onClick={closeModal}
-                        ></div>
-
-                        {/* Modal panel */}
-                        <span
-                            className="hidden sm:inline-block sm:align-middle sm:h-screen"
-                            aria-hidden="true"
-                        >
-                            &#8203;
-                        </span>
-                        <div
-                            className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="bg-[#00529C] px-4 py-3 sm:px-6 flex justify-between items-center">
-                                <h3 className="text-lg leading-6 font-medium text-white">
-                                    {isEditing
-                                        ? "Edit Cabang"
-                                        : "Tambah Cabang Baru"}
-                                </h3>
-                                <button
-                                    type="button"
-                                    className="bg-[#00529C] rounded-md text-white hover:bg-[#003b75] focus:outline-none"
-                                    onClick={closeModal}
-                                >
-                                    <span className="sr-only">Close</span>
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            <form onSubmit={handleSubmit}>
-                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label
-                                                htmlFor="name"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Nama Cabang
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                id="name"
-                                                value={currentBranch.name || ""}
-                                                onChange={handleInputChange}
-                                                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm ${
-                                                    errors.name
-                                                        ? "border-red-300"
-                                                        : ""
-                                                }`}
-                                                placeholder="Masukkan nama cabang"
-                                                autoFocus
-                                            />
-                                            {errors.name && (
-                                                <p className="mt-1 text-sm text-red-600">
-                                                    {errors.name}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label
-                                                htmlFor="address"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Alamat
-                                            </label>
-                                            <textarea
-                                                name="address"
-                                                id="address"
-                                                rows={3}
-                                                value={
-                                                    currentBranch.address || ""
-                                                }
-                                                onChange={handleInputChange}
-                                                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm ${
-                                                    errors.address
-                                                        ? "border-red-300"
-                                                        : ""
-                                                }`}
-                                                placeholder="Masukkan alamat lengkap cabang"
-                                            />
-                                            {errors.address && (
-                                                <p className="mt-1 text-sm text-red-600">
-                                                    {errors.address}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                    <button
-                                        type="submit"
-                                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#00529C] text-base font-medium text-white hover:bg-[#003b75] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00529C] sm:ml-3 sm:w-auto sm:text-sm"
-                                    >
-                                        <Save className="mr-2 h-4 w-4" />
-                                        {isEditing
-                                            ? "Update Cabang"
-                                            : "Simpan Cabang"}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00529C] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                                        onClick={closeModal}
-                                    >
-                                        Batal
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DeleteBranchModal
+                isOpen={showDeleteModal}
+                closeModal={() => setShowDeleteModal(false)}
+                branch={currentBranch}
+            />
         </AuthenticatedLayout>
     );
 };

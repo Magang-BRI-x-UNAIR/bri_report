@@ -13,13 +13,15 @@ import {
     ListFilter,
     ArrowUpDown,
     X,
-    Save,
-    FileText,
-    Tag,
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
+
+// Import modal components
+import CreateAccountProductModal from "./Partials/CreateAccountProductModal";
+import EditAccountProductModal from "./Partials/EditAccountProductModal";
+import DeleteAccountProductModal from "./Partials/DeleteAccountProductModal";
 
 interface AccountProductsIndexProps extends PageProps {
     accountProducts: AccountProduct[];
@@ -32,25 +34,13 @@ const AccountProductsIndex = () => {
     const [sortField, setSortField] = useState("name");
     const [sortDirection, setSortDirection] = useState("asc");
 
-    // Modal state
-    const [showModal, setShowModal] = useState(false);
-    const [isEditing, setIsEditing] = useState(false);
-    const [currentProduct, setCurrentProduct] = useState<
-        Partial<AccountProduct>
-    >({
-        name: "",
-        code: "",
-        description: "",
-    });
-    // State untuk modal delete
+    // Modal states
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
-    const [productToDelete, setProductToDelete] =
-        useState<AccountProduct | null>(null);
-    const [errors, setErrors] = useState<{
-        name?: string;
-        code?: string;
-        description?: string;
-    }>({});
+    const [currentProduct, setCurrentProduct] = useState<AccountProduct | null>(
+        null
+    );
 
     // Filter account products based on search term
     const filteredProducts = accountProducts
@@ -98,115 +88,19 @@ const AccountProductsIndex = () => {
         setSearchTerm("");
     };
 
-    // Modal functions
+    // Modal handlers
     const openCreateModal = () => {
-        setIsEditing(false);
-        setCurrentProduct({ name: "", description: "" });
-        setErrors({});
-        setShowModal(true);
+        setShowCreateModal(true);
     };
 
     const openEditModal = (product: AccountProduct) => {
-        setIsEditing(true);
-        setCurrentProduct({ ...product });
-        setErrors({});
-        setShowModal(true);
+        setCurrentProduct(product);
+        setShowEditModal(true);
     };
 
-    const closeModal = () => {
-        setShowModal(false);
-    };
-
-    const handleInputChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-        const { name, value } = e.target;
-        setCurrentProduct((prev) => ({ ...prev, [name]: value }));
-
-        // Clear error for this field when user types
-        if (errors[name as keyof typeof errors]) {
-            setErrors((prev) => ({ ...prev, [name]: undefined }));
-        }
-    };
-
-    const validateForm = () => {
-        const newErrors: {
-            name?: string;
-            code?: string;
-            description?: string;
-        } = {};
-
-        if (!currentProduct.name?.trim()) {
-            newErrors.name = "Nama produk harus diisi";
-        }
-
-        if (!currentProduct.code?.trim()) {
-            newErrors.code = "Kode produk harus diisi";
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!validateForm()) {
-            return;
-        }
-
-        if (isEditing) {
-            // Update existing product
-            router.put(
-                route("account-products.update", currentProduct.id),
-                currentProduct as any,
-                {
-                    onSuccess: () => {
-                        closeModal();
-                    },
-                    onError: (errors) => {
-                        setErrors(errors);
-                    },
-                }
-            );
-        } else {
-            // Create new product
-            router.post(
-                route("account-products.store"),
-                currentProduct as any,
-                {
-                    onSuccess: () => {
-                        closeModal();
-                    },
-                    onError: (errors) => {
-                        setErrors(errors);
-                    },
-                }
-            );
-        }
-    };
-
-    // Fungsi untuk membuka modal delete
     const openDeleteModal = (product: AccountProduct) => {
-        setProductToDelete(product);
+        setCurrentProduct(product);
         setShowDeleteModal(true);
-    };
-
-    // Fungsi untuk menutup modal delete
-    const closeDeleteModal = () => {
-        setShowDeleteModal(false);
-        setProductToDelete(null);
-    };
-
-    // Fungsi untuk menghapus product
-    const handleDelete = () => {
-        if (!productToDelete) return;
-
-        router.delete(route("account-products.destroy", productToDelete.id), {
-            onSuccess: () => {
-                closeDeleteModal();
-            },
-        });
     };
 
     return (
@@ -560,291 +454,25 @@ const AccountProductsIndex = () => {
                     </div>
                 )}
             </div>
+            {/* Render modals */}
+            <CreateAccountProductModal
+                isOpen={showCreateModal}
+                closeModal={() => setShowCreateModal(false)}
+            />
 
-            {/* Modal Confirmation untuk Delete */}
-            {showDeleteModal && productToDelete && (
-                <div
-                    className="fixed inset-0 z-50 overflow-y-auto"
-                    aria-labelledby="modal-title"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div className="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
-                        {/* Backdrop */}
-                        <div
-                            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                            aria-hidden="true"
-                            onClick={closeDeleteModal}
-                        ></div>
-
-                        {/* Modal panel */}
-                        <span
-                            className="hidden sm:inline-block sm:align-middle sm:h-screen"
-                            aria-hidden="true"
-                        >
-                            &#8203;
-                        </span>
-                        <div
-                            className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="bg-red-600 px-4 py-3 sm:px-6 flex justify-between items-center">
-                                <h3 className="text-lg leading-6 font-medium text-white">
-                                    Konfirmasi Penghapusan
-                                </h3>
-                                <button
-                                    type="button"
-                                    className="bg-red-600 rounded-md text-white hover:bg-red-700 focus:outline-none"
-                                    onClick={closeDeleteModal}
-                                >
-                                    <span className="sr-only">Close</span>
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                <div className="sm:flex sm:items-start">
-                                    <div className="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
-                                        <Trash2 className="h-6 w-6 text-red-600" />
-                                    </div>
-                                    <div className="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                                        <h3
-                                            className="text-lg leading-6 font-medium text-gray-900"
-                                            id="modal-title"
-                                        >
-                                            Hapus Produk Rekening
-                                        </h3>
-                                        <div className="mt-2">
-                                            <p className="text-sm text-gray-500">
-                                                Apakah Anda yakin ingin
-                                                menghapus produk rekening{" "}
-                                                <span className="font-medium text-gray-900">
-                                                    "{productToDelete.name}"
-                                                </span>
-                                                ? Tindakan ini tidak dapat
-                                                dibatalkan dan semua data
-                                                terkait produk ini akan dihapus
-                                                secara permanen.
-                                            </p>
-                                        </div>
-                                        <div className="mt-3 border-t border-gray-200 pt-3">
-                                            <div className="flex items-center text-sm text-gray-500">
-                                                <CreditCard className="h-4 w-4 text-gray-400 mr-2" />
-                                                <span>
-                                                    <span className="font-medium">
-                                                        {productToDelete.code}
-                                                    </span>{" "}
-                                                    · ID: BRI-P-
-                                                    {productToDelete.id
-                                                        .toString()
-                                                        .padStart(4, "0")}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center mt-1.5 text-sm text-gray-500">
-                                                <Tag className="h-4 w-4 text-gray-400 mr-2" />
-                                                <span>
-                                                    {productToDelete.accounts
-                                                        ?.length || 0}{" "}
-                                                    rekening terdaftar dengan
-                                                    produk ini
-                                                </span>
-                                            </div>
-                                            {productToDelete.accounts &&
-                                                productToDelete.accounts
-                                                    .length > 0 && (
-                                                    <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 font-medium">
-                                                        Perhatian: Penghapusan
-                                                        produk ini akan
-                                                        mempengaruhi{" "}
-                                                        {
-                                                            productToDelete
-                                                                .accounts.length
-                                                        }{" "}
-                                                        rekening yang terkait
-                                                    </div>
-                                                )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                <button
-                                    type="button"
-                                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
-                                    onClick={handleDelete}
-                                >
-                                    Hapus Produk
-                                </button>
-                                <button
-                                    type="button"
-                                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00529C] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                                    onClick={closeDeleteModal}
-                                >
-                                    Batalkan
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            {currentProduct && (
+                <EditAccountProductModal
+                    isOpen={showEditModal}
+                    closeModal={() => setShowEditModal(false)}
+                    product={currentProduct}
+                />
             )}
 
-            {/* Modal for Create/Edit Product */}
-            {showModal && (
-                <div
-                    className="fixed inset-0 z-50 overflow-y-auto"
-                    aria-labelledby="modal-title"
-                    role="dialog"
-                    aria-modal="true"
-                >
-                    <div className="flex items-center justify-center min-h-screen px-4 text-center sm:block sm:p-0">
-                        {/* Backdrop */}
-                        <div
-                            className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-                            aria-hidden="true"
-                            onClick={closeModal}
-                        ></div>
-
-                        {/* Modal panel */}
-                        <span
-                            className="hidden sm:inline-block sm:align-middle sm:h-screen"
-                            aria-hidden="true"
-                        >
-                            &#8203;
-                        </span>
-                        <div
-                            className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="bg-[#00529C] px-4 py-3 sm:px-6 flex justify-between items-center">
-                                <h3 className="text-lg leading-6 font-medium text-white">
-                                    {isEditing
-                                        ? "Edit Produk Rekening"
-                                        : "Tambah Produk Rekening Baru"}
-                                </h3>
-                                <button
-                                    type="button"
-                                    className="bg-[#00529C] rounded-md text-white hover:bg-[#003b75] focus:outline-none"
-                                    onClick={closeModal}
-                                >
-                                    <span className="sr-only">Close</span>
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
-
-                            <form onSubmit={handleSubmit}>
-                                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                                    <div className="space-y-4">
-                                        <div>
-                                            <label
-                                                htmlFor="code"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Kode Produk
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="code"
-                                                id="code"
-                                                value={
-                                                    currentProduct.code || ""
-                                                }
-                                                onChange={handleInputChange}
-                                                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm ${
-                                                    errors.code
-                                                        ? "border-red-300"
-                                                        : ""
-                                                }`}
-                                                placeholder="Contoh: BM, VM, SIMPEDES"
-                                                autoFocus
-                                            />
-                                            {errors.code && (
-                                                <p className="mt-1 text-sm text-red-600">
-                                                    {errors.code}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label
-                                                htmlFor="name"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Nama Produk Rekening
-                                            </label>
-                                            <input
-                                                type="text"
-                                                name="name"
-                                                id="name"
-                                                value={
-                                                    currentProduct.name || ""
-                                                }
-                                                onChange={handleInputChange}
-                                                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm ${
-                                                    errors.name
-                                                        ? "border-red-300"
-                                                        : ""
-                                                }`}
-                                                placeholder="Contoh: Britama Bisnis"
-                                            />
-                                            {errors.name && (
-                                                <p className="mt-1 text-sm text-red-600">
-                                                    {errors.name}
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div>
-                                            <label
-                                                htmlFor="description"
-                                                className="block text-sm font-medium text-gray-700"
-                                            >
-                                                Deskripsi (Opsional)
-                                            </label>
-                                            <textarea
-                                                name="description"
-                                                id="description"
-                                                rows={3}
-                                                value={
-                                                    currentProduct.description ||
-                                                    ""
-                                                }
-                                                onChange={handleInputChange}
-                                                className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#00529C] focus:ring-[#00529C] sm:text-sm ${
-                                                    errors.description
-                                                        ? "border-red-300"
-                                                        : ""
-                                                }`}
-                                                placeholder="Deskripsi singkat tentang produk rekening ini"
-                                            />
-                                            {errors.description && (
-                                                <p className="mt-1 text-sm text-red-600">
-                                                    {errors.description}
-                                                </p>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                                    <button
-                                        type="submit"
-                                        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-[#00529C] text-base font-medium text-white hover:bg-[#003b75] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00529C] sm:ml-3 sm:w-auto sm:text-sm"
-                                    >
-                                        <Save className="mr-2 h-4 w-4" />
-                                        {isEditing
-                                            ? "Update Produk"
-                                            : "Simpan Produk"}
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#00529C] sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                                        onClick={closeModal}
-                                    >
-                                        Batal
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DeleteAccountProductModal
+                isOpen={showDeleteModal}
+                closeModal={() => setShowDeleteModal(false)}
+                product={currentProduct}
+            />
         </AuthenticatedLayout>
     );
 };
