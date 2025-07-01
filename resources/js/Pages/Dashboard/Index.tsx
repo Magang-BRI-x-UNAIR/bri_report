@@ -81,9 +81,8 @@ const Dashboard = () => {
     return (
         <AuthenticatedLayout>
             <Head title="Dashboard | BRI Report" />
-
             <div
-                className={`space-y-8 p-4 sm:p-6 lg:p-8 transition-opacity duration-500 ${
+                className={`space-y-6 transition-opacity duration-500 ${
                     isLoaded ? "opacity-100" : "opacity-0"
                 }`}
             >
@@ -108,8 +107,8 @@ const Dashboard = () => {
                     </div>
                 </div>
 
-                {/* Hero Section */}
-                <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 p-8 shadow-2xl">
+                {/* Hero Section - Memperbaiki overflow */}
+                <div className="relative rounded-2xl bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 p-6 md:p-8 shadow-2xl">
                     {/* Background Elements */}
                     <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMS41IiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiIG9wYWNpdHk9Ii4yIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIxMCIvPjwvZz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom,white,transparent_80%)]"></div>
                     <div className="absolute -top-24 -right-24 h-64 w-64 rounded-full bg-purple-500/20 blur-3xl"></div>
@@ -119,10 +118,10 @@ const Dashboard = () => {
                         <div className="inline-block rounded-lg bg-white/10 backdrop-blur-md px-4 py-1.5 mb-4 text-sm text-white/90 border border-white/20">
                             BRI Report Portal
                         </div>
-                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white mb-2">
+                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-white mb-2">
                             Selamat Datang, {auth.user.name}!
                         </h1>
-                        <p className="mt-2 max-w-2xl text-blue-50 text-lg leading-relaxed">
+                        <p className="mt-2 max-w-2xl text-blue-50 text-base md:text-lg leading-relaxed">
                             Platform terpusat untuk analisis dan pemantauan
                             kinerja Universal Banker. Lihat ringkasan data
                             terbaru di bawah.
@@ -146,20 +145,22 @@ const Dashboard = () => {
                 </div>
 
                 {/* Stats Cards with Enhanced Design */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <Link href={route("universalBankers.index")}>
-                        <Card className="group overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                            <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors duration-300"></div>
-                            <CardHeader className="pb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <Link
+                        href={route("universalBankers.index")}
+                        className="w-full"
+                    >
+                        <Card className="group overflow-visible border-0 bg-gradient-to-br from-blue-50 to-blue-100/30 shadow-sm hover:shadow-lg transition-all duration-300">
+                            <CardHeader className="pb-2 pt-4 px-4">
                                 <div className="flex items-center justify-between">
-                                    <div className="p-3 bg-blue-600 text-white rounded-xl shadow-md">
-                                        <UserCheck className="h-5 w-5" />
+                                    <div className="p-2.5 bg-blue-600 text-white rounded-lg shadow-md">
+                                        <UserCheck className="h-4 w-4" />
                                     </div>
-                                    <ArrowUpRight className="h-5 w-5 text-blue-600 opacity-70" />
+                                    <ArrowUpRight className="h-4 w-4 text-blue-600 opacity-70" />
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-blue-700 transition-colors">
+                            <CardContent className="px-4 pb-4">
+                                <div className="text-2xl font-bold text-gray-800 mb-1 group-hover:text-blue-700 transition-colors">
                                     {displayStats.totalUniversalBankers}
                                 </div>
                                 <p className="text-sm font-medium text-blue-800/70">
@@ -172,19 +173,18 @@ const Dashboard = () => {
                         </Card>
                     </Link>
 
-                    <Link href={route("clients.index")}>
-                        <Card className="group overflow-hidden border-0 bg-gradient-to-br from-green-50 to-green-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                            <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-green-500/10 group-hover:bg-green-500/20 transition-colors duration-300"></div>
-                            <CardHeader className="pb-2">
+                    <Link href={route("clients.index")} className="w-full">
+                        <Card className="group overflow-visible border-0 bg-gradient-to-br from-green-50 to-green-100/30 shadow-sm hover:shadow-lg transition-all duration-300">
+                            <CardHeader className="pb-2 pt-4 px-4">
                                 <div className="flex items-center justify-between">
-                                    <div className="p-3 bg-emerald-600 text-white rounded-xl shadow-md">
-                                        <Users className="h-5 w-5" />
+                                    <div className="p-2.5 bg-emerald-600 text-white rounded-lg shadow-md">
+                                        <Users className="h-4 w-4" />
                                     </div>
-                                    <ArrowUpRight className="h-5 w-5 text-emerald-600 opacity-70" />
+                                    <ArrowUpRight className="h-4 w-4 text-emerald-600 opacity-70" />
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-emerald-700 transition-colors">
+                            <CardContent className="px-4 pb-4">
+                                <div className="text-2xl font-bold text-gray-800 mb-1 group-hover:text-emerald-700 transition-colors">
                                     {displayStats.totalClients}
                                 </div>
                                 <p className="text-sm font-medium text-emerald-800/70">
@@ -197,19 +197,18 @@ const Dashboard = () => {
                         </Card>
                     </Link>
 
-                    <Link href={route("accounts.index")}>
-                        <Card className="group overflow-hidden border-0 bg-gradient-to-br from-amber-50 to-amber-100/30 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-                            <div className="absolute top-0 right-0 w-28 h-28 -mr-8 -mt-8 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 transition-colors duration-300"></div>
-                            <CardHeader className="pb-2">
+                    <Link href={route("accounts.index")} className="w-full">
+                        <Card className="group overflow-visible border-0 bg-gradient-to-br from-amber-50 to-amber-100/30 shadow-sm hover:shadow-lg transition-all duration-300">
+                            <CardHeader className="pb-2 pt-4 px-4">
                                 <div className="flex items-center justify-between">
-                                    <div className="p-3 bg-amber-600 text-white rounded-xl shadow-md">
-                                        <LineChart className="h-5 w-5" />
+                                    <div className="p-2.5 bg-amber-600 text-white rounded-lg shadow-md">
+                                        <LineChart className="h-4 w-4" />
                                     </div>
-                                    <ArrowUpRight className="h-5 w-5 text-amber-600 opacity-70" />
+                                    <ArrowUpRight className="h-4 w-4 text-amber-600 opacity-70" />
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                <div className="text-3xl font-bold text-gray-800 mb-1 group-hover:text-amber-700 transition-colors">
+                            <CardContent className="px-4 pb-4">
+                                <div className="text-2xl font-bold text-gray-800 mb-1 group-hover:text-amber-700 transition-colors">
                                     {displayStats.totalActiveAccounts}
                                 </div>
                                 <p className="text-sm font-medium text-amber-800/70">
@@ -224,14 +223,14 @@ const Dashboard = () => {
                 </div>
 
                 {/* Quick Actions Section */}
-                <div>
+                <div className="mb-6">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-xl font-semibold tracking-tight text-gray-800">
                             Aksi Cepat
                         </h2>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-5">
                         <Card className="group overflow-hidden border border-transparent bg-white hover:border-blue-200 shadow-md hover:shadow-xl transition-all duration-300">
                             <CardHeader className="pb-2">
                                 <div className="bg-gradient-to-r from-blue-600 to-indigo-600 -mx-6 -mt-6 p-6 mb-4">

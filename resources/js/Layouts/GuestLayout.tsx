@@ -11,7 +11,7 @@ const GuestLayout = ({
             document.title = `${title} | BRI Report`;
         }
     }, [title]);
-
+    
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
             <Navbar />
