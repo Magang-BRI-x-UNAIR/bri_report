@@ -142,7 +142,34 @@ const Sidebar = ({ sidebarOpen, toggleSidebar }: SidebarProps) => {
                     </nav>
 
                     {/* Footer Section */}
-                    <div className="mt-auto border-t border-[#0063bc]/30 p-4">
+                    <div className="mt-auto border-t border-[#0063bc]/30 p-4 space-y-3">
+                        {/* Logout button */}
+                        <Link
+                            href={route("logout")}
+                            method="post"
+                            as="button"
+                            className="w-full flex items-center justify-center gap-2 bg-[#F37021] hover:bg-[#F37021]/80 text-white py-2 px-3 rounded-lg transition-colors duration-200"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="lucide lucide-log-out"
+                            >
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                                <polyline points="16 17 21 12 16 7" />
+                                <line x1="21" y1="12" x2="9" y2="12" />
+                            </svg>
+                            <span className="font-medium text-sm">Logout</span>
+                        </Link>
+
+                        {/* System status */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-2">
                                 <div className="h-2 w-2 animate-pulse rounded-full bg-[#F37021] shadow-md shadow-[#F37021]/40"></div>
