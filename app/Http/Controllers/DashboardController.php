@@ -13,7 +13,6 @@ use Inertia\Inertia;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cache;
-use App\Models\User;
 use App\Models\Client;
 use App\Models\Account;
 use App\Models\UniversalBanker;

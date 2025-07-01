@@ -17,7 +17,7 @@ class AccountProductController extends Controller
     {
         //
         $accountProducts = AccountProduct::all();
-        return Inertia('Dashboard/AccountProducts/Index', [
+        return Inertia::render('Dashboard/AccountProducts/Index', [
             'accountProducts' => $accountProducts,
         ]);
     }

@@ -9,7 +9,6 @@ use Inertia\Inertia;
 use App\Http\Requests\UpdateClientRequest;
 use App\Models\Account;
 use App\Models\AccountProduct;
-use App\Models\User;
 use Illuminate\Http\Request;
 use App\Models\UniversalBanker;
 
