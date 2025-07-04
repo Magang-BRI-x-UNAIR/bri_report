@@ -137,14 +137,11 @@ const AccountsEdit = () => {
 
     const formatCurrency = (value: number): string => {
         if (!value || isNaN(value)) return "";
-
-        // Format untuk mata uang Indonesia tanpa desimal
         return Math.floor(value).toLocaleString("id-ID");
     };
 
     const parseCurrency = (value: string): number => {
         if (!value) return 0;
-        // Remove all non-numeric characters (dots, commas, spaces)
         const numericString = value.replace(/[^\d]/g, "");
         return Number.parseInt(numericString, 10) || 0;
     };
@@ -154,17 +151,13 @@ const AccountsEdit = () => {
         field: "current_balance" | "available_balance",
         setDisplay: React.Dispatch<React.SetStateAction<string>>
     ) => {
-        // Remove all non-numeric characters
         const numericValue = parseCurrency(value);
-
-        // Format the display value
         const formattedValue =
             numericValue > 0 ? formatCurrency(numericValue) : "";
 
         setDisplay(formattedValue);
         setData(field, numericValue);
 
-        // Clear errors when user starts typing
         if (formErrors[field]) {
             clearErrors(field);
         }
@@ -186,7 +179,6 @@ const AccountsEdit = () => {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validate balance relationship
         if (data.available_balance > data.current_balance) {
             alert("Saldo tersedia tidak boleh lebih besar dari saldo saat ini");
             return;
@@ -199,11 +191,8 @@ const AccountsEdit = () => {
             }),
             {
                 preserveScroll: true,
-                onSuccess: () => {
-                    // Handle success if needed
-                },
+                onSuccess: () => {},
                 onError: (errors) => {
-                    // Handle errors if needed
                     console.error("Form submission errors:", errors);
                 },
             }
@@ -223,91 +212,95 @@ const AccountsEdit = () => {
                 title={`Edit Rekening ${account.account_number} | ${client.name} | Bank BRI`}
             />
 
-            <div className="space-y-6">
-                <Breadcrumb
-                    items={[
-                        { label: "Nasabah", href: route("clients.index") },
-                        {
-                            label: client.name,
-                            href: route("clients.show", { client: client.id }),
-                        },
-                        {
-                            label: account.account_number,
-                            href: route("clients.accounts.show", {
-                                client: client.id,
-                                account: account.id,
-                            }),
-                        },
-                        { label: "Edit Rekening" },
-                    ]}
-                />
+            <Breadcrumb
+                items={[
+                    { label: "Nasabah", href: route("clients.index") },
+                    {
+                        label: client.name,
+                        href: route("clients.show", { client: client.id }),
+                    },
+                    {
+                        label: account.account_number,
+                        href: route("clients.accounts.show", {
+                            client: client.id,
+                            account: account.id,
+                        }),
+                    },
+                    { label: "Edit Rekening" },
+                ]}
+            />
 
-                {/* Header Section */}
-                <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-8 shadow-lg">
-                    <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
-                    <div className="absolute -bottom-8 -right-8 h-64 w-64 rounded-full bg-blue-500/20 blur-3xl"></div>
-                    <div className="absolute top-0 left-0 h-32 w-32 rounded-full bg-indigo-500/20 blur-2xl"></div>
+            {/* Header Section - Fixed overflow */}
+            <div className="relative overflow-hidden rounded-xl bg-gradient-to-r from-[#00529C] to-[#003b75] p-6 md:p-8 shadow-lg mb-6">
+                <div className="absolute inset-0 bg-grid-white/10 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.7))]"></div>
+                <div className="absolute -bottom-8 -right-8 h-32 w-32 rounded-full bg-blue-500/20 blur-2xl"></div>
+                <div className="absolute top-0 left-0 h-24 w-24 rounded-full bg-indigo-500/20 blur-xl"></div>
 
-                    <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div className="mb-6 md:mb-0">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2 rounded-lg bg-white/10">
-                                    <CreditCard className="h-6 w-6 text-white" />
-                                </div>
-                                <h1 className="text-3xl font-bold tracking-tight text-white">
-                                    Edit Rekening
-                                </h1>
-                            </div>
-                            <p className="mt-1.5 max-w-2xl text-blue-100 text-lg">
-                                Perbarui informasi rekening nasabah{" "}
+                <div className="relative z-10 flex flex-col space-y-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-white/10">
+                            <CreditCard className="h-5 w-5 text-white" />
+                        </div>
+                        <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+                            Edit Rekening
+                        </h1>
+                    </div>
+
+                    <p className="text-blue-100 text-base md:text-lg max-w-2xl">
+                        Perbarui informasi rekening nasabah {client.name}
+                    </p>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Badge
+                            variant="secondary"
+                            className="bg-blue-800/30 text-white border-blue-700 text-xs"
+                        >
+                            <Users className="h-3 w-3 mr-1" />
+                            Manajemen Rekening
+                        </Badge>
+                        <Badge
+                            variant="secondary"
+                            className="bg-white/20 text-white border-white/30 text-xs"
+                        >
+                            <FileText className="h-3 w-3 mr-1" />
+                            <span className="truncate max-w-[120px]">
                                 {client.name}
-                            </p>
-                            <div className="mt-4 flex flex-wrap items-center gap-3">
-                                <Badge
-                                    variant="secondary"
-                                    className="bg-blue-800/30 text-white border-blue-700"
-                                >
-                                    <Users className="h-3.5 w-3.5 mr-1" />
-                                    Manajemen Rekening
-                                </Badge>
-                                <Badge
-                                    variant="secondary"
-                                    className="bg-white/20 text-white border-white/30"
-                                >
-                                    <FileText className="h-3.5 w-3.5 mr-1" />
-                                    Nasabah: {client.name}
-                                </Badge>
-                                <Badge
-                                    variant="secondary"
-                                    className="bg-white/20 text-white border-white/30"
-                                >
-                                    Rekening: {account.account_number}
-                                </Badge>
-                            </div>
-                        </div>
-                        <div className="flex flex-shrink-0 items-center space-x-3">
-                            <Link
-                                href={route("clients.show", {
-                                    client: client.id,
-                                })}
-                            >
-                                <Button className="shadow-md bg-white text-[#00529C] hover:bg-blue-50 gap-1.5 font-medium transition-all duration-200 px-5 py-2.5">
-                                    <ChevronLeft className="h-4 w-4" />
-                                    <span>Kembali</span>
-                                </Button>
-                            </Link>
-                        </div>
+                            </span>
+                        </Badge>
+                        <Badge
+                            variant="secondary"
+                            className="bg-white/20 text-white border-white/30 text-xs"
+                        >
+                            <span className="truncate">
+                                {account.account_number}
+                            </span>
+                        </Badge>
+                    </div>
+
+                    <div className="flex items-center">
+                        <Link
+                            href={route("clients.show", {
+                                client: client.id,
+                            })}
+                        >
+                            <Button className="shadow-md bg-white text-[#00529C] hover:bg-blue-50 gap-1.5 font-medium transition-all duration-200 px-4 py-2 text-sm">
+                                <ChevronLeft className="h-4 w-4" />
+                                <span>Kembali</span>
+                            </Button>
+                        </Link>
                     </div>
                 </div>
+            </div>
 
-                {/* Form Section */}
-                <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Form Section with better spacing */}
+            <div className="space-y-6">
+                <form onSubmit={handleSubmit}>
                     {/* Basic Information */}
                     <Card>
                         <CardHeader className="bg-blue-50/50">
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-lg">
                                 <div className="bg-blue-100 rounded-md p-1.5">
-                                    <UserIcon className="h-5 w-5 text-[#00529C]" />
+                                    <UserIcon className="h-4 w-4 text-[#00529C]" />
                                 </div>
                                 Informasi Dasar
                             </CardTitle>
@@ -316,7 +309,7 @@ const AccountsEdit = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="account_number">
                                         Nomor Rekening{" "}
@@ -384,9 +377,9 @@ const AccountsEdit = () => {
                     {/* Balance Information */}
                     <Card>
                         <CardHeader className="bg-green-50/50">
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-lg">
                                 <div className="bg-green-100 rounded-md p-1.5">
-                                    <Wallet className="h-5 w-5 text-green-600" />
+                                    <Wallet className="h-4 w-4 text-green-600" />
                                 </div>
                                 Informasi Saldo
                             </CardTitle>
@@ -395,7 +388,7 @@ const AccountsEdit = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="current_balance">
                                         Saldo Saat Ini{" "}
@@ -496,9 +489,9 @@ const AccountsEdit = () => {
                     {/* Account Information */}
                     <Card>
                         <CardHeader className="bg-gray-50/50">
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-lg">
                                 <div className="bg-[#00529C]/10 rounded-md p-1.5">
-                                    <CreditCard className="h-5 w-5 text-[#00529C]" />
+                                    <CreditCard className="h-4 w-4 text-[#00529C]" />
                                 </div>
                                 Informasi Rekening
                             </CardTitle>
@@ -507,7 +500,7 @@ const AccountsEdit = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="pt-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                                 <div className="space-y-2">
                                     <Label htmlFor="account_product_id">
                                         Produk Rekening{" "}
@@ -672,9 +665,9 @@ const AccountsEdit = () => {
                     {/* Universal Banker Information */}
                     <Card>
                         <CardHeader className="bg-gray-50/50">
-                            <CardTitle className="flex items-center gap-2">
+                            <CardTitle className="flex items-center gap-2 text-lg">
                                 <div className="bg-[#00529C]/10 rounded-md p-1.5">
-                                    <Briefcase className="h-5 w-5 text-[#00529C]" />
+                                    <Briefcase className="h-4 w-4 text-[#00529C]" />
                                 </div>
                                 Informasi Universal Banker
                             </CardTitle>
@@ -712,8 +705,15 @@ const AccountsEdit = () => {
                                                 key={banker.id}
                                                 value={banker.id.toString()}
                                             >
-                                                {banker.name} -{" "}
-                                                {banker.branch?.name || "N/A"}
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium">
+                                                        {banker.name}
+                                                    </span>
+                                                    <span className="text-xs text-gray-500">
+                                                        {banker.branch?.name ||
+                                                            "N/A"}
+                                                    </span>
+                                                </div>
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
@@ -732,7 +732,7 @@ const AccountsEdit = () => {
                     <Card>
                         <CardContent className="pt-6">
                             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                                <div className="flex gap-3">
+                                <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                                     <Link
                                         href={route("clients.show", {
                                             client: client.id,
@@ -742,7 +742,7 @@ const AccountsEdit = () => {
                                             type="button"
                                             variant="outline"
                                             disabled={processing}
-                                            className="gap-2"
+                                            className="gap-2 w-full sm:w-auto"
                                         >
                                             <X className="h-4 w-4" />
                                             Batal
@@ -753,7 +753,7 @@ const AccountsEdit = () => {
                                         variant="outline"
                                         onClick={handleReset}
                                         disabled={processing}
-                                        className="gap-2"
+                                        className="gap-2 w-full sm:w-auto"
                                     >
                                         <AlertCircle className="h-4 w-4" />
                                         Reset
@@ -766,7 +766,7 @@ const AccountsEdit = () => {
                                         data.available_balance >
                                             data.current_balance
                                     }
-                                    className="bg-[#00529C] hover:bg-[#003b75] gap-2 min-w-[160px]"
+                                    className="bg-[#00529C] hover:bg-[#003b75] gap-2 min-w-[160px] w-full sm:w-auto"
                                 >
                                     {processing ? (
                                         <>
