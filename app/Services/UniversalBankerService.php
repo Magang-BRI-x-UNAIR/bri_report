@@ -80,9 +80,18 @@ class UniversalBankerService
         $universalBanker->load([
             'branch',
             'accounts' => function ($query) {
-                $query->with(['client', 'accountProduct'])
+                $query->with([
+                    'client',
+                    'accountProduct',
+                    'accountTransactions' => function ($transactionQuery) {
+                        $transactionQuery->orderBy('date', 'desc')
+                            ->orderBy('id', 'desc')
+                            ->limit(2);
+                    }
+                ])
                     ->orderBy('opened_at', 'desc');
             },
+
         ]);
 
         $loadedAccounts = $universalBanker->accounts;

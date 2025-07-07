@@ -1,6 +1,6 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Branch, PageProps } from "@/types";
-import { Head, usePage, Link, router } from "@inertiajs/react";
+import { Head, usePage, Link } from "@inertiajs/react";
 import { useState } from "react";
 import {
     Search,
@@ -9,7 +9,6 @@ import {
     Trash2,
     Eye,
     Building2,
-    ChevronRight,
     MapPin,
     ListFilter,
     ArrowUpDown,
@@ -17,6 +16,7 @@ import {
 } from "lucide-react";
 import { Breadcrumb } from "@/Components/Breadcrumb";
 import { Button } from "@/components/ui/button";
+import ClientPagination from "@/Components/ClientPagination";
 
 // Import modal components
 import CreateBranchModal from "./Partials/CreateBranchModal";
@@ -34,13 +34,17 @@ const BranchesIndex = () => {
     const [sortField, setSortField] = useState("name");
     const [sortDirection, setSortDirection] = useState("asc");
 
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
+
     // Modal states
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [currentBranch, setCurrentBranch] = useState<Branch | null>(null);
 
-    // Filter branches based on search term
+    // Filter branches based on search term and sorting
     const filteredBranches = branches
         .filter(
             (branch) =>
@@ -60,6 +64,12 @@ const BranchesIndex = () => {
             return 0;
         });
 
+    // Calculate pagination
+    const totalPages = Math.ceil(filteredBranches.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const currentBranches = filteredBranches.slice(startIndex, endIndex);
+
     const handleSort = (field: string) => {
         if (sortField === field) {
             setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -67,10 +77,24 @@ const BranchesIndex = () => {
             setSortField(field);
             setSortDirection("asc");
         }
+        setCurrentPage(1); // Reset to first page when sorting changes
     };
 
     const clearSearch = () => {
         setSearchTerm("");
+        setCurrentPage(1); // Reset to first page when clearing search
+    };
+
+    // Pagination handlers
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+        // Scroll to top when page changes
+        window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const handleItemsPerPageChange = (newItemsPerPage: number) => {
+        setItemsPerPage(newItemsPerPage);
+        setCurrentPage(1); // Reset to first page when items per page changes
     };
 
     // Modal handlers
@@ -214,11 +238,20 @@ const BranchesIndex = () => {
                     )}
 
                     {/* Search results counter */}
-                    <div className="mt-3 flex items-center text-sm text-gray-500">
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#00529C] mr-2">
-                            {filteredBranches.length}
-                        </span>
-                        cabang ditemukan
+                    <div className="mt-3 flex items-center justify-between">
+                        <div className="flex items-center text-sm text-gray-500">
+                            <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-[#00529C] mr-2">
+                                {filteredBranches.length}
+                            </span>
+                            cabang ditemukan
+                        </div>
+
+                        {/* Show current page info */}
+                        {filteredBranches.length > 0 && (
+                            <div className="text-sm text-gray-500">
+                                Halaman {currentPage} dari {totalPages}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -266,14 +299,14 @@ const BranchesIndex = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 bg-white">
-                            {filteredBranches.length > 0 ? (
-                                filteredBranches.map((branch, index) => (
+                            {currentBranches.length > 0 ? (
+                                currentBranches.map((branch, index) => (
                                     <tr
                                         key={branch.id}
                                         className="hover:bg-blue-50/40 transition-colors duration-150"
                                     >
                                         <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                                            {index + 1}
+                                            {startIndex + index + 1}
                                         </td>
                                         <td className="whitespace-nowrap px-6 py-4">
                                             <div className="flex items-center">
@@ -391,40 +424,20 @@ const BranchesIndex = () => {
                     </table>
                 </div>
 
-                {/* Footer info section */}
+                {/* Pagination */}
                 {filteredBranches.length > 0 && (
-                    <div className="bg-gray-50/70 px-6 py-4 flex flex-col sm:flex-row items-center justify-between border-t border-gray-200">
-                        <div className="text-sm text-gray-500 mb-4 sm:mb-0">
-                            Menampilkan {filteredBranches.length} dari{" "}
-                            {branches.length} cabang
-                        </div>
-                        <div className="flex justify-center">
-                            <nav
-                                className="inline-flex rounded-md shadow-sm -space-x-px"
-                                aria-label="Pagination"
-                            >
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                                >
-                                    <span className="sr-only">Previous</span>
-                                    <ChevronRight className="h-4 w-4 transform rotate-180" />
-                                </a>
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-[#00529C] hover:bg-blue-100"
-                                >
-                                    1
-                                </a>
-                                <a
-                                    href="#"
-                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                                >
-                                    <span className="sr-only">Next</span>
-                                    <ChevronRight className="h-4 w-4" />
-                                </a>
-                            </nav>
-                        </div>
+                    <div className="bg-gray-50/70 px-6 py-4 border-t border-gray-200">
+                        <ClientPagination
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            totalItems={filteredBranches.length}
+                            itemsPerPage={itemsPerPage}
+                            onPageChange={handlePageChange}
+                            onItemsPerPageChange={handleItemsPerPageChange}
+                            showItemsPerPage={true}
+                            itemsPerPageOptions={[5, 10, 25, 50]}
+                            className="w-full"
+                        />
                     </div>
                 )}
             </div>

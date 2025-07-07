@@ -12,8 +12,13 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call([
+            AccountProductSeeder::class,
+            BranchSeeder::class,
             RolePermissionSeeder::class,
             UserSeeder::class,
+            ClientSeeder::class,
+            UniversalBankerSeeder::class,
+            AccountSeeder::class,
         ]);
 
         $this->importSqlSequentially();
